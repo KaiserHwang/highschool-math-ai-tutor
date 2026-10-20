@@ -1,0 +1,13 @@
+{
+  "name": "mathpulse",
+  "private": true,
+  "type": "module",
+  "description": "2022 개정 고1 공통수학1·2 진단과 심화 코칭 웹앱",
+  "scripts": {
+    "verify": "python3 tests/verify_answers.py",
+    "test:content": "node tests/content-check.mjs",
+    "test:e2e": "node tests/e2e.mjs",
+    "serve": "python3 -m http.server 8080"
+  },
+  "license": "MIT"
+}
