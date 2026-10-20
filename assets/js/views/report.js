@@ -99,7 +99,9 @@ function buildSummary({ diag, now, w7, tt, wr }) {
   }
   lines.push('역량(0~100): ' + SKILLS.map((s) => `${s.label} ${now[s.key] ?? '없음'}`).join(', '));
   lines.push(`최근 7일: ${w7.solved}문제 해결, ${w7.activeDays}일 학습, 공부 시간 ${fmtMinutes(w7.seconds)}, 첫 시도 정답률 ${w7.problems ? Math.round(w7.firstRight * 100) + '%' : '자료 없음'}, 힌트·풀이 사용률 ${w7.problems ? Math.round(w7.hintUse * 100) + '%' : '자료 없음'}`);
-  lines.push(`누적: 전체 ${tt.total}문제 중 ${tt.solved}문제 해결(그중 한 번에 해결 ${tt.clean})`);
+  lines.push(`누적: 문제 은행 ${tt.total}문제 중 ${tt.solved}문제 해결(그중 한 번에 해결 ${tt.clean})`);
+  const prac = Object.values(getState().practice || {}).reduce((s, v) => s + v.solved, 0);
+  if (prac) lines.push(`숫자를 바꾼 유형 연습: ${prac}문제 해결`);
   lines.push('단원별 숙련도: ' + UNITS.map((u) => `${unitLabel(u)} ${unitMastery(u.id).pct}%`).join(', '));
   if (wr.length) {
     const byReason = REASONS.map((r) => `${r} ${wr.filter((w) => w.reason === r).length}`).join(', ');

@@ -18,6 +18,7 @@ const routes = [
   [/^\/units$/, () => renderUnits, 'units'],
   [/^\/u\/(u\d)$/, () => renderUnit, 'units'],
   [/^\/p\/(u\d-\d\d)$/, () => renderProblem, 'units'],
+  [/^\/v\/(g-[a-z0-9-]+)$/, () => renderProblem, 'units'],
   [/^\/review$/, () => renderReview, 'review'],
   [/^\/report$/, () => renderReport, 'report'],
   [/^\/settings$/, () => renderSettings, 'settings'],

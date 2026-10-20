@@ -330,6 +330,13 @@ def option_matches(options, idx, value):
 
 def main():
     E = expected()
+    sys.path.insert(0, str(ROOT / 'tests'))
+    from verify_extra import expected_extra
+    P = {p['id']: p for p in data['PROBLEMS'] + data['DIAGNOSIS']}
+    extra = expected_extra(P)
+    dup = set(extra) & set(E)
+    assert not dup, f'중복 계산: {dup}'
+    E.update(extra)
     items = data['PROBLEMS'] + data['DIAGNOSIS']
     unit_ids = {u['id'] for u in data['UNITS']}
     skill_keys = {s['key'] for s in data['SKILLS']}
@@ -372,8 +379,14 @@ def main():
             if got != want:
                 errors.append(f'{iid}: 단답 정답 {it["answer"]} ≠ 계산값 {exp}')
         else:
-            if iid == 'u6-04':
-                ok = it['options'][it['answer']].replace(' ', '') == exp
+            if isinstance(exp, tuple) and exp[0] == 'index':
+                ok = it['answer'] == exp[1]
+                others = []
+            elif isinstance(exp, str) and not exp.startswith('range-') and iid != 'u7-09':
+                ok = it['options'][it['answer']].replace(' ', '') == exp.replace(' ', '')
+                others = [i for i, o in enumerate(it['options']) if i != it['answer'] and o.replace(' ', '') == exp.replace(' ', '')]
+            elif isinstance(exp, str) and exp.startswith('range-'):
+                ok = it['options'][it['answer']].strip('$').replace(' ', '').replace('\\frac54', '5/4').replace('\\frac{5}{4}', '5/4') == exp[len('range-'):]
                 others = []
             elif iid == 'u7-09':
                 ok = it['options'][it['answer']].replace(' ', '').strip('$') == exp

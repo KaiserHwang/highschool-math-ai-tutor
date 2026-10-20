@@ -15,6 +15,7 @@ if (shotsDir) mkdirSync(shotsDir, { recursive: true });
 
 const { DIAGNOSIS } = await import('../assets/js/content/diagnosis.js');
 const { PROBLEM_BY_ID } = await import('../assets/js/content/problems.js');
+const { makeVariant } = await import('../assets/js/content/generators.js');
 
 let failures = 0;
 const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!cond) failures++; };
@@ -54,7 +55,7 @@ async function run(viewport, tag) {
   await page.waitForSelector('text=진단 결과');
   await shot('diag-result');
   const lead = await page.locator('.lead').first().textContent();
-  ok(/12문제 중 8문제 정답/.test(lead), `[${tag}] 진단 결과에 정답 수가 맞게 나온다 (${lead.trim()})`);
+  ok(new RegExp(`${DIAGNOSIS.length}문제 중 8문제 정답`).test(lead), `[${tag}] 진단 결과에 정답 수가 맞게 나온다 (${lead.trim()})`);
   ok(await page.locator('svg.radar polygon.rd-area').count() === 1, `[${tag}] 레이더 차트가 그려진다`);
   ok(await page.locator('text=확신했는데 틀린 문제').count() === 1, `[${tag}] 확신 오답이 따로 표시된다`);
 
@@ -69,6 +70,7 @@ async function run(viewport, tag) {
   ok(await page.locator('.mark-wrong').count() === 1, `[${tag}] 오답이면 빗금 표시`);
   await page.click('[data-reason="조건 누락"]');
   await page.click('[data-hint="1"]');
+  await page.click('[data-ask] > summary');
   ok(!(await page.locator('[data-hint="2"]').isDisabled()), `[${tag}] 1단계를 열면 2단계가 열린다`);
   await page.fill('[data-note]', 'R(x)=a(x-1)^2+x+2 로 두었다');
   await page.fill('[data-question]', '왜 이렇게 두나요?');
@@ -118,6 +120,54 @@ async function run(viewport, tag) {
   const stage = await page.evaluate(() => JSON.parse(localStorage.getItem('mathpulse:v2')).wrong['u1-05'].stage);
   ok(stage === 1, `[${tag}] 힌트 없이 복습을 통과하면 다음 단계로 (stage=${stage})`);
 
+  // ── 그림 문제가 그려진다
+  await page.goto(BASE + '#/p/u2-24');
+  await page.waitForSelector('figure.fig svg.plot path.pl-curve');
+  ok(true, `[${tag}] 그림 문제에 그래프가 그려진다`);
+  await shot('problem-figure');
+
+  // ── 비슷한 문제(숫자 바꾸기)
+  await page.goto(BASE + '#/p/u1-01');
+  await page.waitForSelector('.q-text .katex');
+  await page.click('.pager a:has-text("비슷한 문제 풀기")');
+  await page.waitForSelector('.banner.variant');
+  const vurl = new URL(page.url());
+  const [vkey, vq] = vurl.hash.replace('#/v/', '').split('?');
+  const vseed = Number(new URLSearchParams(vq).get('s'));
+  const vp = makeVariant(vkey, vseed);
+  ok(vkey === 'g-sym' && Number.isFinite(vseed), `[${tag}] 비슷한 문제 화면으로 이동 (${vkey})`);
+  if (vp.type === 'mc') { await page.click(`[data-opt="${vp.answer}"]`); await page.click('[data-act="submit"]'); }
+  else { await page.fill('.short-in', vp.answer); await page.click('.short-form button[type="submit"]'); }
+  await page.waitForSelector('.fb-right');
+  const prac = await page.evaluate(() => JSON.parse(localStorage.getItem('mathpulse:v2')).practice['g-sym']);
+  ok(prac && prac.solved === 1, `[${tag}] 비슷한 문제 연습이 기록된다`);
+  await shot('variant');
+
+  // ── 숫자를 바꾼 문제로 오답 복습
+  await page.goto(BASE + '#/p/u1-04');
+  await page.waitForSelector('.opt');
+  await page.click(`[data-opt="${(PROBLEM_BY_ID['u1-04'].answer + 1) % 5}"]`);
+  await page.click('[data-act="submit"]');
+  await page.waitForSelector('.fb-wrong');
+  await page.evaluate(() => { const k = 'mathpulse:v2'; const s = JSON.parse(localStorage.getItem(k)); s.wrong['u1-04'].due = '2000-01-01'; localStorage.setItem(k, JSON.stringify(s)); });
+  await page.goto(BASE + '#/p/u1-04?review=1');
+  await page.reload();
+  await page.click('.banner a:has-text("숫자를 바꾼 문제로 복습")');
+  await page.waitForSelector('.banner.variant');
+  const rurl = new URL(page.url());
+  const [rkey, rq] = rurl.hash.replace('#/v/', '').split('?');
+  const rp = makeVariant(rkey, Number(new URLSearchParams(rq).get('s')));
+  if (rp.type === 'mc') { await page.click(`[data-opt="${rp.answer}"]`); await page.click('[data-act="submit"]'); }
+  else { await page.fill('.short-in', rp.answer); await page.click('.short-form button[type="submit"]'); }
+  await page.waitForSelector('text=복습 통과');
+  const st2 = await page.evaluate(() => JSON.parse(localStorage.getItem('mathpulse:v2')).wrong['u1-04'].stage);
+  ok(st2 === 1, `[${tag}] 숫자를 바꾼 문제로 복습해도 복습 단계가 오른다 (stage=${st2})`);
+
+  // ── 이미 푼 문제를 다시 열면 지난 답과 채점 표시가 남아 있다
+  await page.goto(BASE + '#/p/u1-05');
+  await page.waitForSelector('.mark.static');
+  ok((await page.inputValue('.short-in')) === PROBLEM_BY_ID['u1-05'].answer, `[${tag}] 푼 문제를 다시 열면 지난 답이 보인다`);
+
   // ── 리포트
   await page.goto(BASE + '#/report');
   await page.waitForSelector('.stats');
@@ -137,7 +187,21 @@ async function run(viewport, tag) {
   const [dl] = await Promise.all([page.waitForEvent('download'), page.click('[data-act="export"]')]);
   ok(/mathpulse-backup-\d{4}-\d\d-\d\d\.json/.test(dl.suggestedFilename()), `[${tag}] 백업 파일을 내려받는다`);
 
+  // ── 좁은 화면: 연습장 전체 화면
+  if (viewport.width < 1100) {
+    await page.goto(BASE + '#/p/u1-05');
+    await page.click('[data-act="pad-open"]');
+    await page.waitForSelector('.study-pad.is-full canvas');
+    const box = await page.locator('.study-pad.is-full canvas').boundingBox();
+    ok(box && box.height > viewport.height * 0.6, `[${tag}] 연습장을 전체 화면으로 연다`);
+    await page.mouse.move(box.x + 40, box.y + 40); await page.mouse.down(); await page.mouse.move(box.x + 160, box.y + 120); await page.mouse.up();
+    await shot('pad-full');
+    await page.click('[data-act="pad-close"]');
+    ok(!(await page.locator('.study-pad.is-full').count()), `[${tag}] 연습장을 닫는다`);
+  }
+
   // ── 다크 모드
+  await page.goto(BASE + '#/settings');
   await page.click('[data-theme="dark"]');
   await page.goto(BASE + '#/p/u2-10');
   await page.waitForSelector('.q-text .katex');

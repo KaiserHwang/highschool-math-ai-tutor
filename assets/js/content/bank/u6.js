@@ -1,0 +1,229 @@
+// Ⅵ. 집합과 명제
+const t = String.raw;
+
+export default [
+  {
+    id: 'u6-01', unit: 'u6', level: 'basic', topic: '부분집합의 개수', type: 'short',
+    q: t`집합 $A=\{1,2,3,4\}$의 부분집합 중에서 $1$은 반드시 원소로 갖고 $4$는 원소로 갖지 않는 집합의 개수를 구하시오.`,
+    answer: '4',
+    skills: { concept: 1 },
+    hints: [
+      t`$1$과 $4$는 들어갈지 말지가 이미 정해졌습니다. 자유롭게 정할 수 있는 원소만 세세요.`,
+      t`$2$와 $3$ 각각 넣거나 빼는 두 가지 선택이 있습니다.`,
+    ],
+    solution: t`$2^2=4$`,
+  },
+  {
+    id: 'u6-02', unit: 'u6', level: 'basic', topic: '집합의 연산', type: 'mc',
+    q: t`전체집합 $U=\{x\mid x\text{는 }10\text{ 이하의 자연수}\}$의 두 부분집합 $A=\{x\mid x\text{는 }2\text{의 배수}\}$, $B=\{x\mid x\text{는 }3\text{의 배수}\}$에 대하여 $n(A^C\cap B^C)$의 값은?`,
+    options: ['2', '3', '4', '5', '6'], answer: 1,
+    skills: { concept: 1, calc: 0.5 },
+    hints: [
+      t`드모르간의 법칙으로 $A^C\cap B^C=(A\cup B)^C$입니다.`,
+      t`$n(A\cup B)=n(A)+n(B)-n(A\cap B)=5+3-1$`,
+    ],
+    solution: t`$n(A\cup B)=7$이므로 $n(A^C\cap B^C)=10-7=3$`,
+  },
+  {
+    id: 'u6-03', unit: 'u6', level: 'core', topic: '충분조건과 진리집합', type: 'short',
+    q: t`두 조건 $p:\ x^2-3x-4\le0,\ \ q:\ |x-a|\le3$에 대하여 $p$가 $q$이기 위한 충분조건이 되도록 하는 실수 $a$의 최댓값과 최솟값의 합을 구하시오.`,
+    answer: '3',
+    skills: { reason: 1, concept: 1 },
+    hints: [
+      t`$p$가 $q$이기 위한 충분조건이면 진리집합 사이에 $P\subset Q$가 성립합니다.`,
+      t`$P=\{x\mid-1\le x\le4\}$, $Q=\{x\mid a-3\le x\le a+3\}$입니다. 수직선에 그려 $P$가 $Q$ 안에 들어갈 조건을 세우세요.`,
+    ],
+    solution: t`$a-3\le-1$이고 $a+3\ge4$이므로 $1\le a\le2$<br>최댓값과 최솟값의 합은 $3$`,
+  },
+  {
+    id: 'u6-04', unit: 'u6', level: 'core', topic: '명제의 참거짓', type: 'mc',
+    q: t`실수 $x,\ y$에 대하여 〈보기〉에서 참인 명제만을 있는 대로 고른 것은?<br>ㄱ. $x>1$이면 $x^2>1$이다.<br>ㄴ. $xy>0$이면 $x>0$이고 $y>0$이다.<br>ㄷ. $x+y>2$이면 $x>1$ 또는 $y>1$이다.`,
+    options: ['ㄱ', 'ㄴ', 'ㄱ, ㄴ', 'ㄱ, ㄷ', 'ㄱ, ㄴ, ㄷ'], answer: 3,
+    skills: { reason: 1, concept: 1 },
+    hints: [
+      t`거짓을 보이려면 반례 하나면 충분합니다. ㄴ에서 $x,\ y$가 모두 음수인 경우를 생각해 보세요.`,
+      t`ㄷ은 직접 보이기 어렵습니다. 대우 "$x\le1$이고 $y\le1$이면 $x+y\le2$"를 확인하세요.`,
+    ],
+    solution: t`ㄱ. 참 &nbsp; ㄴ. $x=y=-1$이 반례이므로 거짓 &nbsp; ㄷ. 대우가 참이므로 참<br>따라서 ㄱ, ㄷ`,
+  },
+  {
+    id: 'u6-05', unit: 'u6', level: 'core', topic: '산술평균과 기하평균', type: 'short',
+    q: t`$x>1$일 때, $x+\frac{9}{x-1}$의 최솟값을 구하시오.`,
+    answer: '7',
+    skills: { calc: 1, insight: 0.5 },
+    hints: [
+      t`분모가 $x-1$이므로 곱했을 때 상수가 되도록 $x$를 $x-1$로 바꿔 쓰세요.`,
+      t`$x+\frac{9}{x-1}=(x-1)+\frac{9}{x-1}+1$이고 $x-1>0$입니다.`,
+    ],
+    solution: t`$(x-1)+\frac{9}{x-1}\ge2\sqrt9=6$이므로 최솟값은 $6+1=7$ (등호는 $x=4$)`,
+  },
+  {
+    id: 'u6-06', unit: 'u6', level: 'adv', topic: '조건식이 있는 절대부등식', type: 'mc',
+    q: t`양수 $x,\ y$가 $2x+3y=6$을 만족시킬 때, $\frac{3}{x}+\frac{2}{y}$의 최솟값은?`,
+    options: ['3', '4', t`$\frac92$`, '5', '6'], answer: 1,
+    skills: { insight: 1, calc: 0.5 },
+    hints: [
+      t`$\frac3x+\frac2y$에 바로 산술·기하평균을 쓰면 곱 $\frac{6}{xy}$가 상수가 아니라서 막힙니다. 조건식을 곱해 보세요.`,
+      t`$(2x+3y)\left(\frac3x+\frac2y\right)=12+\frac{4x}{y}+\frac{9y}{x}$입니다.`,
+    ],
+    solution: t`$12+\frac{4x}{y}+\frac{9y}{x}\ge12+2\sqrt{36}=24$이므로 $6\left(\frac3x+\frac2y\right)\ge24$<br>최솟값은 $4$ (등호는 $x=\frac32,\ y=1$)`,
+  },
+  {
+    id: 'u6-07', unit: 'u6', level: 'adv', topic: '조건을 만족하는 집합', type: 'short',
+    q: t`전체집합 $U=\{1,2,3,4,5,6,7\}$의 두 부분집합 $A=\{1,2,3\},\ B=\{3,4,5\}$에 대하여 $(A-B)\cup X=X,\ B\cap X=\{3\}$을 만족시키는 $U$의 부분집합 $X$의 개수를 구하시오.`,
+    answer: '4',
+    skills: { reason: 1, concept: 0.5 },
+    hints: [
+      t`$(A-B)\cup X=X$는 $A-B\subset X$와 같습니다. $A-B$부터 구하세요.`,
+      t`$X$는 $1,2$를 반드시 포함하고, $B$의 원소 중에서는 $3$만 포함해야 합니다.`,
+    ],
+    solution: t`$X$는 $1,2,3$을 포함하고 $4,5$는 포함하지 않으며 $6,7$은 자유롭게 정합니다. $2^2=4$`,
+  },
+  {
+    id: 'u6-08', unit: 'u6', level: 'killer', topic: '"어떤"이 들어간 명제', type: 'short',
+    q: t`명제 '어떤 실수 $x$에 대하여 $x^2-2ax+a+6<0$이다.'가 거짓이 되도록 하는 정수 $a$의 개수를 구하시오.`,
+    answer: '6',
+    skills: { reason: 1, concept: 1, insight: 0.5 },
+    hints: [
+      t`이 명제가 거짓이면 그 부정이 참입니다. '어떤'의 부정은 '모든'입니다.`,
+      t`'모든 실수 $x$에 대하여 $x^2-2ax+a+6\ge0$'이 참이 되려면 판별식 $\frac{D}{4}\le0$이어야 합니다.`,
+    ],
+    solution: t`$\frac{D}{4}=a^2-a-6\le0$에서 $-2\le a\le3$이므로 정수 $a$는 $6$개`,
+  },
+  {
+    id: 'u6-09', unit: 'u6', level: 'basic', topic: '벤 다이어그램', type: 'mc',
+    q: t`그림의 벤 다이어그램에서 색칠한 부분을 나타내는 집합은?`,
+    fig: { kind: 'venn', sets: ['A', 'B'], shade: ['a'], alt: '두 집합 A, B의 벤 다이어그램에서 A에만 속하는 부분이 색칠되어 있다' },
+    options: [t`$A\cap B$`, t`$A-B$`, t`$B-A$`, t`$A\cup B$`, t`$(A\cup B)^C$`], answer: 1,
+    skills: { concept: 1, visual: 0.5 },
+    hints: [
+      t`색칠한 부분은 $A$에는 속하고 $B$에는 속하지 않습니다.`,
+      t`"$A$의 원소 중 $B$에 속하지 않는 것"을 기호로 나타내면?`,
+    ],
+    solution: t`$A-B=A\cap B^C$`,
+  },
+  {
+    id: 'u6-10', unit: 'u6', level: 'core', topic: '세 집합의 벤 다이어그램', type: 'mc',
+    q: t`그림의 벤 다이어그램에서 색칠한 부분을 나타내는 집합은?`,
+    fig: { kind: 'venn', sets: ['A', 'B', 'C'], shade: ['ab'], alt: '세 집합 A, B, C의 벤 다이어그램에서 A와 B에 동시에 속하지만 C에는 속하지 않는 부분이 색칠되어 있다' },
+    options: [t`$(A\cap B)-C$`, t`$A\cap B\cap C$`, t`$(A\cup B)-C$`, t`$A\cap(B\cup C)$`, t`$(A-B)\cup C$`], answer: 0,
+    skills: { concept: 1, visual: 1 },
+    hints: [
+      t`색칠한 부분의 원소는 $A$에 속하는지, $B$에 속하는지, $C$에 속하는지 하나씩 따져 보세요.`,
+      t`$A$와 $B$에는 속하고 $C$에는 속하지 않습니다.`,
+    ],
+    solution: t`$(A\cap B)\cap C^C=(A\cap B)-C$`,
+  },
+  {
+    id: 'u6-11', unit: 'u6', level: 'adv', topic: '집합의 연산 법칙', type: 'mc',
+    q: t`그림의 벤 다이어그램에서 색칠한 부분을 나타내는 집합은?`,
+    fig: { kind: 'venn', sets: ['A', 'B'], shade: ['ab', 'u'], alt: '두 집합 A, B의 벤 다이어그램에서 A와 B의 공통부분과 A, B 어디에도 속하지 않는 바깥 부분이 색칠되어 있다' },
+    options: [t`$(A\cup B)-(A\cap B)$`, t`$A^C\cap B^C$`, t`$(A-B)^C\cap(B-A)^C$`, t`$(A\cap B)^C$`, t`$A\cup B^C$`], answer: 2,
+    skills: { concept: 1, insight: 1, visual: 0.5 },
+    hints: [
+      t`색칠하지 않은 부분은 $A-B$와 $B-A$입니다. 색칠한 부분은 그 둘을 모두 뺀 나머지입니다.`,
+      t`"$A-B$에도 속하지 않고 $B-A$에도 속하지 않는다"를 드모르간의 법칙으로 나타내 보세요.`,
+    ],
+    solution: t`색칠한 부분 $=U-\{(A-B)\cup(B-A)\}=\{(A-B)\cup(B-A)\}^C=(A-B)^C\cap(B-A)^C$`,
+  },
+  {
+    id: 'u6-12', unit: 'u6', level: 'basic', topic: '원소의 개수', type: 'short',
+    q: t`두 집합 $A,\ B$에 대하여 $n(A)=10,\ n(B)=8,\ n(A\cup B)=15$일 때, $n(A-B)$의 값을 구하시오.`,
+    answer: '7',
+    skills: { concept: 1 },
+    hints: [
+      t`$n(A\cup B)=n(A)+n(B)-n(A\cap B)$`,
+      t`$n(A-B)=n(A)-n(A\cap B)$`,
+    ],
+    solution: t`$n(A\cap B)=3$이므로 $n(A-B)=10-3=7$`,
+  },
+  {
+    id: 'u6-13', unit: 'u6', level: 'core', topic: '원소의 개수 활용', type: 'short',
+    q: t`어느 반 학생 $30$명 중 수학을 좋아하는 학생은 $18$명, 영어를 좋아하는 학생은 $15$명이고, 두 과목을 모두 좋아하지 않는 학생은 $5$명이다. 두 과목을 모두 좋아하는 학생 수를 구하시오.`,
+    answer: '8',
+    skills: { concept: 1, reason: 0.5 },
+    hints: [
+      t`둘 중 하나라도 좋아하는 학생은 $30-5=25$명입니다.`,
+      t`$n(A\cup B)=n(A)+n(B)-n(A\cap B)$`,
+    ],
+    solution: t`$25=18+15-n(A\cap B)$이므로 $8$명`,
+  },
+  {
+    id: 'u6-14', unit: 'u6', level: 'core', topic: '명제의 역과 대우', type: 'mc',
+    q: t`명제 '$x^2\ne1$이면 $x\ne1$이다.'의 대우는?`,
+    options: [t`$x\ne1$이면 $x^2\ne1$이다.`, t`$x=1$이면 $x^2=1$이다.`, t`$x^2=1$이면 $x=1$이다.`, t`$x=1$이면 $x^2\ne1$이다.`, t`$x^2\ne1$이면 $x=1$이다.`], answer: 1,
+    skills: { concept: 1 },
+    hints: [
+      t`명제 $p\to q$의 대우는 $\sim q\to\sim p$입니다. 가정과 결론을 바꾸고 둘 다 부정합니다.`,
+      t`$\sim q$는 "$x=1$", $\sim p$는 "$x^2=1$"입니다.`,
+    ],
+    solution: t`대우: $x=1$이면 $x^2=1$이다. (①은 역입니다.)`,
+  },
+  {
+    id: 'u6-15', unit: 'u6', level: 'core', topic: '충분조건', type: 'short',
+    q: t`두 조건 $p:\ |x-1|<2,\ \ q:\ x<a$에 대하여 $p$가 $q$이기 위한 충분조건이 되도록 하는 실수 $a$의 최솟값을 구하시오.`,
+    answer: '3',
+    skills: { reason: 1, concept: 1 },
+    hints: [
+      t`$p$가 $q$이기 위한 충분조건이면 $P\subset Q$입니다.`,
+      t`$P=\{x\mid-1<x<3\}$, $Q=\{x\mid x<a\}$. 수직선에 그려 보세요.`,
+    ],
+    solution: t`$P\subset Q$이려면 $a\ge3$이므로 최솟값은 $3$`,
+    trap: '$a>3$이라고 등호를 빼기 쉽습니다. $P$에 $3$이 포함되지 않으므로 $a=3$이어도 됩니다.',
+  },
+  {
+    id: 'u6-16', unit: 'u6', level: 'adv', topic: '교집합의 원소 개수의 범위', type: 'short',
+    q: t`전체집합 $U$의 두 부분집합 $A,\ B$에 대하여 $n(U)=20,\ n(A)=12,\ n(B)=10$일 때, $n(A\cap B)$의 최댓값과 최솟값의 합을 구하시오.`,
+    answer: '12',
+    skills: { reason: 1, concept: 0.5 },
+    hints: [
+      t`최댓값: $B$가 $A$에 완전히 들어갈 때. 최솟값: $A\cup B$가 가능한 한 클 때입니다.`,
+      t`$n(A\cup B)\le20$이므로 $n(A\cap B)=22-n(A\cup B)\ge2$`,
+    ],
+    solution: t`최댓값 $10$, 최솟값 $2$이므로 합은 $12$`,
+  },
+  {
+    id: 'u6-17', unit: 'u6', level: 'adv', topic: '산술평균과 기하평균', type: 'short',
+    q: t`$x>0$일 때, $\frac{(x+1)(x+4)}{x}$의 최솟값을 구하시오.`,
+    answer: '9',
+    skills: { calc: 1, insight: 0.5 },
+    hints: [
+      t`분자를 전개해 $x$로 나누세요.`,
+      t`$x+\frac4x+5$이고 $x+\frac4x\ge2\sqrt4$입니다.`,
+    ],
+    solution: t`$x+\frac4x+5\ge4+5=9$ (등호는 $x=2$)`,
+  },
+  {
+    id: 'u6-18', unit: 'u6', level: 'adv', topic: '진리집합의 포함 관계', type: 'short',
+    q: t`두 조건 $p:\ x^2-4x+3\le0,\ \ q:\ (x-a)(x-a-4)\le0$에 대하여 명제 $p\to q$가 참이 되도록 하는 정수 $a$의 개수를 구하시오.`,
+    answer: '3',
+    skills: { reason: 1, concept: 1 },
+    hints: [
+      t`$P=\{x\mid1\le x\le3\}$, $Q=\{x\mid a\le x\le a+4\}$입니다.`,
+      t`$P\subset Q$이려면 $a\le1$이고 $a+4\ge3$입니다.`,
+    ],
+    solution: t`$-1\le a\le1$이므로 정수 $a$는 $3$개`,
+  },
+  {
+    id: 'u6-19', unit: 'u6', level: 'killer', topic: '조건을 만족하는 부분집합', type: 'short',
+    q: t`전체집합 $U=\{1,2,3,\dots,10\}$의 부분집합 $A$ 중에서 '$x\in A$이면 $11-x\in A$이다.'를 만족시키는 공집합이 아닌 집합 $A$의 개수를 구하시오.`,
+    answer: '31',
+    skills: { insight: 1, reason: 1 },
+    hints: [
+      t`$x$가 들어가면 $11-x$도 들어가야 합니다. $1$과 $10$, $2$와 $9$처럼 짝을 지어 보세요.`,
+      t`짝은 $(1,10),(2,9),(3,8),(4,7),(5,6)$의 $5$쌍이고, 각 짝은 함께 넣거나 함께 뺍니다.`,
+    ],
+    solution: t`$2^5-1=31$ (공집합 제외)`,
+  },
+  {
+    id: 'u6-20', unit: 'u6', level: 'killer', topic: '산술·기하평균과 부등식', type: 'short',
+    q: t`양수 $x,\ y$가 $xy=x+y+3$을 만족시킬 때, $xy$의 최솟값을 구하시오.`,
+    answer: '9',
+    skills: { insight: 1, calc: 1 },
+    hints: [
+      t`$x+y\ge2\sqrt{xy}$를 조건식에 넣으면 $xy$에 대한 부등식이 됩니다.`,
+      t`$\sqrt{xy}=t$로 두면 $t^2\ge2t+3$입니다.`,
+    ],
+    solution: t`$t^2-2t-3\ge0$에서 $(t-3)(t+1)\ge0$, $t>0$이므로 $t\ge3$<br>$xy\ge9$ (등호는 $x=y=3$)`,
+  },
+];

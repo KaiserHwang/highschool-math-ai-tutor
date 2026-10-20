@@ -165,26 +165,51 @@ export function activeTrack() {
 }
 
 // ── 추천 ─────────────────────────────────────────────
-/** 다음에 풀 문제: 트랙 난이도 안에서, 숙련도가 가장 낮은 단원의 아직 못 푼 문제 */
+/** 다음에 풀 문제.
+ *  1) 가장 최근에 풀던 단원에 트랙 난이도의 안 푼 문제가 남아 있으면 그 단원을 이어서
+ *  2) 아니면 숙련도(70%)와 진단 준비도(30%)가 가장 낮은 단원부터
+ *  난이도는 트랙 난이도를 먼저, 다 풀었으면 나머지 난이도로 넘어간다. */
 export function recommendNext() {
-  const track = TRACKS[activeTrack()];
+  const trackKey = activeTrack();
+  const track = TRACKS[trackKey];
   const st = getState();
   const diag = latestDiagnosis();
-  const unitOrder = UNITS.filter((u) => u.id !== 'u8' || activeTrack() === 'killer')
+  const unsolved = (q) => !(st.attempts[q.id] && st.attempts[q.id].solved);
+  const allowed = UNITS.filter((u) => u.id !== 'u8' || trackKey === 'killer');
+
+  const recent = Object.entries(st.attempts)
+    .filter(([, a]) => a.lastAt)
+    .sort((x, y) => y[1].lastAt.localeCompare(x[1].lastAt))
+    .map(([pid]) => PROBLEM_BY_ID[pid])
+    .find(Boolean);
+  if (recent && allowed.some((u) => u.id === recent.unit)) {
+    const p = problemsOfUnit(recent.unit).find((q) => track.levels.includes(q.level) && unsolved(q));
+    if (p) return p;
+  }
+
+  const unitOrder = allowed
     .map((u) => {
       const m = unitMastery(u.id).pct;
       const prior = diag && diag.units[u.id] != null ? diag.units[u.id] : 60;
-      return { u, score: m * 0.7 + prior * 0.3 - (m >= 85 ? 0 : 0) };
+      return { u, score: m * 0.7 + prior * 0.3 };
     })
     .sort((a, b) => a.score - b.score);
   const levelOrder = [...track.levels, ...Object.keys(LEVELS).filter((l) => !track.levels.includes(l))];
   for (const lv of levelOrder) {
     for (const { u } of unitOrder) {
-      const p = problemsOfUnit(u.id).find((q) => q.level === lv && !(st.attempts[q.id] && st.attempts[q.id].solved));
+      const p = problemsOfUnit(u.id).find((q) => q.level === lv && unsolved(q));
       if (p) return p;
     }
   }
   return null;
+}
+
+/** 오늘 연습할 유형: 숙련도가 가장 낮은 단원의 생성기 */
+export function weakestUnit() {
+  const diag = latestDiagnosis();
+  return UNITS.filter((u) => u.id !== 'u8')
+    .map((u) => ({ u, score: unitMastery(u.id).pct * 0.7 + (diag && diag.units[u.id] != null ? diag.units[u.id] : 60) * 0.3 }))
+    .sort((a, b) => a.score - b.score)[0].u;
 }
 
 // ── 오답노트 복습 주기 ─────────────────────────────────

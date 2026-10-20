@@ -1,0 +1,334 @@
+// Ⅴ. 도형의 방정식
+const t = String.raw;
+
+export default [
+  {
+    id: 'u5-01', unit: 'u5', level: 'basic', topic: '내분점', type: 'short',
+    q: t`두 점 $A(-1,2),\ B(5,-4)$에 대하여 선분 $AB$를 $2:1$로 내분하는 점의 좌표가 $(a,b)$일 때, $a+b$의 값을 구하시오.`,
+    answer: '1',
+    skills: { calc: 1, concept: 0.5 },
+    hints: [
+      t`$m:n$ 내분점의 $x$좌표는 $\frac{mx_2+nx_1}{m+n}$입니다. $m$은 $B$쪽에 곱합니다.`,
+      t`$a=\frac{2\cdot5+1\cdot(-1)}{3},\ b=\frac{2\cdot(-4)+1\cdot2}{3}$`,
+    ],
+    solution: t`$a=3,\ b=-2$이므로 $a+b=1$`,
+  },
+  {
+    id: 'u5-02', unit: 'u5', level: 'basic', topic: '두 직선의 수직', type: 'short',
+    q: t`직선 $2x-y+3=0$에 수직이고 점 $(2,1)$을 지나는 직선의 $y$절편을 구하시오.`,
+    answer: '2',
+    skills: { concept: 1 },
+    hints: [
+      t`주어진 직선의 기울기는 $2$입니다. 수직인 두 직선의 기울기의 곱은 $-1$입니다.`,
+      t`기울기가 $-\frac12$이고 $(2,1)$을 지나는 직선은 $y-1=-\frac12(x-2)$입니다.`,
+    ],
+    solution: t`$y=-\frac12x+2$이므로 $y$절편은 $2$`,
+  },
+  {
+    id: 'u5-03', unit: 'u5', level: 'core', topic: '점과 직선 사이의 거리', type: 'short',
+    q: t`점 $(1,1)$과 직선 $3x+4y+k=0$ 사이의 거리가 $2$일 때, 양수 $k$의 값을 구하시오.`,
+    answer: '3',
+    skills: { concept: 1, calc: 0.5 },
+    hints: [
+      t`점과 직선 사이의 거리 공식 $\frac{|ax_1+by_1+c|}{\sqrt{a^2+b^2}}$을 쓰세요.`,
+      t`$\frac{|3+4+k|}{5}=2$, 즉 $|7+k|=10$입니다.`,
+    ],
+    solution: t`$k=3$ 또는 $k=-17$이므로 양수 $k$는 $3$`,
+  },
+  {
+    id: 'u5-04', unit: 'u5', level: 'core', topic: '원의 방정식', type: 'mc',
+    q: t`방정식 $x^2+y^2-4x+6y+k=0$이 나타내는 도형이 반지름의 길이가 $4$인 원일 때, 상수 $k$의 값은?`,
+    options: ['-5', '-3', '-1', '1', '3'], answer: 1,
+    skills: { calc: 1, concept: 0.5 },
+    hints: [
+      t`$x$끼리, $y$끼리 묶어 완전제곱식으로 바꾸면 중심과 반지름이 보입니다.`,
+      t`$(x-2)^2+(y+3)^2=13-k$입니다.`,
+    ],
+    solution: t`$13-k=16$이므로 $k=-3$`,
+  },
+  {
+    id: 'u5-05', unit: 'u5', level: 'core', topic: '원 위의 점과 직선 사이의 거리', type: 'short',
+    q: t`원 $x^2+y^2=9$ 위의 점 $P$와 직선 $3x+4y-25=0$ 사이의 거리의 최댓값과 최솟값의 합을 구하시오.`,
+    answer: '10',
+    skills: { visual: 1, concept: 0.5 },
+    hints: [
+      t`원 위의 점을 하나하나 보지 말고, 원의 중심에서 직선까지의 거리 $d$를 먼저 구하세요.`,
+      t`$d=\frac{25}{5}=5$이고 반지름은 $3$입니다. 최댓값은 $d+r$, 최솟값은 $d-r$입니다.`,
+    ],
+    solution: t`최댓값 $8$, 최솟값 $2$이므로 합은 $10$`,
+  },
+  {
+    id: 'u5-06', unit: 'u5', level: 'core', topic: '원과 직선의 위치 관계', type: 'short',
+    q: t`원 $x^2+y^2=10$과 직선 $y=x+k$가 만나도록 하는 정수 $k$의 개수를 구하시오.`,
+    answer: '9',
+    skills: { visual: 1, concept: 1 },
+    hints: [
+      t`원과 직선이 만나려면 중심에서 직선까지의 거리 $d$가 반지름 이하여야 합니다.`,
+      t`직선 $x-y+k=0$과 원점 사이의 거리는 $\frac{|k|}{\sqrt2}$이므로 $\frac{|k|}{\sqrt2}\le\sqrt{10}$입니다.`,
+    ],
+    solution: t`$|k|\le\sqrt{20}=2\sqrt5\approx4.47$이므로 정수 $k$는 $-4$부터 $4$까지 $9$개`,
+  },
+  {
+    id: 'u5-07', unit: 'u5', level: 'adv', topic: '현의 길이', type: 'mc',
+    q: t`원 $(x-1)^2+(y-2)^2=25$와 직선 $3x-4y+15=0$이 만나는 두 점을 $A,\ B$라 할 때, 선분 $AB$의 길이는?`,
+    options: [t`$2\sqrt{19}$`, t`$2\sqrt{21}$`, t`$4\sqrt5$`, t`$2\sqrt{23}$`, t`$4\sqrt6$`], answer: 1,
+    skills: { visual: 1, concept: 0.5, calc: 0.5 },
+    hints: [
+      t`교점을 직접 구하면 계산이 깁니다. 중심에서 현에 내린 수선은 현을 이등분합니다.`,
+      t`중심 $(1,2)$에서 직선까지의 거리 $d=\frac{|3-8+15|}{5}=2$, 현의 절반은 $\sqrt{r^2-d^2}$입니다.`,
+    ],
+    solution: t`$\frac{AB}{2}=\sqrt{25-4}=\sqrt{21}$이므로 $AB=2\sqrt{21}$`,
+  },
+  {
+    id: 'u5-08', unit: 'u5', level: 'adv', topic: '대칭이동과 최단거리', type: 'mc',
+    q: t`두 점 $A(1,3),\ B(5,1)$과 $x$축 위의 점 $P$에 대하여 $\overline{AP}+\overline{PB}$의 최솟값은?`,
+    fig: {
+      x: [-0.5, 6], y: [-2, 4], alt: '두 점 A(1,3), B(5,1)과 x축 위의 점 P. B를 x축에 대칭이동한 B\'(5,-1)과 A를 잇는 점선이 x축과 만나는 점이 P',
+      items: [
+        { t: 'pt', p: [1, 3], label: 'A(1,3)', pos: 'ne' }, { t: 'pt', p: [5, 1], label: 'B(5,1)', pos: 'ne' },
+        { t: 'pt', p: [4, 0], label: 'P', pos: 's' },
+        { t: 'seg', p: [1, 3], q: [4, 0] }, { t: 'seg', p: [4, 0], q: [5, 1] },
+        { t: 'pt', p: [5, -1], label: "B'", pos: 'e', open: true }, { t: 'seg', p: [4, 0], q: [5, -1], dash: true, style: 'faint' },
+      ],
+    },
+    options: [t`$2\sqrt{10}$`, t`$4\sqrt2$`, t`$6$`, t`$2\sqrt{13}$`, t`$5\sqrt2$`], answer: 1,
+    skills: { visual: 1, insight: 0.5 },
+    hints: [
+      t`꺾인 선의 길이를 곧은 선으로 바꾸는 방법을 생각해 보세요. $A,\ B$는 $x$축의 같은 쪽에 있습니다.`,
+      t`$B$를 $x$축에 대하여 대칭이동한 점 $B'(5,-1)$에 대해 $\overline{PB}=\overline{PB'}$입니다.`,
+    ],
+    solution: t`$\overline{AP}+\overline{PB}=\overline{AP}+\overline{PB'}\ge\overline{AB'}=\sqrt{4^2+4^2}=4\sqrt2$`,
+  },
+  {
+    id: 'u5-09', unit: 'u5', level: 'adv', topic: '원의 평행이동', type: 'short',
+    q: t`원 $x^2+y^2-2x+4y=0$을 $x$축의 방향으로 $a$만큼, $y$축의 방향으로 $b$만큼 평행이동하였더니 원 $x^2+y^2+4x-6y+c=0$과 일치하였다. $a+b+c$의 값을 구하시오.`,
+    answer: '10',
+    skills: { calc: 1, concept: 1 },
+    hints: [
+      t`평행이동해도 반지름은 그대로이고 중심만 움직입니다. 두 원의 중심을 각각 구하세요.`,
+      t`처음 원은 중심 $(1,-2)$, 반지름 $\sqrt5$이고, 옮긴 원의 중심은 $(-2,3)$입니다.`,
+    ],
+    solution: t`$1+a=-2,\ -2+b=3$에서 $a=-3,\ b=5$<br>$(x+2)^2+(y-3)^2=5$를 전개하면 $c=4+9-5=8$<br>$a+b+c=10$`,
+  },
+  {
+    id: 'u5-10', unit: 'u5', level: 'killer', topic: '접선과 접점을 잇는 현', type: 'mc',
+    q: t`점 $A(4,2)$에서 원 $x^2+y^2=4$에 그은 두 접선의 접점을 각각 $P,\ Q$라 할 때, 선분 $PQ$의 길이는?`,
+    fig: {
+      x: [-3, 5], y: [-3, 3.5], alt: '원점이 중심이고 반지름이 2인 원과 원 밖의 점 A(4,2)에서 그은 두 접선, 접점 P와 Q',
+      items: [
+        { t: 'circle', c: [0, 0], r: 2 },
+        { t: 'pt', p: [4, 2], label: 'A(4,2)', pos: 'ne' },
+        { t: 'pt', p: [0, 2], label: 'P', pos: 'nw' }, { t: 'pt', p: [1.6, -1.2], label: 'Q', pos: 'se' },
+        { t: 'seg', p: [4, 2], q: [0, 2] }, { t: 'seg', p: [4, 2], q: [1.6, -1.2] },
+        { t: 'seg', p: [0, 2], q: [1.6, -1.2], style: 'red' },
+        { t: 'seg', p: [0, 0], q: [4, 2], dash: true, style: 'faint' },
+      ],
+    },
+    options: [t`$\frac{4\sqrt5}{5}$`, t`$\frac{6\sqrt5}{5}$`, t`$\frac{8\sqrt5}{5}$`, t`$\frac{12\sqrt5}{5}$`, t`$2\sqrt5$`], answer: 2,
+    skills: { visual: 1, insight: 1 },
+    hints: [
+      t`원의 중심 $O$, 접점 $P$, 점 $A$는 $\angle OPA=90^\circ$인 직각삼각형을 이룹니다. $\overline{OA}$와 $\overline{AP}$를 구하세요.`,
+      t`$\overline{OA}=2\sqrt5,\ \overline{OP}=2,\ \overline{AP}=4$이고, 선분 $OA$는 현 $PQ$를 수직이등분합니다. 직각삼각형 $OPA$의 넓이를 두 가지로 나타내 보세요.`,
+    ],
+    solution: t`$\frac12\cdot\overline{OP}\cdot\overline{AP}=\frac12\cdot\overline{OA}\cdot\frac{\overline{PQ}}{2}$에서 $8=2\sqrt5\cdot\frac{\overline{PQ}}{2}$<br>$\overline{PQ}=\frac{8}{\sqrt5}=\frac{8\sqrt5}{5}$`,
+  },
+  {
+    id: 'u5-11', unit: 'u5', level: 'killer', topic: '원 위의 점과 거리의 제곱', type: 'mc',
+    q: t`원 $x^2+y^2=4$ 위의 점 $P$와 두 점 $A(4,0),\ B(0,4)$에 대하여 $\overline{PA}^2+\overline{PB}^2$의 최솟값은?`,
+    options: [t`$40-16\sqrt2$`, t`$32-8\sqrt2$`, t`$40-8\sqrt2$`, t`$24$`, t`$32$`], answer: 0,
+    skills: { insight: 1, visual: 1, calc: 0.5 },
+    hints: [
+      t`$P(x,y)$로 두고 $\overline{PA}^2+\overline{PB}^2$을 전개하세요. $x^2+y^2=4$를 쓰면 식이 크게 줄어듭니다.`,
+      t`$\overline{PA}^2+\overline{PB}^2=40-8(x+y)$입니다. 이제 원 위에서 $x+y$의 최댓값을 구하면 됩니다. 직선 $x+y=k$가 원에 접할 때를 생각하세요.`,
+    ],
+    solution: t`$(x-4)^2+y^2+x^2+(y-4)^2=2(x^2+y^2)-8(x+y)+32=40-8(x+y)$<br>직선 $x+y=k$가 원에 접하면 $\frac{|k|}{\sqrt2}=2$이므로 $x+y$의 최댓값은 $2\sqrt2$<br>최솟값은 $40-16\sqrt2$`,
+  },
+  {
+    id: 'u5-12', unit: 'u5', level: 'basic', topic: '삼각형의 무게중심', type: 'short',
+    q: t`그림과 같이 세 점 $A(1,4),\ B(-2,-1),\ C(4,0)$을 꼭짓점으로 하는 삼각형 $ABC$의 무게중심의 좌표가 $(a,b)$일 때, $a+b$의 값을 구하시오.`,
+    fig: {
+      x: [-3, 5], y: [-2, 5], alt: '좌표평면 위의 삼각형 ABC. A(1,4), B(-2,-1), C(4,0)',
+      items: [
+        { t: 'poly', pts: [[1, 4], [-2, -1], [4, 0]] },
+        { t: 'pt', p: [1, 4], label: 'A(1,4)', pos: 'ne' }, { t: 'pt', p: [-2, -1], label: 'B(-2,-1)', pos: 'sw' }, { t: 'pt', p: [4, 0], label: 'C(4,0)', pos: 'se' },
+      ],
+    },
+    answer: '2',
+    skills: { calc: 1, concept: 0.5 },
+    hints: [
+      t`무게중심은 세 꼭짓점의 좌표를 각각 평균한 점입니다.`,
+      t`$a=\frac{1+(-2)+4}{3},\ b=\frac{4+(-1)+0}{3}$`,
+    ],
+    solution: t`$a=1,\ b=1$이므로 $a+b=2$`,
+  },
+  {
+    id: 'u5-13', unit: 'u5', level: 'basic', topic: '두 점 사이의 거리', type: 'short',
+    q: t`두 점 $A(1,2),\ B(4,6)$ 사이의 거리를 구하시오.`,
+    answer: '5',
+    skills: { calc: 1 },
+    hints: [
+      t`$\overline{AB}=\sqrt{(x_2-x_1)^2+(y_2-y_1)^2}$`,
+      t`$\sqrt{3^2+4^2}$`,
+    ],
+    solution: t`$\sqrt{9+16}=5$`,
+  },
+  {
+    id: 'u5-14', unit: 'u5', level: 'core', topic: '넓이를 이등분하는 직선', type: 'short',
+    q: t`그림과 같이 세 점 $A(0,4),\ B(-2,0),\ C(3,0)$을 꼭짓점으로 하는 삼각형 $ABC$가 있다. 점 $A$를 지나고 삼각형 $ABC$의 넓이를 이등분하는 직선의 기울기를 구하시오.`,
+    fig: {
+      x: [-3, 4], y: [-1, 5], alt: '삼각형 ABC. A(0,4)는 y축 위, B(-2,0)과 C(3,0)은 x축 위',
+      items: [
+        { t: 'poly', pts: [[0, 4], [-2, 0], [3, 0]], fill: true },
+        { t: 'pt', p: [0, 4], label: 'A', pos: 'ne' }, { t: 'pt', p: [-2, 0], label: 'B', pos: 'sw' }, { t: 'pt', p: [3, 0], label: 'C', pos: 'se' },
+      ],
+    },
+    answer: '-8',
+    skills: { visual: 1, concept: 0.5 },
+    hints: [
+      t`꼭짓점 $A$를 지나는 직선이 넓이를 이등분하려면 밑변 $BC$를 이등분해야 합니다(높이가 같으므로).`,
+      t`$BC$의 중점은 $\left(\frac12,\ 0\right)$입니다.`,
+    ],
+    solution: t`$(0,4)$와 $\left(\frac12,0\right)$을 지나는 직선의 기울기는 $\frac{0-4}{\frac12-0}=-8$`,
+  },
+  {
+    id: 'u5-15', unit: 'u5', level: 'core', topic: '원 위의 점에서의 접선', type: 'short',
+    q: t`그림과 같이 원 $(x-2)^2+(y-1)^2=5$는 원점을 지난다. 원점에서 이 원에 접하는 직선의 방정식이 $y=mx$일 때, $m$의 값을 구하시오.`,
+    fig: {
+      x: [-2.5, 5], y: [-2, 4], alt: '중심이 (2,1)이고 원점을 지나는 원과, 원점에서 원에 접하는 직선',
+      items: [
+        { t: 'circle', c: [2, 1], r: Math.sqrt(5) },
+        { t: 'pt', p: [2, 1], label: '(2,1)', pos: 'ne' },
+        { t: 'seg', p: [0, 0], q: [2, 1], dash: true, style: 'faint' },
+        { t: 'line', abc: [2, 1, 0], style: 'red' },
+      ],
+    },
+    answer: '-2',
+    skills: { visual: 1, concept: 1 },
+    hints: [
+      t`접선은 접점과 원의 중심을 잇는 반지름에 수직입니다.`,
+      t`원점과 중심 $(2,1)$을 잇는 선분의 기울기는 $\frac12$입니다.`,
+    ],
+    solution: t`수직인 직선의 기울기는 $-2$이므로 $m=-2$`,
+  },
+  {
+    id: 'u5-16', unit: 'u5', level: 'core', topic: '대칭이동', type: 'short',
+    q: t`점 $(3,1)$을 원점에 대하여 대칭이동한 다음, 직선 $y=x$에 대하여 대칭이동한 점의 좌표가 $(a,b)$일 때, $a+b$의 값을 구하시오.`,
+    answer: '-4',
+    skills: { concept: 1 },
+    hints: [
+      t`원점 대칭: $(x,y)\to(-x,-y)$`,
+      t`직선 $y=x$ 대칭: $(x,y)\to(y,x)$`,
+    ],
+    solution: t`$(3,1)\to(-3,-1)\to(-1,-3)$이므로 $a+b=-4$`,
+  },
+  {
+    id: 'u5-17', unit: 'u5', level: 'core', topic: '직선의 평행이동', type: 'short',
+    q: t`직선 $2x+y-4=0$을 $x$축의 방향으로 $2$만큼, $y$축의 방향으로 $1$만큼 평행이동한 직선의 $y$절편을 구하시오.`,
+    answer: '9',
+    skills: { concept: 1, calc: 0.5 },
+    hints: [
+      t`평행이동한 도형의 방정식은 $x$ 대신 $x-2$, $y$ 대신 $y-1$을 넣어 얻습니다.`,
+      t`$2(x-2)+(y-1)-4=0$`,
+    ],
+    solution: t`$2x+y-9=0$이므로 $y$절편은 $9$`,
+  },
+  {
+    id: 'u5-18', unit: 'u5', level: 'adv', topic: '현과 삼각형의 넓이', type: 'short',
+    q: t`그림과 같이 원 $x^2+y^2=25$와 직선 $y=x+1$이 만나는 두 점을 $A,\ B$라 할 때, 삼각형 $OAB$의 넓이를 구하시오. (단, $O$는 원점이고, 분수는 a/b 꼴로 입력)`,
+    fig: {
+      x: [-6, 6], y: [-6, 6], alt: '원점이 중심이고 반지름이 5인 원과 직선 y=x+1이 두 점 A(3,4), B(-4,-3)에서 만나고, 원점 O와 A, B를 이은 삼각형',
+      items: [
+        { t: 'circle', c: [0, 0], r: 5 },
+        { t: 'line', abc: [1, -1, 1], style: 'alt' },
+        { t: 'poly', pts: [[0, 0], [3, 4], [-4, -3]], fill: true },
+        { t: 'pt', p: [3, 4], label: 'A', pos: 'ne' }, { t: 'pt', p: [-4, -3], label: 'B', pos: 'sw' },
+      ],
+    },
+    answer: '7/2',
+    skills: { visual: 1, concept: 1, calc: 0.5 },
+    hints: [
+      t`밑변을 현 $AB$로 보면 높이는 원점에서 직선까지의 거리입니다.`,
+      t`$d=\frac{1}{\sqrt2}$, 현의 길이 $=2\sqrt{25-\frac12}=7\sqrt2$`,
+    ],
+    solution: t`$\frac12\times7\sqrt2\times\frac{1}{\sqrt2}=\frac72$`,
+  },
+  {
+    id: 'u5-19', unit: 'u5', level: 'adv', topic: '두 원의 위치 관계', type: 'short',
+    q: t`두 원 $x^2+y^2=4,\ (x-3)^2+y^2=r^2$이 서로 다른 두 점에서 만나도록 하는 자연수 $r$의 개수를 구하시오.`,
+    answer: '3',
+    skills: { concept: 1, visual: 0.5 },
+    hints: [
+      t`두 원이 두 점에서 만날 조건: (반지름의 차) $<$ (중심 사이의 거리) $<$ (반지름의 합)`,
+      t`$|r-2|<3<r+2$`,
+    ],
+    solution: t`$1<r<5$이므로 자연수 $r$는 $2,\ 3,\ 4$의 $3$개`,
+  },
+  {
+    id: 'u5-20', unit: 'u5', level: 'adv', topic: '두 번 대칭이동한 최단거리', type: 'mc',
+    q: t`그림과 같이 점 $A(3,1)$과 $x$축 위의 점 $P$, 직선 $y=x$ 위의 점 $Q$에 대하여 $\overline{AP}+\overline{PQ}+\overline{QA}$의 최솟값은?`,
+    fig: {
+      x: [-0.8, 4.2], y: [-1.6, 3.6], alt: '점 A(3,1), x축 위의 점 P, 직선 y=x 위의 점 Q가 이루는 삼각형. A를 x축에 대칭이동한 A\'(3,-1)과 직선 y=x에 대칭이동한 A\'\'(1,3)을 잇는 점선',
+      items: [
+        { t: 'line', abc: [1, -1, 0], style: 'faint', label: 'y=x', at: [3.4, 3.4], pos: 'e' },
+        { t: 'poly', pts: [[3, 1], [2.5, 0], [5 / 3, 5 / 3]] },
+        { t: 'pt', p: [3, 1], label: 'A', pos: 'e' },
+        { t: 'pt', p: [2.5, 0], label: 'P', pos: 'se' },
+        { t: 'pt', p: [5 / 3, 5 / 3], label: 'Q', pos: 'nw' },
+        { t: 'pt', p: [3, -1], label: "A'", pos: 'e', open: true }, { t: 'pt', p: [1, 3], label: "A''", pos: 'w', open: true },
+        { t: 'seg', p: [3, -1], q: [1, 3], dash: true, style: 'faint' },
+      ],
+    },
+    options: [t`$2\sqrt3$`, t`$4$`, t`$2\sqrt5$`, t`$3\sqrt2$`, t`$5$`], answer: 2,
+    skills: { visual: 1, insight: 1 },
+    hints: [
+      t`$A$를 $x$축에 대하여 대칭이동한 점 $A'$, 직선 $y=x$에 대하여 대칭이동한 점 $A''$를 생각하세요. $\overline{AP}=\overline{A'P}$, $\overline{QA}=\overline{QA''}$입니다.`,
+      t`세 선분의 합은 $\overline{A'P}+\overline{PQ}+\overline{QA''}\ge\overline{A'A''}$입니다.`,
+    ],
+    solution: t`$A'(3,-1),\ A''(1,3)$이므로 최솟값은 $\sqrt{2^2+4^2}=2\sqrt5$`,
+  },
+  {
+    id: 'u5-21', unit: 'u5', level: 'killer', topic: '현의 길이와 직선', type: 'short',
+    q: t`직선 $y=mx+2$가 원 $(x-2)^2+y^2=4$와 만나서 생기는 현의 길이가 $2\sqrt2$가 되도록 하는 모든 실수 $m$의 값의 합을 구하시오.`,
+    fig: {
+      x: [-1, 5], y: [-2.5, 3.5], alt: '중심이 (2,0)이고 반지름이 2인 원과, 점 (0,2)를 지나며 원을 자르는 직선 하나',
+      items: [
+        { t: 'circle', c: [2, 0], r: 2 },
+        { t: 'pt', p: [2, 0], label: '(2,0)', pos: 's' },
+        { t: 'line', abc: [2 - Math.sqrt(3), 1, -2], style: 'alt' },
+        { t: 'pt', p: [0, 2], label: '(0,2)', pos: 'nw' },
+      ],
+    },
+    answer: '-4',
+    skills: { insight: 1, concept: 1, calc: 0.5 },
+    hints: [
+      t`현의 길이가 $2\sqrt2$이면 중심에서 직선까지의 거리 $d$는 $\sqrt{r^2-2}=\sqrt2$입니다.`,
+      t`$\frac{|2m+2|}{\sqrt{m^2+1}}=\sqrt2$를 제곱해 $m$에 대한 이차방정식을 만드세요.`,
+    ],
+    solution: t`$(2m+2)^2=2(m^2+1)$에서 $m^2+4m+1=0$<br>판별식이 양수이므로 두 실근이 있고, 그 합은 $-4$`,
+  },
+  {
+    id: 'u5-22', unit: 'u5', level: 'killer', topic: '대칭이동과 원 위의 점', type: 'short',
+    q: t`그림과 같이 점 $A(0,3)$과 $x$축 위의 점 $P$, 원 $(x-6)^2+(y-5)^2=4$ 위의 점 $Q$에 대하여 $\overline{AP}+\overline{PQ}$의 최솟값을 구하시오.`,
+    fig: {
+      x: [-1, 9], y: [-4, 8], alt: '점 A(0,3), x축 위의 점 P, 중심 (6,5) 반지름 2인 원 위의 점 Q. A를 x축에 대칭이동한 A\'(0,-3)과 원의 중심을 잇는 선분',
+      items: [
+        { t: 'circle', c: [6, 5], r: 2 },
+        { t: 'pt', p: [6, 5], label: '(6,5)', pos: 'e' },
+        { t: 'pt', p: [0, 3], label: 'A', pos: 'w' },
+        { t: 'pt', p: [0, -3], label: "A'", pos: 'w', open: true },
+        { t: 'seg', p: [0, -3], q: [6, 5], dash: true, style: 'faint' },
+        { t: 'pt', p: [2.25, 0], label: 'P', pos: 'se' },
+        { t: 'seg', p: [0, 3], q: [2.25, 0] },
+        { t: 'seg', p: [2.25, 0], q: [4.8, 3.4] },
+        { t: 'pt', p: [4.8, 3.4], label: 'Q', pos: 'nw' },
+      ],
+    },
+    answer: '8',
+    skills: { insight: 1, visual: 1 },
+    hints: [
+      t`$\overline{AP}$를 $x$축 반대편에서 보세요. $A$를 $x$축에 대하여 대칭이동한 점 $A'(0,-3)$에 대해 $\overline{AP}=\overline{A'P}$입니다.`,
+      t`$\overline{A'P}+\overline{PQ}$는 $A'$에서 원 위의 점까지 가는 꺾은 경로입니다. 원 위의 점까지의 최단거리는 (중심까지의 거리) $-$ (반지름)입니다.`,
+    ],
+    solution: t`$A'$에서 중심 $(6,5)$까지의 거리는 $\sqrt{36+64}=10$이므로 최솟값은 $10-2=8$`,
+  },
+];

@@ -1,6 +1,8 @@
 import { UNIT_BY_ID, UNITS, unitLabel } from '../content/units.js';
 import { wrongList, REASONS, REVIEW_GAPS } from '../model.js';
 import { tex, esc, fmtDate } from '../lib/ui.js';
+import { figure } from '../lib/plot.js';
+import { generatorFor, newSeed } from '../content/generators.js';
 import { today } from '../store.js';
 
 let filter = { reason: 'all', unit: 'all', show: 'active' };
@@ -33,10 +35,11 @@ function draw(view) {
         <span class="meta">${esc(unitLabel(UNIT_BY_ID[w.p.unit]))} · ${esc(w.p.topic)}</span>
         <span class="wn-reason${w.reason ? '' : ' none'}">${esc(w.reason || '원인 미분류')}</span>
       </div>
-      <div class="q-text compact">${tex(w.p.q)}</div>
+      <div class="q-text compact">${tex(w.p.q)}</div>${w.p.fig ? `<div class="fig-thumb">${figure(w.p.fig)}</div>` : ''}
       <div class="wn-foot">
         <span class="stages" role="img" aria-label="복습 ${w.stage}/${REVIEW_GAPS.length}단계">${REVIEW_GAPS.map((_, i) => `<span class="stage${i < w.stage ? ' on' : ''}"></span>`).join('')}</span>
         <span class="hint-text">${w.resolved ? `${fmtDate(w.resolvedAt)} 졸업` : isDue ? '오늘 복습' : `${fmtDate(w.due)} 복습`}</span>
+        ${!w.resolved && generatorFor(w.pid) ? `<a class="btn btn-quiet" href="#/v/${generatorFor(w.pid)}?s=${newSeed()}&review=${w.pid}" title="숫자를 바꾼 문제로 복습">숫자 바꿔 풀기</a>` : ''}
         <a class="btn ${isDue ? 'btn-primary' : 'btn-quiet'}" href="#/p/${w.pid}?review=1">${w.resolved ? '다시 보기' : '다시 풀기'}</a>
       </div>
     </li>`;

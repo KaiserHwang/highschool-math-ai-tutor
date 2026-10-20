@@ -23,12 +23,14 @@ function blank() {
     wrong: {}, // pid → 오답노트 항목
     notes: {}, // pid → 풀이 메모
     activity: {}, // 'YYYY-MM-DD' → { solved, attempted, seconds }
+    practice: {}, // 생성기 이름 → { tried, solved } (비슷한 문제 연습)
     settings: { theme: 'auto', ai: { gemini: '', chatgpt: '', claude: '' }, preferredAi: 'claude' },
   };
 }
 
-let state = load();
+// 주의: memoryOnly 는 load() 보다 먼저 선언해야 한다(저장소 접근이 막힌 브라우저에서 load()가 이 값을 바꾼다).
 let memoryOnly = false;
+let state = load();
 
 function load() {
   try {
@@ -45,7 +47,7 @@ function migrate(s) {
   const out = { ...base, ...s };
   out.profile = { ...base.profile, ...(s.profile || {}) };
   out.settings = { ...base.settings, ...(s.settings || {}), ai: { ...base.settings.ai, ...((s.settings || {}).ai || {}) } };
-  for (const k of ['attempts', 'wrong', 'notes', 'activity']) out[k] = s[k] && typeof s[k] === 'object' ? s[k] : {};
+  for (const k of ['attempts', 'wrong', 'notes', 'activity', 'practice']) out[k] = s[k] && typeof s[k] === 'object' ? s[k] : {};
   out.diagnoses = Array.isArray(s.diagnoses) ? s.diagnoses : [];
   out.version = 2;
   return out;

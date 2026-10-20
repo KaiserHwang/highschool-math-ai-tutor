@@ -2,8 +2,9 @@ import { DIAGNOSIS } from '../content/diagnosis.js';
 import { UNIT_BY_ID, UNITS, TRACKS, SKILLS, LEVELS, unitLabel } from '../content/units.js';
 import { getState, update } from '../store.js';
 import { gradeDiagnosis, latestDiagnosis, isCorrect, normalizeAnswer } from '../model.js';
-import { tex, esc, CIRCLED, fmtDate, gradeMark, toast } from '../lib/ui.js';
+import { tex, esc, CIRCLED, fmtDate, gradeMark, toast, optionsClass } from '../lib/ui.js';
 import { radar } from '../lib/radar.js';
+import { figure } from '../lib/plot.js';
 
 let run = null; // { i, responses, startedAt, shownAt }
 
@@ -40,7 +41,7 @@ function renderIntro(view) {
     <div class="prose">
       <p>정답 여부만 보지 않습니다. 각 문제마다 <strong>얼마나 확신했는지</strong>, <strong>힌트를 봤는지</strong>, <strong>얼마나 걸렸는지</strong>를 함께 기록해서 점수를 냅니다. 찍어서 맞힌 문제는 낮게, 확신했는데 틀린 문제는 따로 표시해 개념 오해를 찾아냅니다.</p>
       <ul>
-        <li>예상 시간: 약 25분. 연습장과 필기구를 준비하세요.</li>
+        <li>예상 시간: 약 30분. 연습장과 필기구를 준비하세요.</li>
         <li>계산기는 쓰지 않습니다.</li>
         <li>모르는 문제는 건너뛰어도 됩니다. 억지로 찍는 것보다 정확한 진단에 도움이 됩니다.</li>
       </ul>
@@ -61,7 +62,7 @@ function renderQuestion(view) {
   run.current = q.id;
   const unit = UNIT_BY_ID[q.unit];
   const answerUI = q.type === 'mc'
-    ? `<div class="options" role="radiogroup" aria-label="보기">${q.options.map((o, k) => `<button type="button" class="opt" role="radio" aria-checked="${r.response === k}" data-opt="${k}"><span class="opt-n">${CIRCLED[k]}</span><span class="opt-t">${tex(o)}</span></button>`).join('')}</div>`
+    ? `<div class="options${optionsClass(q.options)}" role="radiogroup" aria-label="보기">${q.options.map((o, k) => `<button type="button" class="opt" role="radio" aria-checked="${r.response === k}" data-opt="${k}"><span class="opt-n">${CIRCLED[k]}</span><span class="opt-t">${tex(o)}</span></button>`).join('')}</div>`
     : `<label class="short"><span class="short-l">답</span><input class="short-in" inputmode="text" autocomplete="off" value="${esc(r.response ?? '')}" placeholder="정수 또는 분수(예: 10/3)"></label>`;
 
   view.innerHTML = `
@@ -73,6 +74,7 @@ function renderQuestion(view) {
     </header>
     <article class="paper">
       <div class="q-row"><span class="q-num">${run.i + 1}</span><div class="q-text">${tex(q.q)}</div></div>
+      ${figure(q.fig)}
       ${answerUI}
       <div class="diag-hint" ${r.hint ? '' : 'hidden'}><p class="hl">${tex(q.hint)}</p></div>
     </article>
@@ -165,7 +167,7 @@ function renderResult(view, d) {
     return `<li class="dr-item">
       <details>
         <summary><span class="dr-mark">${it.correct ? gradeMark('right') : gradeMark('wrong')}</span><span class="dr-n">${i + 1}</span><span class="dr-u">${esc(UNIT_BY_ID[q.unit].title)}</span><span class="dr-meta">${resp} · ${it.conf ? CONF_LABEL[it.conf] : ''}${it.hint ? ' · 힌트' : ''} · ${Math.round(it.sec)}초</span></summary>
-        <div class="dr-body"><div class="q-text">${tex(q.q)}</div><p class="sol">${tex(q.solution)}</p></div>
+        <div class="dr-body"><div class="q-text">${tex(q.q)}</div>${figure(q.fig)}<p class="sol">${tex(q.solution)}</p></div>
       </details>
     </li>`;
   }).join('');

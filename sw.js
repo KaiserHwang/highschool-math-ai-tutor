@@ -1,5 +1,6 @@
-// 오프라인에서도 열리도록 앱 파일을 캐시한다. 배포할 때마다 VERSION을 올린다(tests/content-check.mjs가 목록을 검사).
-const VERSION = 'mathpulse-2.0.0';
+// 자동 생성 파일입니다. 직접 고치지 말고 node tools/gen-sw.mjs 를 실행하세요.
+// 오프라인에서도 열리도록 앱 파일을 미리 받아 두고, 온라인일 때는 항상 서버의 최신 파일을 먼저 씁니다.
+const VERSION = 'mathpulse-b29f625b486b';
 const ASSETS = [
   './',
   'assets/css/app.css',
@@ -8,10 +9,20 @@ const ASSETS = [
   'assets/icons/icon-maskable-512.png',
   'assets/icons/icon.svg',
   'assets/js/app.js',
+  'assets/js/content/bank/u1.js',
+  'assets/js/content/bank/u2.js',
+  'assets/js/content/bank/u3.js',
+  'assets/js/content/bank/u4.js',
+  'assets/js/content/bank/u5.js',
+  'assets/js/content/bank/u6.js',
+  'assets/js/content/bank/u7.js',
+  'assets/js/content/bank/u8.js',
   'assets/js/content/diagnosis.js',
+  'assets/js/content/generators.js',
   'assets/js/content/problems.js',
   'assets/js/content/units.js',
   'assets/js/lib/ai.js',
+  'assets/js/lib/plot.js',
   'assets/js/lib/radar.js',
   'assets/js/lib/scratchpad.js',
   'assets/js/lib/ui.js',
@@ -56,7 +67,9 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k)))).then(() => self.clients.claim()),
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== VERSION && k !== 'mathpulse-fonts').map((k) => caches.delete(k))))
+      .then(() => self.clients.claim()),
   );
 });
 
@@ -65,9 +78,9 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) {
-    // 웹폰트는 한 번 받으면 캐시해 둔다
+    // 웹폰트는 한 번 받으면 따로 보관한다
     if (/fonts\.(googleapis|gstatic)\.com$/.test(url.hostname)) {
-      e.respondWith(caches.open(VERSION + '-fonts').then(async (c) => {
+      e.respondWith(caches.open('mathpulse-fonts').then(async (c) => {
         const hit = await c.match(req);
         if (hit) return hit;
         const res = await fetch(req);
@@ -77,18 +90,16 @@ self.addEventListener('fetch', (e) => {
     }
     return;
   }
-  // 화면(HTML)은 네트워크 우선: 새 버전을 바로 받되, 오프라인이면 캐시로
-  if (req.mode === 'navigate') {
-    e.respondWith(fetch(req).then((res) => {
-      const copy = res.clone();
-      caches.open(VERSION).then((c) => c.put('index.html', copy));
-      return res;
-    }).catch(() => caches.match('index.html')));
-    return;
-  }
-  // 나머지는 캐시 우선, 없으면 네트워크
-  e.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((res) => {
-    if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); }
-    return res;
-  })));
+  // 네트워크 우선: 새 버전을 바로 반영하고, 연결이 없으면 보관본을 쓴다
+  e.respondWith(
+    fetch(req)
+      .then((res) => {
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(VERSION).then((c) => c.put(req.mode === 'navigate' ? 'index.html' : req, copy));
+        }
+        return res;
+      })
+      .catch(() => caches.match(req.mode === 'navigate' ? 'index.html' : req).then((hit) => hit || caches.match(req, { ignoreSearch: true }))),
+  );
 });

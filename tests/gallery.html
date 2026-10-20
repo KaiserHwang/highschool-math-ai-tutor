@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>그림 점검</title>
+<link rel="stylesheet" href="../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/app.css">
+<style>body{padding:16px}.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:16px}.paper h2{font:600 13px var(--sans);margin:0 0 8px}</style>
+</head>
+<body>
+<h1 class="page-title">문제 그림 점검</h1>
+<p class="lead">모든 문제의 그림을 한곳에 모아 그린다. 개발용 페이지.</p>
+<div class="g" id="g"></div>
+<script type="module">
+  import { PROBLEMS } from '../assets/js/content/problems.js';
+  import { DIAGNOSIS } from '../assets/js/content/diagnosis.js';
+  import { UNITS } from '../assets/js/content/units.js';
+  import { figure } from '../assets/js/lib/plot.js';
+  import { tex } from '../assets/js/lib/ui.js';
+  const items = [...PROBLEMS, ...DIAGNOSIS].filter((p) => p.fig).map((p) => ({ id: p.id, q: p.q, fig: p.fig }));
+  for (const u of UNITS) for (const c of u.concept) for (const f of c.figs || []) items.push({ id: u.id + ' 개념: ' + c.title, q: f.cap, fig: f.fig });
+  document.getElementById('g').innerHTML = items.map((p) => `<article class="paper"><h2>${p.id}</h2><div class="q-text compact">${tex(p.q)}</div>${figure(p.fig)}</article>`).join('');
+  document.body.dataset.count = items.length;
+</script>
+</body>
+</html>

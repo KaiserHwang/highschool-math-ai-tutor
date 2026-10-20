@@ -72,3 +72,10 @@ export function statusGlyph(status) {
   if (status === 'wrong') return '<span class="st st-wrong" title="아직 못 풂">／</span>';
   return '<span class="st st-new" title="안 푼 문제">·</span>';
 }
+
+/** 보기 길이에 맞춰 배치를 고른다: 짧으면 한 줄 5칸, 중간이면 여러 칸, 길면 한 칸씩 */
+const optLen = (s) => String(s).replace(/\\(cap|cup|le|ge|ne)/g, 'xx').replace(/\\[a-z]+/g, 'x').replace(/[${}\\^_ ]/g, '').length;
+export function optionsClass(options) {
+  const n = Math.max(...options.map(optLen));
+  return n <= 6 ? ' options-row' : n <= 16 ? ' options-mid' : '';
+}

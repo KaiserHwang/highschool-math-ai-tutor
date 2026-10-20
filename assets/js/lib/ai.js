@@ -22,6 +22,7 @@ const MAX_URL_PROMPT = 3500; // 너무 긴 주소는 일부 브라우저에서 �
 export function problemPrompt({ p, question, note, lastResponse, hintsSeen, solved }) {
   const unit = UNIT_BY_ID[p.unit];
   const lines = [TUTOR_RULES, '', `[문제] ${unitLabel(unit)} · ${p.topic} · ${LEVELS[p.level].label}`, plain(p.q)];
+  if (p.fig && p.fig.alt) lines.push('', `[그림 설명] ${p.fig.alt}`);
   if (p.type === 'mc') lines.push('', '[보기] ' + p.options.map((o, i) => `(${i + 1}) ${plain(o)}`).join('  '));
   lines.push('', '[내 상황]');
   if (lastResponse != null && lastResponse !== '') lines.push(`- 내가 낸 답: ${p.type === 'mc' ? `(${lastResponse + 1})` : lastResponse}${solved ? ' (정답)' : ' (오답)'}`);

@@ -21,7 +21,9 @@ jobs:
         run: |
           pip install sympy
           python3 tests/verify_answers.py
-      - name: 수식·HTML·캐시 목록 검사
+      - name: 비슷한 문제 생성기 검사
+        run: node tests/gen-check.mjs
+      - name: 수식·HTML·그림·서비스 워커 검사
         run: node tests/content-check.mjs
       - name: 브라우저 종단 테스트
         run: |

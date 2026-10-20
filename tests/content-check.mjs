@@ -1,11 +1,11 @@
 // 콘텐츠 정적 검사: 모든 수식이 KaTeX로 오류 없이 렌더링되는지, 수식 밖에 깨진 HTML이 없는지,
-// 서비스 워커 캐시 목록이 실제 파일과 일치하는지 확인한다.  실행: node tests/content-check.mjs
-import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
-import { join } from 'path';
+// 그림 설명이 있는지, 서비스 워커가 최신인지 확인한다.  실행: node tests/content-check.mjs
+import { readFileSync } from 'fs';
 import katex from '../assets/vendor/katex/katex.mjs';
 import { PROBLEMS } from '../assets/js/content/problems.js';
 import { DIAGNOSIS } from '../assets/js/content/diagnosis.js';
 import { UNITS } from '../assets/js/content/units.js';
+import { renderSW } from '../tools/gen-sw.mjs';
 
 let fails = 0;
 const fail = (m) => { fails++; console.log('✗ ' + m); };
@@ -29,9 +29,17 @@ for (const p of [...PROBLEMS, ...DIAGNOSIS]) {
   check(`${p.id}.hint`, p.hint);
   check(`${p.id}.solution`, p.solution);
   check(`${p.id}.trap`, p.trap);
+  // 그림에는 설명(alt)이 있어야 한다(화면 낭독기와 AI 질문에 쓰임)
+  if (p.fig && !(p.fig.alt && p.fig.alt.length > 10)) fail(`${p.id}: 그림 설명(alt)이 없거나 너무 짧음`);
 }
 for (const u of UNITS) {
-  u.concept.forEach((c, i) => check(`${u.id}.concept[${i}]`, c.body));
+  u.concept.forEach((c, i) => {
+    check(`${u.id}.concept[${i}]`, c.body);
+    for (const f of c.figs || []) {
+      check(`${u.id}.concept[${i}].cap`, f.cap);
+      if (!f.fig.alt) fail(`${u.id}.concept[${i}]: 개념 그림 설명 없음`);
+    }
+  });
   u.traps.forEach((t, i) => check(`${u.id}.traps[${i}]`, t));
 }
 
@@ -42,14 +50,10 @@ for (const u of UNITS.filter((x) => x.id !== 'u8')) {
   }
 }
 
-// 서비스 워커 캐시 목록
-const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-const listed = new Set([...sw.matchAll(/'((?:assets\/|index|manifest)[^']+)'/g)].map((m) => m[1]));
-const walk = (d) => readdirSync(d).flatMap((f) => (statSync(join(d, f)).isDirectory() ? walk(join(d, f)) : [join(d, f)]));
-const root = new URL('..', import.meta.url).pathname;
-const actual = new Set(['index.html', 'manifest.webmanifest', ...walk(join(root, 'assets')).map((f) => f.slice(root.length)).filter((f) => !f.endsWith('LICENSE'))]);
-for (const f of actual) if (!listed.has(f)) fail(`sw.js 캐시 목록에 없음: ${f}`);
-for (const f of listed) if (!existsSync(join(root, f))) fail(`sw.js 캐시 목록의 파일이 없음: ${f}`);
+// 서비스 워커가 최신인지(파일 목록과 버전 해시)
+const swNow = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+if (swNow !== renderSW()) fail('sw.js 가 최신이 아닙니다. node tools/gen-sw.mjs 를 실행하세요.');
 
-console.log(fails ? `\n실패 ${fails}건` : `콘텐츠 검사 통과 (문항 ${PROBLEMS.length + DIAGNOSIS.length}개, 단원 ${UNITS.length}개, 캐시 파일 ${listed.size}개)`);
+const figs = [...PROBLEMS, ...DIAGNOSIS].filter((p) => p.fig).length;
+console.log(fails ? `\n실패 ${fails}건` : `콘텐츠 검사 통과 (문항 ${PROBLEMS.length + DIAGNOSIS.length}개, 그림 문항 ${figs}개, 단원 ${UNITS.length}개)`);
 process.exit(fails ? 1 : 0);
