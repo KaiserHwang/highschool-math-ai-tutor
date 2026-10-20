@@ -88,6 +88,17 @@ if (isMemoryOnly()) {
 }
 
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  // 새 버전이 배포되면 서비스 워커가 바뀐다. 막 연 화면이면 바로 새로고침하고,
+  // 풀이 도중이면 기록이 끊기지 않도록 알림만 띄운다.
+  const loadedAt = Date.now();
+  const hadController = !!navigator.serviceWorker.controller;
+  let handled = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || handled) return;
+    handled = true;
+    if (Date.now() - loadedAt < 8000) location.reload();
+    else toast('앱이 업데이트되었어요. 지금 문제를 마친 뒤 새로고침하면 적용됩니다.', 7000);
+  });
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
