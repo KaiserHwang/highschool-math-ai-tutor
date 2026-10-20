@@ -25,6 +25,8 @@ jobs:
         run: node tests/gen-check.mjs
       - name: 수식·HTML·그림·서비스 워커 검사
         run: node tests/content-check.mjs
+      - name: 회귀 검사(백업 검증, 캐시 정리, 시간대별 통계)
+        run: node tests/unit.mjs
       - name: 브라우저 종단 테스트
         run: |
           npm i --no-save playwright@1.56.0

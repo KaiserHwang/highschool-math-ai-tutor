@@ -39,7 +39,7 @@
 ## 기록은 어디에 저장되나요
 
 모든 기록은 **이 기기의 브라우저(localStorage)에만** 저장되고 서버로 보내지 않습니다. 다른 사람이 같은 주소로 접속해도 아드님의 기록은 보이지 않습니다.
-브라우저 데이터를 지우면 기록도 사라지므로, 설정 → **백업 파일 내려받기**로 가끔 백업하세요. 다른 기기로 옮길 때도 백업 파일을 불러오면 됩니다.
+브라우저 데이터를 지우면 기록도 사라지므로, 설정 → **백업 파일 내려받기**로 가끔 백업하세요. 다른 기기로 옮길 때도 백업 파일을 불러오면 됩니다. 백업 파일은 전체 구조를 검사한 뒤에만 반영하고, 형식이 맞지 않으면 기존 기록을 그대로 둡니다.
 
 ## 문제의 정확성
 
@@ -78,12 +78,13 @@ python3 -m http.server 8080        # http://localhost:8080 에서 실행
 pip install sympy && python3 tests/verify_answers.py   # 정답 검증
 node tests/gen-check.mjs           # 비슷한 문제 생성기 검사
 node tests/content-check.mjs       # 수식·HTML·그림 설명·서비스 워커 검사
+node tests/unit.mjs                # 회귀 검사(백업 가져오기 검증, 캐시 정리, 시간대별 통계)
 node tools/gen-sw.mjs              # 파일을 고친 뒤 서비스 워커 갱신
 npm i --no-save playwright && npx playwright install chromium
 node tests/e2e.mjs                 # 브라우저 종단 테스트(서버 실행 중일 때)
 ```
 
-파일을 고치면 `node tools/gen-sw.mjs`로 서비스 워커를 다시 만드세요. 버전이 파일 내용의 해시로 정해지므로, 배포하면 사용자의 오프라인 캐시도 자동으로 새 버전으로 바뀝니다. `content-check.mjs`가 최신인지 검사합니다. 그림을 고칠 때는 `tests/gallery.html`에서 모든 그림을 한눈에 볼 수 있습니다. GitHub Actions(`.github/workflows/check.yml`)가 푸시할 때마다 네 가지 검사를 실행합니다.
+파일을 고치면 `node tools/gen-sw.mjs`로 서비스 워커를 다시 만드세요. 버전이 파일 내용의 해시로 정해지므로, 배포하면 사용자의 오프라인 캐시도 자동으로 새 버전으로 바뀝니다. `content-check.mjs`가 최신인지 검사합니다. 그림을 고칠 때는 `tests/gallery.html`에서 모든 그림을 한눈에 볼 수 있습니다. GitHub Actions(`.github/workflows/check.yml`)가 푸시할 때마다 다섯 가지 검사를 실행합니다.
 
 ## 라이선스
 

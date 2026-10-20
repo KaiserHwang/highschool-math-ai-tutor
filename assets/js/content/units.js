@@ -17,6 +17,10 @@ export const LEVELS = {
   killer: { label: '최상위', weight: 4 },
 };
 
+// 오답 복습 간격(일)과 오답 원인. 오답 직후 1일 → 3일 → 7일 → 14일 뒤
+export const REVIEW_GAPS = [1, 3, 7, 14];
+export const REASONS = ['개념 미숙', '조건 누락', '발상 막힘', '계산 실수'];
+
 export const TRACKS = {
   foundation: {
     label: '개념 완성',

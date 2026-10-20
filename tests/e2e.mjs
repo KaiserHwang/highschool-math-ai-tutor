@@ -120,6 +120,24 @@ async function run(viewport, tag) {
   const stage = await page.evaluate(() => JSON.parse(localStorage.getItem('mathpulse:v2')).wrong['u1-05'].stage);
   ok(stage === 1, `[${tag}] 힌트 없이 복습을 통과하면 다음 단계로 (stage=${stage})`);
 
+  // ── #1 회귀: URL 매개변수로 HTML을 끼워 넣을 수 없다
+  for (const payload of ['"><img src=x onerror="window.__xss=1">', "'><span id=injected>x</span>", 'u1-01" onmouseover="window.__xss=1', 'u1-01&s=1#<b>', '<script>window.__xss=1</script>']) {
+    await page.goto(BASE + '#/v/g-sym?' + new URLSearchParams({ s: '123', from: payload, review: payload }).toString());
+    await page.waitForSelector('.banner.variant');
+    const injected = await page.evaluate(() => ({
+      xss: window.__xss === 1,
+      img: !!document.querySelector('#view img'),
+      span: !!document.getElementById('injected'),
+      script: !!document.querySelector('#view script'),
+      back: !!document.querySelector('.pager a[href^="#/p/"]'),
+      hrefs: [...document.querySelectorAll('#view a')].map((a) => a.getAttribute('href')).filter((h) => /[<>"']/.test(h)),
+    }));
+    ok(!injected.xss && !injected.img && !injected.span && !injected.script && !injected.back && injected.hrefs.length === 0, `[${tag}] 조작된 from/review 값은 무시되고 HTML로 해석되지 않는다 (${payload.slice(0, 18)}…)`);
+  }
+  await page.goto(BASE + '#/v/g-sym?s=123&from=u1-01');
+  await page.waitForSelector('.banner.variant');
+  ok((await page.getAttribute('.pager a:has-text("원래 문제로")', 'href')) === '#/p/u1-01', `[${tag}] 정상 from 값이면 원래 문제로 돌아가는 링크가 생긴다`);
+
   // ── 그림 문제가 그려진다
   await page.goto(BASE + '#/p/u2-24');
   await page.waitForSelector('figure.fig svg.plot path.pl-curve');
@@ -186,6 +204,16 @@ async function run(viewport, tag) {
   await page.goto(BASE + '#/settings');
   const [dl] = await Promise.all([page.waitForEvent('download'), page.click('[data-act="export"]')]);
   ok(/mathpulse-backup-\d{4}-\d\d-\d\d\.json/.test(dl.suggestedFilename()), `[${tag}] 백업 파일을 내려받는다`);
+
+  // ── #2 회귀: 잘못된 백업은 거절하고 기존 기록을 그대로 둔다, 정상 백업은 다시 불러온다
+  const savedBefore = await page.evaluate(() => localStorage.getItem('mathpulse:v2'));
+  await page.setInputFiles('input[data-act="import"]', { name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, diagnoses: [{ track: 'invalid' }] } })) });
+  await page.waitForFunction(() => /기존 기록은 그대로/.test(document.getElementById('toast').textContent));
+  ok((await page.evaluate(() => localStorage.getItem('mathpulse:v2'))) === savedBefore, `[${tag}] 잘못된 백업을 가져오면 거절하고 기존 기록을 그대로 둔다`);
+  const goodPath = await dl.path();
+  await page.setInputFiles('input[data-act="import"]', goodPath);
+  await page.waitForFunction(() => /백업을 불러왔어요/.test(document.getElementById('toast').textContent));
+  ok(await page.locator('h1:has-text("설정")').count() === 1, `[${tag}] 내려받은 백업을 다시 불러온다`);
 
   // ── 좁은 화면: 연습장 전체 화면
   if (viewport.width < 1100) {

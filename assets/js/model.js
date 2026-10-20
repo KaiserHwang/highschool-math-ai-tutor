@@ -1,8 +1,8 @@
 // 채점, 숙련도, 추천, 복습 주기 계산
 import { PROBLEMS, problemsOfUnit, PROBLEM_BY_ID } from './content/problems.js';
 import { DIAGNOSIS } from './content/diagnosis.js';
-import { UNITS, SKILLS, LEVELS, TRACKS } from './content/units.js';
-import { getState, today, addDays } from './store.js';
+import { UNITS, SKILLS, LEVELS, TRACKS, REVIEW_GAPS } from './content/units.js';
+import { getState, today, addDays, localDay } from './store.js';
 
 // ── 답 비교 ──────────────────────────────────────────
 function gcd(a, b) {
@@ -214,8 +214,7 @@ export function weakestUnit() {
 
 // ── 오답노트 복습 주기 ─────────────────────────────────
 // 오답 직후 1일 → 3일 → 7일 → 14일 뒤. 힌트 없이 맞히면 다음 단계, 틀리면 1단계로.
-export const REVIEW_GAPS = [1, 3, 7, 14];
-export const REASONS = ['개념 미숙', '조건 누락', '발상 막힘', '계산 실수'];
+export { REVIEW_GAPS, REASONS } from './content/units.js';
 
 export function addWrong(st, pid, reason = null) {
   const w = st.wrong[pid];
@@ -265,14 +264,17 @@ export function streak() {
   return n;
 }
 
-export function periodStats(days = 7) {
+/** 최근 days일(오늘 포함) 통계. 날짜 경계는 모두 현지 날짜 기준이다(학습량과 정답률이 같은 기록을 본다). */
+export function periodStats(days = 7, now = new Date()) {
   const st = getState();
-  const from = addDays(today(), -(days - 1));
+  const end = today(now);
+  const from = addDays(end, -(days - 1));
+  const inRange = (d) => d !== null && d >= from && d <= end;
   let solved = 0, attempted = 0, seconds = 0, activeDays = 0;
   for (const [d, a] of Object.entries(st.activity)) {
-    if (d >= from) { solved += a.solved; attempted += a.attempted; seconds += a.seconds; if (a.attempted) activeDays++; }
+    if (inRange(d)) { solved += a.solved; attempted += a.attempted; seconds += a.seconds; if (a.attempted) activeDays++; }
   }
-  const atts = Object.values(st.attempts).filter((a) => a.lastAt && a.lastAt.slice(0, 10) >= from);
+  const atts = Object.values(st.attempts).filter((a) => a.lastAt && inRange(localDay(a.lastAt)));
   const hintUse = atts.length ? atts.filter((a) => a.hints > 0 || a.sawSolution).length / atts.length : 0;
   const firstRight = atts.length ? atts.filter((a) => a.firstCorrect).length / atts.length : 0;
   return { solved, attempted, seconds, activeDays, problems: atts.length, hintUse, firstRight };

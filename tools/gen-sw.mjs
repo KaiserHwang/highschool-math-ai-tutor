@@ -37,10 +37,15 @@ self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
 
+// CacheStorage는 같은 origin(kaiserhwang.github.io)의 다른 앱과 공유되므로,
+// MathPulse가 만든 캐시(이름이 'mathpulse-'로 시작)만 정리한다.
+const OWN = 'mathpulse-';
+const FONTS = OWN + 'fonts';
+
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== VERSION && k !== 'mathpulse-fonts').map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith(OWN) && k !== VERSION && k !== FONTS).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
@@ -52,7 +57,7 @@ self.addEventListener('fetch', (e) => {
   if (url.origin !== location.origin) {
     // 웹폰트는 한 번 받으면 따로 보관한다
     if (/fonts\\.(googleapis|gstatic)\\.com$/.test(url.hostname)) {
-      e.respondWith(caches.open('mathpulse-fonts').then(async (c) => {
+      e.respondWith(caches.open(FONTS).then(async (c) => {
         const hit = await c.match(req);
         if (hit) return hit;
         const res = await fetch(req);

@@ -1,6 +1,6 @@
 // 자동 생성 파일입니다. 직접 고치지 말고 node tools/gen-sw.mjs 를 실행하세요.
 // 오프라인에서도 열리도록 앱 파일을 미리 받아 두고, 온라인일 때는 항상 서버의 최신 파일을 먼저 씁니다.
-const VERSION = 'mathpulse-f280b3223053';
+const VERSION = 'mathpulse-96ec139eb18b';
 const ASSETS = [
   './',
   'assets/css/app.css',
@@ -9,6 +9,7 @@ const ASSETS = [
   'assets/icons/icon-maskable-512.png',
   'assets/icons/icon.svg',
   'assets/js/app.js',
+  'assets/js/backup.js',
   'assets/js/content/bank/u1.js',
   'assets/js/content/bank/u2.js',
   'assets/js/content/bank/u3.js',
@@ -65,10 +66,15 @@ self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
 
+// CacheStorage는 같은 origin(kaiserhwang.github.io)의 다른 앱과 공유되므로,
+// MathPulse가 만든 캐시(이름이 'mathpulse-'로 시작)만 정리한다.
+const OWN = 'mathpulse-';
+const FONTS = OWN + 'fonts';
+
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== VERSION && k !== 'mathpulse-fonts').map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith(OWN) && k !== VERSION && k !== FONTS).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
@@ -80,7 +86,7 @@ self.addEventListener('fetch', (e) => {
   if (url.origin !== location.origin) {
     // 웹폰트는 한 번 받으면 따로 보관한다
     if (/fonts\.(googleapis|gstatic)\.com$/.test(url.hostname)) {
-      e.respondWith(caches.open('mathpulse-fonts').then(async (c) => {
+      e.respondWith(caches.open(FONTS).then(async (c) => {
         const hit = await c.match(req);
         if (hit) return hit;
         const res = await fetch(req);

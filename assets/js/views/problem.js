@@ -10,6 +10,12 @@ import { figure } from '../lib/plot.js';
 import { AI_SERVICES, problemPrompt, sendToAI, copyText } from '../lib/ai.js';
 
 
+/** 해시 경로 링크를 만든다. 쿼리 값은 인코딩하고, 결과는 HTML 속성에 넣을 수 있게 이스케이프한다. */
+function link(path, query = {}) {
+  const q = Object.entries(query).filter(([, v]) => v !== null && v !== undefined && v !== '').map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
+  return esc(`#${path}${q ? `?${q}` : ''}`);
+}
+
 export function renderProblem(view, { args: [ref], params }) {
   const isVariant = ref.startsWith('g-');
   let p;
@@ -30,7 +36,9 @@ export function renderProblem(view, { args: [ref], params }) {
   const reviewParam = params.get('review');
   const reviewPid = isVariant ? (reviewParam && PROBLEM_BY_ID[reviewParam] ? reviewParam : null) : reviewParam === '1' ? pid : null;
   const reviewMode = !!reviewPid;
-  const fromPid = isVariant ? params.get('from') || reviewPid : null;
+  // from은 URL에서 오므로 실제 문제 ID일 때만 받아들인다(그 밖의 값은 HTML에 절대 넣지 않는다)
+  const fromParam = params.get('from');
+  const fromPid = isVariant ? (fromParam && PROBLEM_BY_ID[fromParam] ? fromParam : reviewPid) : null;
   const genKey = isVariant ? ref : generatorFor(pid);
   const st = getState();
   const att0 = isVariant ? null : st.attempts[pid];
@@ -63,7 +71,7 @@ export function renderProblem(view, { args: [ref], params }) {
   const variantBanner = isVariant
     ? `<p class="banner variant">숫자를 바꾼 연습 문제입니다. ${reviewMode ? '힌트 없이 맞히면 원래 문제의 복습을 통과한 것으로 기록합니다.' : '숙련도에는 반영되지 않고, 몇 번이든 새로 만들 수 있어요.'}</p>`
     : reviewMode
-      ? `<p class="banner">오답 복습 중입니다. 힌트 없이 맞히면 다음 복습이 ${REVIEW_GAPS.map((g) => g + '일').join(' → ')} 순서로 늘어납니다.${genKey ? ` 답을 기억하고 있다면 <a href="#/v/${genKey}?s=${newSeed()}&review=${pid}">숫자를 바꾼 문제로 복습</a>하세요.` : ''}</p>`
+      ? `<p class="banner">오답 복습 중입니다. 힌트 없이 맞히면 다음 복습이 ${REVIEW_GAPS.map((g) => g + '일').join(' → ')} 순서로 늘어납니다.${genKey ? ` 답을 기억하고 있다면 <a href="${link(`/v/${genKey}`, { s: newSeed(), review: pid })}">숫자를 바꾼 문제로 복습</a>하세요.` : ''}</p>`
       : '';
 
   view.innerHTML = `
@@ -123,8 +131,8 @@ export function renderProblem(view, { args: [ref], params }) {
     <button type="button" class="pad-fab" data-act="pad-open" aria-label="연습장 열기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16zM14 6l3 3"/></svg>연습장</button>
     <nav class="pager" aria-label="다른 문제">
       ${isVariant
-        ? `${fromPid ? `<a class="btn btn-quiet" href="#/p/${fromPid}">원래 문제로</a>` : '<span></span>'}<a class="btn btn-quiet" href="#/u/${unit.id}">단원으로</a><a class="btn btn-quiet" href="#/v/${ref}?s=${newSeed()}${fromPid ? `&from=${fromPid}` : ''}">다른 숫자로 한 문제 더</a>`
-        : `${prev ? `<a class="btn btn-quiet" href="#/p/${prev.id}">이전 문제</a>` : '<span></span>'}${genKey ? `<a class="btn btn-quiet" href="#/v/${genKey}?s=${newSeed()}&from=${pid}">비슷한 문제 풀기</a>` : `<a class="btn btn-quiet" href="#/u/${unit.id}">문제 목록</a>`}${next ? `<a class="btn btn-quiet" href="#/p/${next.id}">다음 문제</a>` : '<span></span>'}`}
+        ? `${fromPid ? `<a class="btn btn-quiet" href="${link(`/p/${fromPid}`)}">원래 문제로</a>` : '<span></span>'}<a class="btn btn-quiet" href="${link(`/u/${unit.id}`)}">단원으로</a><a class="btn btn-quiet" href="${link(`/v/${ref}`, { s: newSeed(), from: fromPid })}">다른 숫자로 한 문제 더</a>`
+        : `${prev ? `<a class="btn btn-quiet" href="${link(`/p/${prev.id}`)}">이전 문제</a>` : '<span></span>'}${genKey ? `<a class="btn btn-quiet" href="${link(`/v/${genKey}`, { s: newSeed(), from: pid })}">비슷한 문제 풀기</a>` : `<a class="btn btn-quiet" href="${link(`/u/${unit.id}`)}">문제 목록</a>`}${next ? `<a class="btn btn-quiet" href="${link(`/p/${next.id}`)}">다음 문제</a>` : '<span></span>'}`}
     </nav>
   </section>`;
 
@@ -307,9 +315,9 @@ export function renderProblem(view, { args: [ref], params }) {
           : '<p class="fb-note">힌트를 봤으니 이번 복습은 다시 처음 단계로 돌아갑니다. 내일 한 번 더 풀어 보세요.</p>';
       }
       const nextBtn = isVariant
-        ? `<a class="btn btn-primary" href="#/v/${ref}?s=${newSeed()}${fromPid ? `&from=${fromPid}` : ''}">다른 숫자로 한 문제 더</a>`
-        : next ? `<a class="btn btn-primary" href="#/p/${next.id}">다음 문제</a>` : `<a class="btn btn-primary" href="#/u/${unit.id}">단원으로 돌아가기</a>`;
-      const simBtn = !isVariant && genKey ? `<a class="btn btn-quiet" href="#/v/${genKey}?s=${newSeed()}&from=${pid}">비슷한 문제 풀기</a>` : '';
+        ? `<a class="btn btn-primary" href="${link(`/v/${ref}`, { s: newSeed(), from: fromPid })}">다른 숫자로 한 문제 더</a>`
+        : next ? `<a class="btn btn-primary" href="${link(`/p/${next.id}`)}">다음 문제</a>` : `<a class="btn btn-primary" href="${link(`/u/${unit.id}`)}">단원으로 돌아가기</a>`;
+      const simBtn = !isVariant && genKey ? `<a class="btn btn-quiet" href="${link(`/v/${genKey}`, { s: newSeed(), from: pid })}">비슷한 문제 풀기</a>` : '';
       msg += `<div class="row">${nextBtn}${simBtn}${reviewMode ? '<a class="btn btn-quiet" href="#/review">오답 복습 목록</a>' : ''}</div>`;
       fb.innerHTML = msg;
     } else {

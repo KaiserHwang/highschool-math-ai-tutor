@@ -77,11 +77,12 @@ export function renderSettings(view) {
     if (t.dataset.act === 'import' && t.files[0]) {
       t.files[0].text().then((txt) => {
         try {
-          importData(txt);
-          toast('백업을 불러왔어요.');
+          const { dropped } = importData(txt);
+          toast(dropped ? `백업을 불러왔어요. 지금 앱에 없는 문제의 기록 ${dropped}건은 제외했어요.` : '백업을 불러왔어요.', 5000);
           renderSettings(view);
         } catch (err) {
-          toast('불러오지 못했습니다: ' + err.message, 5000);
+          toast(`불러오지 못했습니다. 기존 기록은 그대로입니다. (${err.message})`, 7000);
+          t.value = '';
         }
       });
     }

@@ -1,4 +1,6 @@
 // 학습 기록 저장소. 모든 데이터는 이 기기의 브라우저(localStorage)에만 저장된다.
+import { blankState, checkState, parseBackup } from './backup.js';
+
 const KEY = 'mathpulse:v2';
 const listeners = new Set();
 
@@ -7,58 +9,49 @@ export const today = (d = new Date()) => {
   return z.toISOString().slice(0, 10);
 };
 
+/** 저장된 시각(ISO, UTC)을 이 기기의 현지 날짜('YYYY-MM-DD')로 바꾼다. 날짜 비교는 모두 이 기준으로 한다. */
+export const localDay = (iso) => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : today(d);
+};
+
 export const addDays = (iso, n) => {
   const d = new Date(iso + 'T00:00:00');
   d.setDate(d.getDate() + n);
   return today(d);
 };
 
-function blank() {
-  return {
-    version: 2,
-    createdAt: new Date().toISOString(),
-    profile: { name: '', track: null, dailyGoal: 5 },
-    diagnoses: [], // 최신이 마지막
-    attempts: {}, // pid → 시도 기록
-    wrong: {}, // pid → 오답노트 항목
-    notes: {}, // pid → 풀이 메모
-    activity: {}, // 'YYYY-MM-DD' → { solved, attempted, seconds }
-    practice: {}, // 생성기 이름 → { tried, solved } (비슷한 문제 연습)
-    settings: { theme: 'auto', ai: { gemini: '', chatgpt: '', claude: '' }, preferredAi: 'claude' },
-  };
-}
+const blank = blankState;
 
 // 주의: memoryOnly 는 load() 보다 먼저 선언해야 한다(저장소 접근이 막힌 브라우저에서 load()가 이 값을 바꾼다).
 let memoryOnly = false;
 let state = load();
 
 function load() {
+  let raw;
   try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) return migrate(JSON.parse(raw));
+    raw = localStorage.getItem(KEY);
   } catch (e) {
     memoryOnly = true;
+    return blank();
   }
-  return blank();
-}
-
-function migrate(s) {
-  const base = blank();
-  const out = { ...base, ...s };
-  out.profile = { ...base.profile, ...(s.profile || {}) };
-  out.settings = { ...base.settings, ...(s.settings || {}), ai: { ...base.settings.ai, ...((s.settings || {}).ai || {}) } };
-  for (const k of ['attempts', 'wrong', 'notes', 'activity', 'practice']) out[k] = s[k] && typeof s[k] === 'object' ? s[k] : {};
-  out.diagnoses = Array.isArray(s.diagnoses) ? s.diagnoses : [];
-  out.version = 2;
-  return out;
+  if (!raw) return blank();
+  try {
+    // 저장된 기록은 관대하게 검사한다: 망가진 항목만 버리고 나머지는 살린다
+    return checkState(JSON.parse(raw), { strict: false }).state;
+  } catch (e) {
+    return blank();
+  }
 }
 
 function persist() {
   try {
     localStorage.setItem(KEY, JSON.stringify(state));
     memoryOnly = false;
+    return true;
   } catch (e) {
     memoryOnly = true;
+    return false;
   }
 }
 
@@ -80,13 +73,22 @@ export function exportData() {
   return JSON.stringify({ app: 'MathPulse', exportedAt: new Date().toISOString(), data: state }, null, 2);
 }
 
+/**
+ * 백업을 가져온다. 전체를 검사한 뒤에만 기록을 바꾸고, 검사나 저장에 실패하면 기존 기록을 그대로 둔다.
+ * @returns {{ dropped: number }} 지금 앱에 없는 문제 등으로 버린 항목 수
+ */
 export function importData(text) {
-  const parsed = JSON.parse(text);
-  const data = parsed && parsed.app === 'MathPulse' ? parsed.data : parsed;
-  if (!data || typeof data !== 'object' || !('attempts' in data)) throw new Error('MathPulse 백업 파일이 아닙니다.');
-  state = migrate(data);
-  persist();
+  const { state: next, dropped } = parseBackup(text); // 잘못되면 여기서 BackupError
+  const prev = state;
+  const prevRaw = (() => { try { return localStorage.getItem(KEY); } catch { return null; } })();
+  state = next;
+  if (!persist() && prevRaw !== null) {
+    state = prev;
+    try { localStorage.setItem(KEY, prevRaw); } catch { /* 저장소를 쓸 수 없음 */ }
+    throw new Error('기록을 저장하지 못해 가져오기를 취소했습니다. 기존 기록은 그대로입니다.');
+  }
   listeners.forEach((l) => l(state));
+  return { dropped };
 }
 
 export function resetAll() {
