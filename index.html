@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MathPulse 고1 AI 수학 마스터</title>
+  <script src="//cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 0; }
+    header { background: #020617; border-bottom: 1px solid #1e293b; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; sticky: top; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 32px 16px; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    h1, h2, h3, h4 { margin-top: 0; }
+    .btn { background: #4f46e5; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; margin-right: 8px; }
+    .btn-green { background: #059669; }
+    .btn-amber { background: #d97706; }
+    .btn:hover { opacity: 0.9; }
+    input[type=range] { width: 100%; }
+    textarea { width: 100%; background: #0f172a; color: white; border: 1px solid #334155; border-radius: 8px; padding: 12px; box-sizing: border-box; }
+    nav a { color: #94a3b8; text-decoration: none; margin-left: 16px; font-size: 14px; }
+    nav a:hover { color: #818cf8; }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div style="font-size: 20px; font-weight: bold; color: white;">MathPulse <span style="font-size: 14px; color: #818cf8; font-weight: normal;">고1 AI 수학 마스터 (2022 개정)</span></div>
+    <nav>
+      <a href="#curriculum">커리큘럼</a>
+      <a href="#diagnosis">AI 역량진단</a>
+      <a href="#coaching">3단계 힌트코칭</a>
+      <a href="#notepad">디지털 연습장</a>
+      <a href="#bridge">AI 모델 브릿지</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <!-- Hero -->
+    <div class="card" style="text-align: center; background: linear-gradient(135deg, #1e1b4b, #0f172a);">
+      <h2 style="font-size: 28px; color: white;">2022 개정 공통수학1·2 AI 수준 진단 &amp; 1등급 심화 코칭</h2>
+      <p style="color: #cbd5e1;">개념 이해부터 킬러 문항 정복까지, AI 5대 역량 분석 및 맞춤형 소크라테스식 힌트 코칭으로 수학 1등급을 완성하세요.</p>
+    </div>
+
+    <!-- 1. Curriculum -->
+    <div id="curriculum" class="card">
+      <h3 style="color: #a5b4fc;">📘 2022 개정 공통수학1·2 &amp; 선행 심화 커리큘럼</h3>
+      <div class="grid">
+        <div style="background: #0f172a; padding: 16px; border-radius: 8px; border: 1px solid #334155;">
+          <h4 style="color: #818cf8;">공통수학 1</h4>
+          <ul style="color: #cbd5e1; font-size: 14px; padding-left: 20px;">
+            <li>다항식 (연산, 항등식과 나머지정리, 인수분해)</li>
+            <li>방정식과 부등식 (복소수, 이차방정식, 이차부등식)</li>
+            <li>행렬과 그 연산 (행렬의 뜻, 연산)</li>
+            <li>경우의 수 (순열과 조합)</li>
+          </ul>
+        </div>
+        <div style="background: #0f172a; padding: 16px; border-radius: 8px; border: 1px solid #334155;">
+          <h4 style="color: #c084fc;">공통수학 2</h4>
+          <ul style="color: #cbd5e1; font-size: 14px; padding-left: 20px;">
+            <li>도형의 방정식 (평면좌표, 직선, 원, 도형의 이동)</li>
+            <li>집합과 명제 (집합의 연산, 명제와 조건, 절대부등식)</li>
+            <li>함수와 그래프 (합성함수, 역함수, 유리·무리함수)</li>
+          </ul>
+        </div>
+        <div style="background: #0f172a; padding: 16px; border-radius: 8px; border: 1px solid #334155;">
+          <h4 style="color: #fbbf24;">선행 심화 (1등급 킬러)</h4>
+          <ul style="color: #cbd5e1; font-size: 14px; padding-left: 20px;">
+            <li>고난도 융합 킬러 문항 정복</li>
+            <li>수능 모의고사 기출 변형 조건 해석</li>
+            <li>소크라테스식 발상 교정 및 논리적 추론 훈련</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. AI Competency Diagnosis & Radar Chart -->
+    <div id="diagnosis" class="card">
+      <h3 style="color: #a5b4fc;">📊 AI 5대 역량 진단 테스트 &amp; 레이더 차트</h3>
+      <div class="grid">
+        <div>
+          <h4>역량 점수 설정 (0~100점)</h4>
+          <label style="font-size: 12px; color: #94a3b8;">개념 이해도</label>
+          <input type="range" id="score1" min="0" max="100" value="85" oninput="updateChart()">
+          <label style="font-size: 12px; color: #94a3b8;">문제 해결력</label>
+          <input type="range" id="score2" min="0" max="100" value="70" oninput="updateChart()">
+          <label style="font-size: 12px; color: #94a3b8;">연산 정확도</label>
+          <input type="range" id="score3" min="0" max="100" value="90" oninput="updateChart()">
+          <label style="font-size: 12px; color: #94a3b8;">논리적 추론력</label>
+          <input type="range" id="score4" min="0" max="100" value="65" oninput="updateChart()">
+          <label style="font-size: 12px; color: #94a3b8;">응용 확장성</label>
+          <input type="range" id="score5" min="0" max="100" value="75" oninput="updateChart()">
+        </div>
+        <div style="text-align: center;">
+          <h4>AI 역량 레이더 차트</h4>
+          <div style="max-width: 280px; margin: 0 auto;">
+            <canvas id="radarChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 3-Step Socratic Coaching -->
+    <div id="coaching" class="card">
+      <h3 style="color: #a5b4fc;">💡 3단계 소크라테스식 킬러 문항 코칭</h3>
+      <p style="font-size: 14px; color: #cbd5e1;">킬러 대표 문항: <span style="color: #fde047;">[공통수학1] 이차방정식 f(x)=0의 두 근 α, β에 대하여 f(2x-3)=0의 두 근의 합을 구하시오.</span></p>
+      <div class="grid">
+        <div style="background: #0f172a; padding: 16px; border-radius: 8px;">
+          <span class="badge" style="background: #312e81; color: #a5b4fc;">1단계: 핵심 개념</span>
+          <p style="font-size: 13px; color: #cbd5e1;">f(α)=0, f(β)=0이 성립하므로, 2x-3 = α 또는 2x-3 = β가 되는 x를 구해야 합니다.</p>
+        </div>
+        <div style="background: #0f172a; padding: 16px; border-radius: 8px;">
+          <span class="badge" style="background: #581c87; color: #e9d5ff;">2단계: 단계별 풀이</span>
+          <p style="font-size: 13px; color: #cbd5e1;">x = (α+3)/2, x = (β+3)/2 두 근을 도출하여 두 근의 합 (α+β+6)/2 공식을 적용합니다.</p>
+        </div>
+        <div style="background: #0f172a; padding: 16px; border-radius: 8px;">
+          <span class="badge" style="background: #064e3b; color: #a7f3d0;">3단계: 심화 완성</span>
+          <p style="font-size: 13px; color: #cbd5e1;">주어진 α+β의 값을 대입해 최종 답을 산출하고 변형 문제(합성함수 관점)로 확장 연습합니다.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Digital Notepad -->
+    <div id="notepad" class="card">
+      <h3 style="color: #a5b4fc;">📝 디지털 연습장</h3>
+      <p style="font-size: 14px; color: #cbd5e1;">문제 풀이 과정을 자유롭게 작성하거나 메모하세요.</p>
+      <textarea id="noteText" rows="5" placeholder="여기에 풀이 단계나 공식을 적으세요..."></textarea>
+      <br><br>
+      <button class="btn" onclick="alert('연습장이 저장되었습니다!')">풀이 저장하기</button>
+    </div>
+
+    <!-- 5. AI Subscription Bridge -->
+    <div id="bridge" class="card">
+      <h3 style="color: #a5b4fc;">🤖 Gemini / ChatGPT / Claude 구독 계정 원클릭 프롬프트 브릿지</h3>
+      <p style="font-size: 14px; color: #cbd5e1;">별도 API Key 등록 없이, 구독 중인 AI 웹 서비스로 프롬프트를 원클릭 복사하여 연동하세요.</p>
+      <div id="promptText" style="background: #0f172a; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; color: #34d399; margin-bottom: 16px;">
+        [MathPulse 고1 AI 수학 클리닉 요청]<br>
+        교육과정: 2022 개정 공통수학 1·2<br>
+        학생 역량: 개념 이해 85점, 문제 해결 70점, 연산 90점, 논리추론 65점, 응용 75점<br>
+        질문: 이차방정식 및 도형의 방정식 킬러 문항에 대해 소크라테스식 3단계 질문으로 스스로 답을 도출할 수 있도록 유도해주세요.
+      </div>
+      <button class="btn" onclick="copyPrompt('https://gemini.google.com')">Gemini 브릿지</button>
+      <button class="btn btn-green" onclick="copyPrompt('https://chatgpt.com')">ChatGPT 브릿지</button>
+      <button class="btn btn-amber" onclick="copyPrompt('https://claude.ai')">Claude 브릿지</button>
+    </div>
+  </div>
+
+  <script>
+    let radarChart;
+    function initChart() {
+      const ctx = document.getElementById('radarChart').getContext('2d');
+      radarChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: ['개념 이해', '문제 해결', '연산 정확도', '논리적 추론', '응용 확장'],
+          datasets: [{
+            label: '현재 AI 역량',
+            data: [85, 70, 90, 65, 75],
+            backgroundColor: 'rgba(129, 140, 248, 0.2)',
+            borderColor: 'rgba(129, 140, 248, 1)',
+            pointBackgroundColor: 'rgba(129, 140, 248, 1)',
+          }]
+        },
+        options: {
+          scales: {
+            r: {
+              angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+              grid: { color: 'rgba(255, 255, 255, 0.1)' },
+              pointLabels: { color: '#cbd5e1', font: { size: 11 } },
+              ticks: { display: false, beginAtZero: true, max: 100 }
+            }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function updateChart() {
+      if (!radarChart) return;
+      radarChart.data.datasets[0].data = [
+        document.getElementById('score1').value,
+        document.getElementById('score2').value,
+        document.getElementById('score3').value,
+        document.getElementById('score4').value,
+        document.getElementById('score5').value,
+      ];
+      radarChart.update();
+    }
+
+    function copyPrompt(url) {
+      const text = document.getElementById('promptText').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('프롬프트가 복사되었습니다!');
+        window.open(url, '_blank');
+      }).catch(() => {
+        window.open(url, '_blank');
+      });
+    }
+
+    window.onload = initChart;
+  </script>
+</body>
+</html>
