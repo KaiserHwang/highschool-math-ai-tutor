@@ -1,6 +1,6 @@
-import { UNITS, UNIT_BY_ID, LEVELS, TRACKS } from '../content/units.js';
+import { UNITS, UNIT_BY_ID, LEVELS, TRACKS, NEXT_SUBJECTS_NOTE } from '../content/units.js';
 import { problemsOfUnit } from '../content/problems.js';
-import { unitMastery, statusOf, activeTrack, latestDiagnosis, unitLessonStats, lessonProgress } from '../model.js';
+import { unitMastery, statusOf, activeTrack, latestDiagnosis, unitLessonStats, lessonProgress, LESSON_STATE, diagUnitReadiness } from '../model.js';
 import { tex, esc, statusGlyph } from '../lib/ui.js';
 import { lessonsOfUnit } from '../content/lessons/index.js';
 import { generatorsOfUnit, newSeed } from '../content/generators.js';
@@ -14,13 +14,14 @@ export function renderUnits(view) {
   const block = (course) => {
     const list = UNITS.filter((u) => u.course === course).map((u) => {
       const m = unitMastery(u.id);
-      const ready = diag && diag.units[u.id] != null ? `진단 ${diag.units[u.id]}` : '';
+      const dr = diag ? diagUnitReadiness(diag)[u.id] : null;
+      const ready = dr ? `진단 ${dr.pct}(${dr.n}문항)` : '';
       const ls = unitLessonStats(u.id);
       return `<li class="toc-row">
         <a class="toc-link" href="#/u/${u.id}">
           <span class="toc-no">${u.no}</span>
           <span class="toc-body"><span class="toc-t">${esc(u.title)}</span><span class="toc-sub">${esc(u.sub)}</span></span>
-          <span class="toc-stat"><span class="meter" role="img" aria-label="숙련도 ${m.pct}%"><span style="--v:${m.pct}%"></span></span><span class="toc-p">${m.pct}%</span><span class="toc-n">개념 ${ls.done}/${ls.total} · ${m.solved}/${m.total}문제${ready ? ` · ${ready}` : ''}</span></span>
+          <span class="toc-stat"><span class="meter" role="img" aria-label="숙련도 ${m.pct}%"><span style="--v:${m.pct}%"></span></span><span class="toc-p">${m.pct}%</span><span class="toc-n">개념 ${ls.verified}/${ls.total} 혼자 확인 · ${m.solved}/${m.total}문제${ready ? ` · ${ready}` : ''}</span></span>
           <span class="toc-dots" aria-hidden="true">${problemsOfUnit(u.id).map((p) => `<i class="dot d-${statusOf(p.id)} lv-${p.level}"></i>`).join('')}</span>
         </a>
       </li>`;
@@ -31,7 +32,8 @@ export function renderUnits(view) {
   <section class="page">
     <header class="page-head">
       <h1 class="page-title">단원</h1>
-      <p class="lead">2022 개정 교육과정 공통수학1·2의 일곱 단원과 선행 학습자를 위한 융합 단원입니다. 지금 트랙은 <a href="#/settings">${TRACKS[track].label}</a>입니다.</p>
+      <p class="lead">2022 개정 교육과정 공통수학1·2(고1)의 일곱 단원과 선행 학습자를 위한 융합 단원입니다. 지금 트랙은 <a href="#/settings">${TRACKS[track].label}</a>입니다.</p>
+      <p class="row"><a class="btn btn-quiet" href="#/quiz?view=intro">배운 범위 혼합 평가</a></p>
     </header>
     ${COURSES.map(block).join('')}
   </section>`;
@@ -69,7 +71,7 @@ export function renderUnit(view, { args: [unitId] }) {
     <header class="page-head unit-head">
       <h1 class="page-title"><span class="unit-no">${u.no}</span>${esc(u.title)}</h1>
       <p class="lead">${esc(u.sub)}</p>
-      <p class="meta">개념 ${ls.done}/${ls.total} 이해 · 숙련도 ${m.pct}% · ${m.solved}/${m.total}문제 해결 · 그림 문제 ${probs.filter((p) => p.fig).length}개</p>
+<p class="meta">개념 ${ls.total}개 중 혼자 확인 ${ls.verified} · 이해 표시 ${ls.done} · 숙련도 ${m.pct}% · ${m.solved}/${m.total}문제 해결 · 그림 문제 ${probs.filter((p) => p.fig).length}개</p>
       <p class="row jump">${ls.next ? `<a class="btn${m.tried ? '' : ' btn-primary'}" href="#/l/${ls.next.id}">${ls.done ? '개념 이어서 보기' : '개념부터 보기'}</a>` : ''}<a class="btn${m.tried || !ls.next ? ' btn-primary' : ''}" href="#/p/${(probs.find((p) => track.levels.includes(p.level) && !['clean', 'solved'].includes(statusOf(p.id))) || probs.find((p) => !['clean', 'solved'].includes(statusOf(p.id))) || probs[0]).id}">${m.tried ? '이어서 풀기' : '첫 문제 풀기'}</a><button type="button" class="btn btn-quiet" data-act="to-list">문제 목록 보기</button></p>
     </header>
     <div class="unit-grid">
@@ -77,12 +79,14 @@ export function renderUnit(view, { args: [unitId] }) {
         <h2 class="paper-title">개념 학습 <span class="hint-text">소단원 ${lessons.length}개 · 핵심 정리, 예제, 확인 문제</span></h2>
         <ol class="lesson-toc">${lessons.map((l, i) => {
           const pr = lessonProgress(l);
-          return `<li><a class="lt-row${pr.done ? ' is-done' : ''}" href="#/l/${l.id}">
+          const tag = pr.state === 'recheck' ? `<span class="recheck-tag">${LESSON_STATE.recheck}</span>` : LESSON_STATE[pr.state] ? `<span class="done-tag">${LESSON_STATE[pr.state]}</span>` : '';
+          return `<li><a class="lt-row st-${pr.state}" href="#/l/${l.id}">
             <span class="lt-n">${i + 1}</span>
             <span class="lt-body"><span class="lt-t">${esc(l.title)}</span><span class="lt-s">${tex(l.summary)}</span></span>
-            <span class="lt-st">${pr.done ? '<span class="done-tag">이해 완료</span>' : ''}<span class="lt-ck">확인 ${pr.right}/${pr.total}</span></span>
+            <span class="lt-st">${tag}<span class="lt-ck">혼자 맞힘 ${pr.independent}/${pr.total}</span></span>
           </a></li>`;
         }).join('')}</ol>
+        <section class="c-sec next-sec"><h3 class="c-h">이 단원이 이어지는 곳</h3><ul>${u.next.map((n) => `<li><strong>${esc(n.subject)}</strong> ${esc(n.what)}</li>`).join('')}</ul><p class="hint-text">${esc(NEXT_SUBJECTS_NOTE)}</p></section>
         <section class="c-sec traps"><h3 class="c-h">이 단원에서 자주 하는 실수</h3><ul>${u.traps.map((t) => `<li>${tex(esc(t))}</li>`).join('')}</ul></section>
         <p class="std">성취기준 ${u.standards.join(', ')}</p>
       </article>

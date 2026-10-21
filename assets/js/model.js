@@ -4,6 +4,7 @@ import { DIAGNOSIS } from './content/diagnosis.js';
 import { UNITS, SKILLS, LEVELS, TRACKS, REVIEW_GAPS } from './content/units.js';
 import { getState, today, addDays, localDay } from './store.js';
 import { LESSONS, lessonsOfUnit } from './content/lessons/index.js';
+import { GENERATORS } from './content/generators.js';
 
 // ── 답 비교 ──────────────────────────────────────────
 function gcd(a, b) {
@@ -58,6 +59,22 @@ export function creditOf(att) {
   return Math.round(c * 100) / 100;
 }
 
+// ── 현재 숙련도 ───────────────────────────────────────
+// 처음 성과(creditOf)는 그대로 보존하고, 현재 숙련도는 그 뒤의 간격 복습 결과로 다시 계산한다.
+// 간격 복습 성공은 예정일이 된 뒤 하루 한 번만 인정되므로(reviewResult), 같은 날 반복해 답을 외운 것은 근거가 되지 않는다.
+// 마지막 복습에서 틀리면 취약으로 돌아가고, 그 뒤 성공이 쌓이는 만큼 회복한다.
+const RECOVER = [0.7, 0.85, 1];
+export function currentCredit(pid) {
+  const st = getState();
+  const base = creditOf(st.attempts[pid]);
+  const hist = st.wrong[pid]?.history || [];
+  if (!hist.length) return base;
+  if (!hist[hist.length - 1].ok) return Math.min(base, 0.2);
+  let n = 0;
+  for (let i = hist.length - 1; i >= 0 && hist[i].ok; i--) n++;
+  return Math.max(base, RECOVER[Math.min(n, RECOVER.length) - 1]);
+}
+
 export function statusOf(pid) {
   const att = getState().attempts[pid];
   if (!att || !att.tries) return 'new';
@@ -68,16 +85,23 @@ export function statusOf(pid) {
 export function unitMastery(unitId) {
   const items = problemsOfUnit(unitId);
   const st = getState();
-  let num = 0, den = 0, solved = 0, tried = 0;
+  let num = 0, den = 0, first = 0, tDen = 0, tNum = 0, solved = 0, tried = 0;
   for (const p of items) {
     const w = LEVELS[p.level].weight;
     den += w;
     const att = st.attempts[p.id];
-    num += w * creditOf(att);
-    if (att && att.tries) tried++;
+    const cur = currentCredit(p.id);
+    num += w * cur;
+    first += w * creditOf(att);
+    if (att && att.tries) { tried++; tDen += w; tNum += w * cur; }
     if (att && att.solved) solved++;
   }
-  return { pct: den ? Math.round((num / den) * 100) : 0, solved, tried, total: items.length };
+  return {
+    pct: den ? Math.round((num / den) * 100) : 0, // 현재 숙련도(안 푼 문제는 0으로 계산: 문제 은행 진행을 함께 반영)
+    firstPct: den ? Math.round((first / den) * 100) : 0, // 처음 풀었을 때의 성과
+    triedPct: tDen ? Math.round((tNum / tDen) * 100) : null, // 푼 문제만으로 본 현재 실력
+    solved, tried, total: items.length,
+  };
 }
 
 // ── 역량 추정 ─────────────────────────────────────────
@@ -89,7 +113,7 @@ export function practiceSkills() {
     if (!att || !att.tries) continue;
     const lw = LEVELS[p.level].weight;
     for (const [k, w] of Object.entries(p.skills)) {
-      acc[k].num += w * lw * creditOf(att);
+      acc[k].num += w * lw * currentCredit(p.id);
       acc[k].den += w * lw;
     }
   }
@@ -115,6 +139,24 @@ export function currentSkills() {
 
 // ── 진단 채점 ─────────────────────────────────────────
 const CONF = { sure: 1, unsure: 0.75, guess: 0.4 };
+// 단원 준비도는 문항이 적으면 한두 문항의 정오로 0이나 100이 되지 않도록, 50점짜리 가상 근거(가중치 2)를 섞는다(#8).
+const DIAG_PRIOR_W = 2;
+const readinessOf = (num, den) => Math.round(((num + DIAG_PRIOR_W * 0.5) / (den + DIAG_PRIOR_W)) * 100);
+
+/** 진단 기록의 단원별 준비도와 근거(문항 수, 정답 수, 틀린 문항). 저장된 문항 기록에서 다시 계산하므로 예전 진단에도 같은 기준을 쓴다. */
+export function diagUnitReadiness(d) {
+  const out = {};
+  for (const it of d.items || []) {
+    const q = DIAGNOSIS.find((x) => x.id === it.id);
+    if (!q) continue;
+    const u = (out[q.unit] ||= { num: 0, den: 0, n: 0, correct: 0, missed: [] });
+    const lw = LEVELS[q.level].weight;
+    u.num += lw * (it.credit || 0); u.den += lw; u.n += 1;
+    if (it.correct) u.correct += 1; else u.missed.push(q);
+  }
+  for (const u of Object.values(out)) { u.pct = readinessOf(u.num, u.den); u.enough = u.n >= 2; }
+  return out;
+}
 
 export function gradeDiagnosis(responses) {
   // responses: { [id]: { response, conf, hint, sec } }
@@ -145,7 +187,7 @@ export function gradeDiagnosis(responses) {
     items.push({ id: q.id, correct, credit: Math.round(credit * 100) / 100, conf: r.conf || null, hint: !!r.hint, sec: Math.round(r.sec || 0), response: r.response ?? null });
   }
   const skills = Object.fromEntries(Object.entries(skillAcc).map(([k, v]) => [k, v.den ? Math.round((v.num / v.den) * 100) : 0]));
-  const units = Object.fromEntries(Object.entries(unitAcc).map(([k, v]) => [k, Math.round((v.num / v.den) * 100)]));
+  const units = Object.fromEntries(Object.entries(unitAcc).map(([k, v]) => [k, readinessOf(v.num, v.den)]));
   const overall = Math.round((num / den) * 100);
   const correctCount = items.filter((i) => i.correct).length;
   const advCorrect = DIAGNOSIS.filter((q) => (q.level === 'adv' || q.level === 'killer') && items.find((i) => i.id === q.id).correct).length;
@@ -188,13 +230,7 @@ export function recommendNext() {
     if (p) return p;
   }
 
-  const unitOrder = allowed
-    .map((u) => {
-      const m = unitMastery(u.id).pct;
-      const prior = diag && diag.units[u.id] != null ? diag.units[u.id] : 60;
-      return { u, score: m * 0.7 + prior * 0.3 };
-    })
-    .sort((a, b) => a.score - b.score);
+  const unitOrder = allowed.map((u) => ({ u, score: unitNeed(u.id, diag) })).sort((a, b) => a.score - b.score);
   const levelOrder = [...track.levels, ...Object.keys(LEVELS).filter((l) => !track.levels.includes(l))];
   for (const lv of levelOrder) {
     for (const { u } of unitOrder) {
@@ -209,8 +245,20 @@ export function recommendNext() {
 export function weakestUnit() {
   const diag = latestDiagnosis();
   return UNITS.filter((u) => u.id !== 'u8')
-    .map((u) => ({ u, score: unitMastery(u.id).pct * 0.7 + (diag && diag.units[u.id] != null ? diag.units[u.id] : 60) * 0.3 }))
+    .map((u) => ({ u, score: unitNeed(u.id, diag) }))
     .sort((a, b) => a.score - b.score)[0].u;
+}
+
+/** 추천 순서용 점수(낮을수록 먼저). 진단 준비도에서 출발해, 그 단원 문제를 풀수록 실제 풀이 결과의 비중이 커진다(#8).
+ *  문제 은행 진행도(안 푼 문제)도 조금 반영해 손대지 않은 단원이 뒤로 밀리지 않게 한다. */
+export function unitNeed(unitId, diag = latestDiagnosis()) {
+  const m = unitMastery(unitId);
+  const r = diag ? diagUnitReadiness(diag)[unitId] : null;
+  const prior = r ? r.pct : 60;
+  const wPrior = 4 / (4 + m.tried); // 문제를 4개 풀면 진단과 풀이 결과가 반반
+  const perf = m.triedPct == null ? prior : wPrior * prior + (1 - wPrior) * m.triedPct;
+  const coverage = m.total ? m.tried / m.total : 0;
+  return perf * 0.8 + coverage * 100 * 0.2;
 }
 
 // ── 오답노트 복습 주기 ─────────────────────────────────
@@ -228,10 +276,31 @@ export function addWrong(st, pid, reason = null) {
   st.wrong[pid] = { addedAt: today(), reason, stage: 0, due: addDays(today(), REVIEW_GAPS[0]), history: [], resolved: false };
 }
 
+/**
+ * 복습 결과를 반영한다. 간격 반복 단계는 예정일이 된 뒤, 하루 한 번만 오른다.
+ * @returns {{ counted: boolean, why?: 'none'|'early'|'today'|'resolved'|'reopened' }}
+ *  - early: 예정일 전 성공 → 연습으로만 기록(단계 유지)
+ *  - today: 오늘 이미 복습 결과가 기록됨 → 반영 안 함
+ *  - resolved: 졸업한 문제를 맞힘 → 기록 변화 없음
+ *  - reopened: 졸업한 문제를 틀림 → 오답노트로 되돌림
+ * 틀린 결과는 예정일과 관계없이 반영한다(잊었다는 근거이므로). 다만 하루 한 번만.
+ */
 export function reviewResult(st, pid, ok) {
   const w = st.wrong[pid];
-  if (!w) return;
-  w.history.push({ date: today(), ok });
+  if (!w) return { counted: false, why: 'none' };
+  const t = today();
+  if (w.resolved) {
+    if (ok) return { counted: false, why: 'resolved' };
+    w.resolved = false;
+    delete w.resolvedAt;
+    w.history.push({ date: t, ok: false });
+    w.stage = 0;
+    w.due = addDays(t, REVIEW_GAPS[0]);
+    return { counted: true, why: 'reopened' };
+  }
+  if (ok && w.due > t) return { counted: false, why: 'early' };
+  if (w.history.some((h) => h.date === t)) return { counted: false, why: 'today' };
+  w.history.push({ date: t, ok });
   if (ok) {
     w.stage += 1;
     if (w.stage >= REVIEW_GAPS.length) {
@@ -244,6 +313,7 @@ export function reviewResult(st, pid, ok) {
     w.stage = 0;
     w.due = addDays(today(), REVIEW_GAPS[0]);
   }
+  return { counted: true };
 }
 
 export function wrongList() {
@@ -260,8 +330,9 @@ export function streak() {
   const act = getState().activity;
   let n = 0;
   let d = today();
-  if (!(act[d] && act[d].attempted)) d = addDays(d, -1);
-  while (act[d] && act[d].attempted) { n++; d = addDays(d, -1); }
+  const studied = (a) => a && (a.attempted || a.checks);
+  if (!studied(act[d])) d = addDays(d, -1);
+  while (studied(act[d])) { n++; d = addDays(d, -1); }
   return n;
 }
 
@@ -271,14 +342,14 @@ export function periodStats(days = 7, now = new Date()) {
   const end = today(now);
   const from = addDays(end, -(days - 1));
   const inRange = (d) => d !== null && d >= from && d <= end;
-  let solved = 0, attempted = 0, seconds = 0, activeDays = 0;
+  let solved = 0, attempted = 0, seconds = 0, activeDays = 0, checks = 0;
   for (const [d, a] of Object.entries(st.activity)) {
-    if (inRange(d)) { solved += a.solved; attempted += a.attempted; seconds += a.seconds; if (a.attempted) activeDays++; }
+    if (inRange(d)) { solved += a.solved; attempted += a.attempted; seconds += a.seconds; checks += a.checks || 0; if (a.attempted || a.checks) activeDays++; }
   }
   const atts = Object.values(st.attempts).filter((a) => a.lastAt && inRange(localDay(a.lastAt)));
   const hintUse = atts.length ? atts.filter((a) => a.hints > 0 || a.sawSolution).length / atts.length : 0;
   const firstRight = atts.length ? atts.filter((a) => a.firstCorrect).length / atts.length : 0;
-  return { solved, attempted, seconds, activeDays, problems: atts.length, hintUse, firstRight };
+  return { solved, attempted, seconds, activeDays, checks, problems: atts.length, hintUse, firstRight };
 }
 
 export function totals() {
@@ -293,20 +364,148 @@ export function totals() {
 }
 
 // ── 개념 학습 ─────────────────────────────────────
-/** 소단원 진행 상황: 이해 표시, 맞힌 확인 문제 수 */
+// 확인 문제 기록: { tries, solved, firstCorrect(true|false|null=예전 기록), sawSolution, lastAt }
+// "이해했어요"는 학생의 자기 표시이고, "혼자 확인"은 모든 확인 문제를 첫 시도에 풀이 없이 맞힌 경우다(#9).
+export const blankLessonRec = () => ({ done: null, checks: {}, recheck: null, rechecked: null });
+
 export function lessonProgress(lesson) {
-  const rec = getState().lessons[lesson.id] || { done: null, checks: {} };
-  const right = lesson.checks.filter((c) => rec.checks[c.id] === true).length;
-  return { done: rec.done, right, total: lesson.checks.length, complete: !!rec.done && right === lesson.checks.length };
+  const rec = getState().lessons[lesson.id] || blankLessonRec();
+  let independent = 0, helped = 0, missed = 0;
+  for (const c of lesson.checks) {
+    const r = rec.checks[c.id];
+    if (!r || !r.tries) continue;
+    if (r.solved && r.firstCorrect === true && !r.sawSolution) independent++;
+    else if (r.solved) helped++;
+    if (r.firstCorrect === false || r.sawSolution) missed++;
+  }
+  const total = lesson.checks.length;
+  const right = independent + helped;
+  const verified = independent === total; // 모든 확인 문제를 혼자 맞힘
+  const t = today();
+  const recheck = rec.recheck || null;
+  return {
+    done: rec.done, total, right, independent, helped, missed, verified,
+    recheck, recheckDue: !!recheck && recheck.due <= t, rechecked: rec.rechecked || null,
+    // 단원 목차와 홈에 보이는 한 줄 상태
+    state: recheck ? 'recheck' : verified ? 'verified' : rec.done ? 'self' : right ? 'partial' : 'new',
+  };
+}
+
+export const LESSON_STATE = {
+  verified: '혼자 확인',
+  self: '이해 표시',
+  recheck: '다시 확인할 개념',
+  partial: '확인 중',
+  new: '',
+};
+
+/** 확인 문제를 틀리거나 풀이를 보면, 다음 날 다른 문항으로 다시 확인하도록 예약한다. */
+export function scheduleRecheck(st, lessonId) {
+  const r = (st.lessons[lessonId] ||= blankLessonRec());
+  if (!r.recheck) r.recheck = { due: addDays(today(), 1), since: today() };
+}
+
+/** 확인 문제 한 번 제출: 첫 시도 정오, 시도 횟수, 마지막 시각을 남기고 처음에 틀리면 재확인을 예약한다. */
+export function recordCheck(st, lessonId, checkId, ok) {
+  const r = (st.lessons[lessonId] ||= blankLessonRec());
+  const cr = (r.checks[checkId] ||= { tries: 0, solved: false, firstCorrect: null, sawSolution: false, lastAt: null });
+  if (cr.tries === 0) cr.firstCorrect = ok;
+  cr.tries += 1;
+  cr.lastAt = new Date().toISOString();
+  if (ok) cr.solved = true;
+  if (!ok) scheduleRecheck(st, lessonId);
+  return cr;
+}
+
+/** 확인 문제의 풀이를 열었다: 기록에 남기고 재확인을 예약한다. */
+export function markCheckSolution(st, lessonId, checkId) {
+  const r = (st.lessons[lessonId] ||= blankLessonRec());
+  const cr = (r.checks[checkId] ||= { tries: 0, solved: false, firstCorrect: null, sawSolution: false, lastAt: null });
+  cr.sawSolution = true;
+  scheduleRecheck(st, lessonId);
+}
+
+/** 재확인 결과. 예정일 전 성공은 연습으로만 본다(#11과 같은 규칙). */
+export function recheckResult(st, lessonId, ok) {
+  const r = st.lessons[lessonId];
+  if (!r || !r.recheck) return { counted: false, why: 'none' };
+  if (ok && r.recheck.due > today()) return { counted: false, why: 'early' };
+  if (ok) { r.recheck = null; r.rechecked = today(); return { counted: true }; }
+  r.recheck = { due: addDays(today(), 1), since: r.recheck.since };
+  return { counted: true };
+}
+
+/** 재확인에 쓸 "다른 문항": 숫자를 바꾼 문제(처음 보는 문항)를 먼저, 없으면 아직 풀지 않은 관련 문제 */
+export function recheckTarget(lesson) {
+  const gen = Object.entries(GENERATORS).find(([, g]) => g.like.some((pid) => lesson.related.includes(pid)));
+  if (gen) return { kind: 'variant', key: gen[0], topic: gen[1].topic };
+  const st = getState();
+  const rel = lesson.related.map((pid) => PROBLEM_BY_ID[pid]).filter(Boolean);
+  const order = ['basic', 'core', 'adv', 'killer'];
+  const fresh = rel.filter((p) => !st.attempts[p.id]?.tries).sort((a, b) => order.indexOf(a.level) - order.indexOf(b.level));
+  const p = fresh[0] || rel.find((q) => !st.attempts[q.id]?.solved) || rel[0];
+  return p ? { kind: 'problem', pid: p.id, topic: p.topic } : null;
+}
+
+export function lessonRechecks() {
+  return LESSONS.map((l) => ({ l, pr: lessonProgress(l) })).filter((x) => x.pr.recheck);
 }
 
 export function unitLessonStats(unitId) {
   const ls = lessonsOfUnit(unitId);
-  const done = ls.filter((l) => getState().lessons[l.id]?.done).length;
-  return { done, total: ls.length, next: ls.find((l) => !getState().lessons[l.id]?.done) || null };
+  const prs = ls.map((l) => lessonProgress(l));
+  return {
+    done: prs.filter((p) => p.done).length,
+    verified: prs.filter((p) => p.verified).length,
+    total: ls.length,
+    next: ls.find((l, i) => !prs[i].done && !prs[i].verified) || null,
+  };
 }
 
 export function lessonTotals() {
-  const done = LESSONS.filter((l) => getState().lessons[l.id]?.done).length;
-  return { done, total: LESSONS.length };
+  const prs = LESSONS.map((l) => lessonProgress(l));
+  return { done: prs.filter((p) => p.done).length, verified: prs.filter((p) => p.verified).length, recheck: prs.filter((p) => p.recheck).length, total: LESSONS.length };
+}
+
+// ── 혼합 평가(#7) ───────────────────────────────────
+/** 학생이 공부한 흔적이 있는 단원(문제를 풀었거나 개념 확인 문제를 풀었음). 없으면 공통수학 전 단원 */
+export function studiedUnits() {
+  const st = getState();
+  const set = new Set();
+  for (const [pid, a] of Object.entries(st.attempts)) if (a.tries && PROBLEM_BY_ID[pid]) set.add(PROBLEM_BY_ID[pid].unit);
+  for (const [lid, r] of Object.entries(st.lessons)) if (Object.keys(r.checks || {}).length || r.done) set.add(lid.slice(0, 2));
+  set.delete('u8');
+  return set.size ? UNITS.filter((u) => set.has(u.id)).map((u) => u.id) : UNITS.filter((u) => u.id !== 'u8').map((u) => u.id);
+}
+
+/**
+ * 혼합 평가 문항을 고른다. 단원 이름은 보여 주지 않고, 학습용으로 이미 본 문제는 쓰지 않는다.
+ * - 숫자를 바꾼 문제(처음 보는 숫자)와 아직 시도하지 않은 문제 은행 문제를 섞는다.
+ * - 개념 학습의 예제·확인 문제는 쓰지 않는다(콘텐츠 검사가 은행과 중복이 없음을 확인).
+ * @returns {Array<{ref:string, kind:'bank'|'variant', unit:string}>}
+ */
+export function makeQuiz(units, n = 8, seed = Date.now()) {
+  let s0 = seed >>> 0 || 1;
+  const rand = () => { s0 ^= s0 << 13; s0 >>>= 0; s0 ^= s0 >> 17; s0 ^= s0 << 5; s0 >>>= 0; return s0 / 4294967296; };
+  const shuffle = (arr) => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const st = getState();
+  const levels = TRACKS[activeTrack()].levels;
+  const pools = Object.fromEntries(units.map((u) => [u, {
+    gens: shuffle(Object.entries(GENERATORS).filter(([, g]) => g.unit === u).map(([k]) => k)),
+    bank: shuffle(problemsOfUnit(u).filter((p) => !st.attempts[p.id]?.tries && (levels.includes(p.level) || p.level === 'basic'))),
+  }]));
+  const out = [];
+  let guard = 0;
+  while (out.length < n && guard++ < 200) {
+    for (const u of shuffle(units)) {
+      if (out.length >= n) break;
+      const pool = pools[u];
+      const preferVariant = out.length % 2 === 0;
+      const takeVariant = () => { const k = pool.gens.shift(); if (!k) return false; out.push({ ref: `${k}:${1 + Math.floor(rand() * 1e9)}`, kind: 'variant', unit: u }); return true; };
+      const takeBank = () => { const p = pool.bank.shift(); if (!p) return false; out.push({ ref: p.id, kind: 'bank', unit: u }); return true; };
+      if (preferVariant ? takeVariant() || takeBank() : takeBank() || takeVariant()) continue;
+    }
+    if (units.every((u) => !pools[u].gens.length && !pools[u].bank.length)) break;
+  }
+  return shuffle(out);
 }

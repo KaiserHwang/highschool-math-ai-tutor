@@ -296,6 +296,12 @@ def expected():
     E['d04'] = [aa for aa in range(1, 50) if min_on((x - aa)**2 + 2, 0, 3)[0] == 6][0]
     E['d05'] = sum(1 for c in itertools.permutations(range(1, 7), 3) if c[0] < c[1] < c[2])
     E['d06'] = sum(mat([[2, 1], [1, 1]])**2)
+    E['d15'] = sum(1 for c in itertools.permutations('abcde', 3) if 'a' in c)
+    xs_, ys_ = sp.symbols('xs_ ys_')
+    so_ = sp.solve(list(mat([[1, 2], [3, 4]]) * sp.Matrix([xs_, ys_]) - sp.Matrix([5, 11])), [xs_, ys_])
+    E['d16'] = so_[xs_] + so_[ys_]
+    P_ = sp.Point(1, -2) + (sp.Point(7, 4) - sp.Point(1, -2)) * sp.Rational(2, 3)
+    E['d17'] = P_.distance(sp.Point(0, 0))**2
     s_ = sp.solve(sp.Abs(3 + 2 * a - 5) / sp.sqrt(5) - sp.sqrt(5), a)
     # 접선 확인
     assert sp.simplify((x + 2 * y - 5).subs({x: 1, y: 2})) == 0
@@ -337,6 +343,10 @@ def main():
     dup = set(extra) & set(E)
     assert not dup, f'중복 계산: {dup}'
     E.update(extra)
+    from verify_ladder import expected_ladder
+    ladder = expected_ladder(P)
+    assert not set(ladder) & set(E), f'중복 계산: {set(ladder) & set(E)}'
+    E.update(ladder)
     items = data['PROBLEMS'] + data['DIAGNOSIS']
     unit_ids = {u['id'] for u in data['UNITS']}
     skill_keys = {s['key'] for s in data['SKILLS']}

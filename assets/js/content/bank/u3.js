@@ -238,4 +238,22 @@ export default [
     ],
     solution: t`$1$부터 $8$까지에서 세 수를 고르는 $_8\mathrm{C}_3=56$과 일대일로 대응합니다.`,
   },
+
+  // ── 소단원 사다리 보강(#7)
+  {
+    id: 'u3-21', unit: 'u3', level: 'basic', topic: '조합의 뜻', type: 'short',
+    q: t`학생 $7$명 중에서 대표 $3$명을 뽑는 경우의 수를 구하시오.`,
+    answer: '35',
+    skills: { concept: 1 },
+    hints: [t`대표 $3$명은 뽑힌 순서가 의미 없으므로 조합입니다.`, t`$_7\mathrm C_3=\dfrac{7\cdot6\cdot5}{3\cdot2\cdot1}$`],
+    solution: t`$_7\mathrm C_3=35$`,
+  },
+  {
+    id: 'u3-22', unit: 'u3', level: 'basic', topic: '여사건으로 세기', type: 'short',
+    q: t`$1$부터 $9$까지의 자연수 중에서 서로 다른 두 수를 고를 때, 적어도 하나가 짝수인 경우의 수를 구하시오.`,
+    answer: '26',
+    skills: { concept: 1, reason: 0.5 },
+    hints: [t`"적어도 하나"는 전체에서 "하나도 없는" 경우를 빼면 쉽습니다.`, t`둘 다 홀수인 경우는 홀수 $5$개 중 $2$개를 고르는 것입니다.`],
+    solution: t`$_9\mathrm C_2-{_5\mathrm C_2}=36-10=26$`,
+  },
 ];

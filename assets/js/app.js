@@ -6,6 +6,7 @@ import { renderDiagnosis } from './views/diagnosis.js';
 import { renderUnits, renderUnit } from './views/units.js';
 import { renderProblem } from './views/problem.js';
 import { renderLesson } from './views/lesson.js';
+import { renderQuiz } from './views/quiz.js';
 import { renderReview } from './views/review.js';
 import { renderReport } from './views/report.js';
 import { renderSettings } from './views/settings.js';
@@ -22,6 +23,7 @@ const routes = [
   [/^\/p\/(u\d-\d\d)$/, () => renderProblem, 'units'],
   [/^\/v\/(g-[a-z0-9-]+)$/, () => renderProblem, 'units'],
   [/^\/review$/, () => renderReview, 'review'],
+  [/^\/quiz$/, () => renderQuiz, 'units'],
   [/^\/report$/, () => renderReport, 'report'],
   [/^\/settings$/, () => renderSettings, 'settings'],
 ];

@@ -226,4 +226,38 @@ export default [
     ],
     solution: t`$t^2-2t-3\ge0$에서 $(t-3)(t+1)\ge0$, $t>0$이므로 $t\ge3$<br>$xy\ge9$ (등호는 $x=y=3$)`,
   },
+
+  // ── 소단원 사다리 보강(#7)
+  {
+    id: 'u6-21', unit: 'u6', level: 'basic', topic: '조건과 진리집합', type: 'short',
+    q: t`전체집합 $U=\{1,2,3,4,5,6\}$에서 두 조건 $p:\ x\text{는 }6\text{의 약수},\ \ q:\ x\ge3$에 대하여 조건 "$p$ 그리고 $\sim q$"의 진리집합의 모든 원소의 합을 구하시오.`,
+    answer: '3',
+    skills: { concept: 1 },
+    hints: [t`"$p$ 그리고 $\sim q$"의 진리집합은 $P\cap Q^C$입니다.`, t`$P=\{1,2,3,6\}$, $Q^C=\{1,2\}$`],
+    solution: t`$P\cap Q^C=\{1,2\}$이므로 합은 $3$`,
+  },
+  {
+    id: 'u6-22', unit: 'u6', level: 'basic', topic: '충분조건과 대입', type: 'short',
+    q: t`두 조건 $p:\ x=2,\ \ q:\ x^2-ax+6=0$에 대하여 $p$가 $q$이기 위한 충분조건일 때, 상수 $a$의 값을 구하시오.`,
+    answer: '5',
+    skills: { concept: 1, reason: 0.5 },
+    hints: [t`$p$가 $q$이기 위한 충분조건이면 $p\Rightarrow q$, 즉 $x=2$이면 $q$가 성립해야 합니다.`, t`$x=2$를 $q$에 대입하세요.`],
+    solution: t`$4-2a+6=0$이므로 $a=5$`,
+  },
+  {
+    id: 'u6-23', unit: 'u6', level: 'basic', topic: '대우', type: 'mc',
+    q: t`자연수 $n$에 대한 명제 "$n^2$이 $3$의 배수이면 $n$은 $3$의 배수이다"의 대우는?`,
+    options: [t`$n$이 $3$의 배수가 아니면 $n^2$은 $3$의 배수가 아니다.`, t`$n$이 $3$의 배수이면 $n^2$은 $3$의 배수이다.`, t`$n^2$이 $3$의 배수가 아니면 $n$은 $3$의 배수가 아니다.`, t`$n$이 $3$의 배수가 아니면 $n^2$은 $3$의 배수이다.`, t`$n^2$이 $3$의 배수이면 $n$은 $3$의 배수가 아니다.`], answer: 0,
+    skills: { concept: 1, reason: 0.5 },
+    hints: [t`$p\to q$의 대우는 $\sim q\to\sim p$입니다.`, t`가정과 결론을 바꾸고, 둘 다 부정하세요.`],
+    solution: t`$\sim(n\text{은 }3\text{의 배수})\to\sim(n^2\text{은 }3\text{의 배수})$`,
+  },
+  {
+    id: 'u6-24', unit: 'u6', level: 'basic', topic: '산술평균과 기하평균의 기본', type: 'short',
+    q: t`$x>0$일 때, $4x+\dfrac1x$의 최솟값을 구하시오.`,
+    answer: '4',
+    skills: { concept: 1, calc: 0.5 },
+    hints: [t`두 양수 $4x,\ \dfrac1x$의 곱이 일정합니다.`, t`$4x+\dfrac1x\ge2\sqrt{4x\cdot\dfrac1x}$`],
+    solution: t`$4x+\dfrac1x\ge2\sqrt4=4$, 등호는 $4x=\dfrac1x$, 즉 $x=\dfrac12$일 때`,
+  },
 ];

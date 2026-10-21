@@ -97,11 +97,12 @@ export function resetAll() {
   listeners.forEach((l) => l(state));
 }
 
-export function logActivity({ solved = 0, attempted = 0, seconds = 0 }) {
+export function logActivity({ solved = 0, attempted = 0, seconds = 0, checks = 0 }) {
   const d = today();
   const a = state.activity[d] || { solved: 0, attempted: 0, seconds: 0 };
   a.solved += solved;
   a.attempted += attempted;
   a.seconds += Math.round(seconds);
+  if (checks) a.checks = (a.checks || 0) + checks; // 개념 확인 문제 풀이 수(문제 은행과 따로 센다)
   state.activity[d] = a;
 }

@@ -1,7 +1,9 @@
 import { DIAGNOSIS } from '../content/diagnosis.js';
 import { UNIT_BY_ID, UNITS, TRACKS, SKILLS, LEVELS, unitLabel } from '../content/units.js';
 import { getState, update } from '../store.js';
-import { gradeDiagnosis, latestDiagnosis, isCorrect, normalizeAnswer } from '../model.js';
+import { gradeDiagnosis, latestDiagnosis, isCorrect, normalizeAnswer, diagUnitReadiness, recheckTarget } from '../model.js';
+import { LESSON_BY_ID } from '../content/lessons/index.js';
+import { newSeed } from '../content/generators.js';
 import { tex, esc, CIRCLED, fmtDate, gradeMark, toast, optionsClass } from '../lib/ui.js';
 import { radar } from '../lib/radar.js';
 import { figure } from '../lib/plot.js';
@@ -36,12 +38,12 @@ function renderIntro(view) {
   <section class="page narrow">
     <header class="page-head">
       <h1 class="page-title">수준 진단</h1>
-      <p class="lead">공통수학1·2 전 단원에서 고른 ${DIAGNOSIS.length}문제로 다섯 가지 역량과 단원별 준비도를 측정합니다.</p>
+      <p class="lead">고1 공통수학1·2의 일곱 단원에서 단원마다 2~4문제씩, 모두 ${DIAGNOSIS.length}문제로 다섯 가지 역량과 단원별 준비도를 살펴봅니다. 학습 순서를 정하는 출발점이며, 성적을 예측하는 시험은 아닙니다.</p>
     </header>
     <div class="prose">
       <p>정답 여부만 보지 않습니다. 각 문제마다 <strong>얼마나 확신했는지</strong>, <strong>힌트를 봤는지</strong>, <strong>얼마나 걸렸는지</strong>를 함께 기록해서 점수를 냅니다. 찍어서 맞힌 문제는 낮게, 확신했는데 틀린 문제는 따로 표시해 개념 오해를 찾아냅니다.</p>
       <ul>
-        <li>예상 시간: 약 30분. 연습장과 필기구를 준비하세요.</li>
+        <li>예상 시간: 약 35분. 연습장과 필기구를 준비하세요.</li>
         <li>계산기는 쓰지 않습니다.</li>
         <li>모르는 문제는 건너뛰어도 됩니다. 억지로 찍는 것보다 정확한 진단에 도움이 됩니다.</li>
       </ul>
@@ -156,9 +158,27 @@ function finish(view) {
 
 function renderResult(view, d) {
   const weakSkills = [...SKILLS].sort((a, b) => d.skills[a.key] - d.skills[b.key]);
-  const unitRows = UNITS.filter((u) => d.units[u.id] != null)
-    .map((u) => `<li><span class="ur-t">${esc(unitLabel(u))}</span><span class="meter" role="img" aria-label="${d.units[u.id]}%"><span style="--v:${d.units[u.id]}%"></span></span><span class="ur-p">${d.units[u.id]}</span></li>`)
-    .join('');
+  const ready = diagUnitReadiness(d);
+  const unitRows = UNITS.filter((u) => ready[u.id])
+    .map((u) => {
+      const r = ready[u.id];
+      return `<li><span class="ur-t">${esc(unitLabel(u))}<span class="ur-ev">${r.n}문항 중 ${r.correct}개 정답${r.enough ? '' : ' · 자료 부족'}</span></span><span class="meter" role="img" aria-label="${r.pct}%"><span style="--v:${r.pct}%"></span></span><span class="ur-p">${r.pct}</span></li>`;
+    }).join('');
+  // 확신도와 정답률을 따로 본다(#8)
+  const its = d.items || [];
+  const acc = its.length ? Math.round((its.filter((i) => i.correct).length / its.length) * 100) : 0;
+  const sure = its.filter((i) => i.conf === 'sure'), sureRight = sure.filter((i) => i.correct).length;
+  const guessRight = its.filter((i) => i.conf === 'guess' && i.correct).length;
+  // 틀린 문항 → 먼저 볼 소단원, 처음 보는 문제로 추가 확인
+  const missed = DIAGNOSIS.filter((q) => { const it = its.find((x) => x.id === q.id); return it && !it.correct; });
+  const followRows = missed.map((q) => {
+    const L = LESSON_BY_ID[q.lesson];
+    if (!L) return '';
+    const tg = recheckTarget(L);
+    const href = !tg ? '' : tg.kind === 'variant' ? `#/v/${tg.key}?s=${newSeed()}` : `#/p/${tg.pid}`;
+    return `<li class="rc-row"><div><span class="rc-t">${DIAGNOSIS.indexOf(q) + 1}번 · ${esc(unitLabel(UNIT_BY_ID[q.unit]))}</span><span class="hint-text">먼저 볼 개념: ${esc(L.title)}</span></div>
+      <span class="row"><a class="btn btn-quiet" href="#/l/${L.id}">개념 보기</a>${tg ? `<a class="btn btn-quiet" href="${href}">처음 보는 문제로 확인: ${esc(tg.topic)}</a>` : ''}</span></li>`;
+  }).join('');
   const cw = d.confidentWrong.map((id) => DIAGNOSIS.find((q) => q.id === id)).filter(Boolean);
   const track = TRACKS[d.track];
   const items = DIAGNOSIS.map((q, i) => {
@@ -166,7 +186,7 @@ function renderResult(view, d) {
     const resp = it.response == null || it.response === '' ? '건너뜀' : q.type === 'mc' ? CIRCLED[it.response] : esc(it.response);
     return `<li class="dr-item">
       <details>
-        <summary><span class="dr-mark">${it.correct ? gradeMark('right') : gradeMark('wrong')}</span><span class="dr-n">${i + 1}</span><span class="dr-u">${esc(UNIT_BY_ID[q.unit].title)}</span><span class="dr-meta">${resp} · ${it.conf ? CONF_LABEL[it.conf] : ''}${it.hint ? ' · 힌트' : ''} · ${Math.round(it.sec)}초</span></summary>
+        <summary><span class="dr-mark">${it.correct ? gradeMark('right') : gradeMark('wrong')}</span><span class="dr-n">${i + 1}</span><span class="dr-u">${esc(UNIT_BY_ID[q.unit].title)}${LESSON_BY_ID[q.lesson] ? ` · ${esc(LESSON_BY_ID[q.lesson].title)}` : ''}</span><span class="dr-meta">${resp} · ${it.conf ? CONF_LABEL[it.conf] : ''}${it.hint ? ' · 힌트' : ''} · ${Math.round(it.sec)}초</span></summary>
         <div class="dr-body"><div class="q-text">${tex(q.q)}</div>${figure(q.fig)}<p class="sol">${tex(q.solution)}</p></div>
       </details>
     </li>`;
@@ -178,6 +198,13 @@ function renderResult(view, d) {
       <h1 class="page-title">진단 결과</h1>
       <p class="lead">${fmtDate(d.date)} · ${d.total}문제 중 ${d.correctCount}문제 정답 · 확신도와 힌트를 반영한 점수 ${d.overall}점</p>
     </header>
+    <dl class="stats diag-stats">
+      <div><dt>정답률(확신도와 무관)</dt><dd>${acc}<small>%</small></dd></div>
+      <div><dt>보정 점수(확신도·힌트·시간 반영)</dt><dd>${d.overall}<small>점</small></dd></div>
+      <div><dt>"확실해요" 문항의 정답</dt><dd>${sureRight}<small>/${sure.length}</small></dd></div>
+      <div><dt>찍어서 맞힌 문항</dt><dd>${guessRight}<small>개</small></dd></div>
+    </dl>
+    <p class="hint-text">정답률은 맞힌 문항의 비율이고, 보정 점수는 찍어서 맞히거나 힌트를 본 문항을 낮게 계산한 값입니다. 두 값의 차이가 크면 아는 것과 맞힌 것이 다르다는 뜻입니다.</p>
     <div class="result-grid">
       <section class="paper chart-paper">
         <h2 class="paper-title">다섯 가지 역량</h2>
@@ -190,14 +217,17 @@ function renderResult(view, d) {
           <p>${track.desc}</p>
           <p class="hint-text">${d.track === 'killer' ? `심화·최상위 문제 ${d.advCorrect}개를 맞혀 최상위 트랙을 추천합니다.` : d.track === 'standard' ? '기본기가 갖춰져 있어 내신 1등급 트랙을 추천합니다.' : '개념을 다시 다지면 심화 문제가 훨씬 수월해집니다.'}</p>
           <div class="row">${Object.entries(TRACKS).map(([k, v]) => `<button type="button" class="chip" data-track="${k}" aria-pressed="${(getState().profile.track || d.track) === k}">${v.label}</button>`).join('')}</div>
+          <p class="hint-text">트랙 이름은 학습 목표와 문제 난이도의 추천 경로입니다. 내신 등급이나 수능 성적을 예측하거나 보장하지 않습니다.</p>
         </section>
         <section class="side-block">
           <h2 class="h3">단원별 준비도</h2>
           <ul class="unit-ready">${unitRows}</ul>
+          <p class="hint-text">단원마다 문항이 2~4개뿐이라 출발점을 정하는 참고값입니다. 한두 문항으로 0이나 100이 되지 않도록 중간값 쪽으로 보정했고, 그 단원 문제를 풀수록 추천은 실제 풀이 결과를 더 따릅니다.</p>
         </section>
         ${cw.length ? `<section class="side-block alert"><h2 class="h3">확신했는데 틀린 문제</h2><p>개념을 잘못 알고 있을 가능성이 큽니다. 해당 단원의 개념 정리부터 다시 보세요.</p><ul>${[...new Set(cw.map((q) => q.unit))].map((u) => `<li><a href="#/u/${u}">${esc(unitLabel(UNIT_BY_ID[u]))}</a> <span class="hint-text">${cw.filter((q) => q.unit === u).map((q) => DIAGNOSIS.indexOf(q) + 1 + '번').join(', ')}</span></li>`).join('')}</ul></section>` : ''}
       </div>
     </div>
+    ${followRows ? `<section class="side-block"><h2 class="h3">틀린 문항 다시 확인하기</h2><p class="hint-text">한 번의 계산 실수인지 개념이 부족한지는 한 문항만으로 알 수 없습니다. 개념을 한 번 보고, 처음 보는 비슷한 문제로 다시 확인해 보세요. 그 결과가 추천 순서에 반영됩니다.</p><ul class="rc-list">${followRows}</ul></section>` : ''}
     <section class="side-block">
       <h2 class="h3">문항별 결과</h2>
       <ol class="dr-list">${items}</ol>

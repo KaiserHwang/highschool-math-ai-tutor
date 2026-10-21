@@ -331,4 +331,46 @@ export default [
     ],
     solution: t`$A'$에서 중심 $(6,5)$까지의 거리는 $\sqrt{36+64}=10$이므로 최솟값은 $10-2=8$`,
   },
+
+  // ── 소단원 사다리 보강(#7)
+  {
+    id: 'u5-23', unit: 'u5', level: 'basic', topic: '점과 직선 사이의 거리', type: 'short',
+    q: t`점 $(3,\ 4)$와 직선 $3x+4y-5=0$ 사이의 거리를 구하시오.`,
+    answer: '4',
+    skills: { calc: 1, concept: 0.5 },
+    hints: [t`$d=\dfrac{|ax_1+by_1+c|}{\sqrt{a^2+b^2}}$`, t`분자는 $|9+16-5|$, 분모는 $5$`],
+    solution: t`$\dfrac{20}{5}=4$`,
+  },
+  {
+    id: 'u5-24', unit: 'u5', level: 'basic', topic: '원의 방정식의 일반형', type: 'short',
+    q: t`원 $x^2+y^2-6x+2y+k=0$의 반지름의 길이가 $4$일 때, 상수 $k$의 값을 구하시오.`,
+    answer: '-6',
+    skills: { calc: 1, concept: 0.5 },
+    hints: [t`완전제곱식으로 고쳐 $(x-a)^2+(y-b)^2=r^2$ 꼴로 만드세요.`, t`$(x-3)^2+(y+1)^2=10-k$`],
+    solution: t`$10-k=16$이므로 $k=-6$`,
+  },
+  {
+    id: 'u5-25', unit: 'u5', level: 'basic', topic: '원에 접하는 직선', type: 'short',
+    q: t`원 $x^2+y^2=9$와 직선 $y=x+k$가 접할 때, 양수 $k$에 대하여 $k^2$의 값을 구하시오.`,
+    answer: '18',
+    skills: { concept: 1, calc: 0.5 },
+    hints: [t`접하면 원의 중심과 직선 사이의 거리가 반지름과 같습니다.`, t`$x-y+k=0$과 원점 사이의 거리 $\dfrac{|k|}{\sqrt2}=3$`],
+    solution: t`$k=3\sqrt2$이므로 $k^2=18$`,
+  },
+  {
+    id: 'u5-26', unit: 'u5', level: 'basic', topic: '점의 평행이동', type: 'short',
+    q: t`점 $(2,\ -1)$을 $x$축 방향으로 $3$만큼, $y$축 방향으로 $-2$만큼 평행이동한 점을 $(a,\ b)$라 할 때, $a+b$의 값을 구하시오.`,
+    answer: '2',
+    skills: { concept: 1 },
+    hints: [t`점의 평행이동은 좌표에 이동한 만큼을 더합니다.`, t`$(2+3,\ -1-2)$`],
+    solution: t`$(5,\ -3)$이므로 $a+b=2$`,
+  },
+  {
+    id: 'u5-27', unit: 'u5', level: 'basic', topic: '점의 대칭이동', type: 'short',
+    q: t`점 $(3,\ -2)$를 원점에 대하여 대칭이동한 뒤, 다시 직선 $y=x$에 대하여 대칭이동한 점을 $(a,\ b)$라 할 때, $a-b$의 값을 구하시오.`,
+    answer: '5',
+    skills: { concept: 1 },
+    hints: [t`원점 대칭은 두 좌표의 부호를 모두 바꿉니다.`, t`$y=x$ 대칭은 $x$좌표와 $y$좌표를 바꿉니다.`],
+    solution: t`$(3,\ -2)\to(-3,\ 2)\to(2,\ -3)$이므로 $a-b=5$`,
+  },
 ];

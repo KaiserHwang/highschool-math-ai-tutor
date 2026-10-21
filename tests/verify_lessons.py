@@ -25,10 +25,13 @@ R = random.Random(20261021)
 
 
 def real_roots(expr, var=x):
-    """서로 다른 실근(수치)"""
+    """서로 다른 실근(수치). 계수가 유리수면 정확한 계산(중근에 강함), 아니면 수치 계산"""
     poly = sp.Poly(sp.expand(expr), var)
+    if all(c.is_rational for c in poly.all_coeffs()):
+        vals = sorted({float(r) for r in sp.real_roots(poly)})
+        return vals
     out = []
-    for r in poly.nroots(n=30, maxsteps=200):
+    for r in poly.nroots(n=30, maxsteps=500):
         if abs(sp.im(r)) < 1e-9:
             v = float(sp.re(r))
             if all(abs(v - u) > 1e-6 for u in out):
@@ -124,6 +127,21 @@ def u2():
     # 실근을 갖는 k의 최댓값: 정수 k를 훑어 실근 존재 여부
     r['u2-l2-c1'] = max(kk for kk in range(-20, 21) if real_roots(x ** 2 + 4 * x + kk))
     r['u2-l2-c2'] = [kk for kk in range(-50, 51) if len(real_roots(x ** 2 - 6 * x + kk)) == 1][0]
+    # (mx+n)^2 꼴 판정: m, n 실수로 계수 비교가 풀리는지
+    M, N = sp.symbols('M N', real=True)
+    opts = [x ** 2 - 4 * x + 4, 4 * x ** 2 + 12 * x + 9, -x ** 2 + 2 * x - 1, 9 * x ** 2 - 6 * x + 1, x ** 2 + x + sp.Rational(1, 4)]
+
+    def is_real_square(e):
+        sols = sp.solve(sp.Poly(sp.expand((M * x + N) ** 2 - e), x).all_coeffs(), [M, N], dict=True)
+        return any(all(v.is_real for v in so.values()) for so in sols)
+    r['u2-l2-c3'] = only_true([lambda e=e: not is_real_square(e) for e in opts])
+    zc = sp.Symbol('zc')  # 복소수 근을 구하려면 실수 가정이 없는 기호를 써야 한다
+    eq = zc ** 2 - (2 + I) * zc + 2 * I
+    roots_ = set(sp.solve(eq, zc))
+    assert roots_ == {2, I} and -I not in roots_
+    coeffs_real = all(c.is_real for c in sp.Poly(eq, zc).all_coeffs())
+    r['u2-l3-c3'] = only_true([lambda: not coeffs_real, lambda: sp.discriminant(eq, zc).is_negative is True, lambda: not I.is_real is False,
+                               lambda: len(roots_) == 1, lambda: sp.degree(eq, zc) != 2])
     rts = sp.solve(x ** 2 - 5 * x + 2, x)
     r['u2-l3-c1'] = sp.simplify(rts[0] ** 2 * rts[1] + rts[0] * rts[1] ** 2)
     rts = sp.solve(x ** 2 - 4 * x + 1, x)
@@ -172,8 +190,8 @@ def u2():
 
 def u3():
     r = {}
-    r['u3-l1-e1'] = sum(1 for p, q in itertools.product(range(1, 7), repeat=2) if (p + q) % 4 == 0)
-    r['u3-l1-c1'] = sum(1 for d in range(1, 361) if 360 % d == 0)
+    r['u3-l1-e1'] = sum(1 for p, q in itertools.product(range(1, 7), repeat=2) if (p + q) % 3 == 0)
+    r['u3-l1-c1'] = sum(1 for d in range(1, 181) if 180 % d == 0 and d % 2 == 0)
     r['u3-l1-c2'] = len(sp.Add.make_args(sp.expand((sp.Symbol('A') + sp.Symbol('B')) * (sp.Symbol('X') + sp.Symbol('Y') + sp.Symbol('Z')) * (sp.Symbol('P') + sp.Symbol('Q')))))
     r['u3-l1-c3'] = sum(1 for p, q in itertools.product(range(1, 7), repeat=2) if p + q <= 5)
     r['u3-l2-e2'] = sum(1 for d in itertools.permutations(range(5), 3) if d[0] != 0 and d[2] % 2 == 0)
@@ -348,6 +366,8 @@ def u6():
     r['u6-l6-c1'] = min(v + 16 / v for v in xs)
     r['u6-l6-c2'] = max(v * (8 - 2 * v) for v in xs if v < 4)
     r['u6-l6-c3'] = min(v + 1 / (v - 2) for v in xs if v > 2)
+    pts = sp.solve([2 - 2 * lam * x, 1 - 2 * lam * y, x ** 2 + y ** 2 - 5], [x, y, lam], dict=True)
+    r['u6-l6-c4'] = max(p_[x] * 2 + p_[y] for p_ in pts)
     return r
 
 
@@ -375,8 +395,8 @@ def u7():
     r['u7-l3-e2'] = sp.solve(3 * 2 + a - 5, a)[0]
     comp = sp.Lambda(x, (2 * x + 1) - 3)
     r['u7-l3-c1'] = sp.solve(comp(x) - 4, x)[0]
-    sol = sp.solve([a + b - 3, 3 * a + b - 7], [a, b])
-    r['u7-l3-c2'] = 5 * sol[a] + sol[b]
+    sol = sp.solve([2 * a + b - 1, 4 * a + b - 5], [a, b])  # f(2)=1, f(4)=5 (f^{-1}(5)=4)
+    r['u7-l3-c2'] = 6 * sol[a] + sol[b]
     r['u7-l3-c3'] = [v for v in sp.solve(x ** 2 - 2 * x + 3 - 6, x) if v >= 1][0]
     expr = (3 * x - 1) / (x + 2)
     va = sp.solve(sp.denom(sp.together(expr)), x)[0]
@@ -388,6 +408,15 @@ def u7():
     eqs = [sp.Eq(-c_, 2), sp.Eq(a, 3), sp.Eq(f.subs(x, 3), 4)]
     sol = sp.solve(eqs, [a, b, c_], dict=True)[0]
     r['u7-l4-c3'] = sol[a] + sol[b] + sol[c_]
+    # 점근선이 없는 유리함수: 약분하면 다항식(상수)이 되는 것
+    rats = [(2 * x + 4) / (x + 2), (2 * x + 1) / (x + 2), (x + 4) / (2 * x + 2), 3 / (x - 1) + 1, (x - 1) / (x + 1)]
+    r['u7-l4-c4'] = only_true([lambda e=e: sp.cancel(e).is_polynomial(x) for e in rats])
+    # f(x)=sqrt(-2x)의 역함수 g: g(f(t))=t 를 이용해 g(2) = f(t)=2 인 t
+    tt = sp.symbols('tt', real=True)
+    sol_t = [v for v in sp.solve(sp.sqrt(-2 * tt) - 2, tt)]
+    gx = -x ** 2 / 2  # 역함수 후보, 정의역 x>=0
+    assert all(sp.simplify(gx.subs(x, sp.sqrt(-2 * v)) - v) == 0 for v in [-1, -3, -sp.Rational(1, 2)])
+    r['u7-l5-c4'] = sol_t[0]
     sol = sp.solve([sp.sqrt(a * (5 - 1)) + 2 - 4], [a], dict=True)[0]
     r['u7-l5-c1'] = sol[a] + 1 + 2
     r['u7-l5-c2'] = [av for av in sp.solve(sp.sqrt(-2 * a) - 2, a)][0]
@@ -411,7 +440,7 @@ def u8():
 
     def distinct_real(expr):
         return len(real_roots(expr))
-    r['u8-l1-e1'] = distinct_real((x ** 2 - 2 * x) ** 2 - 2 * (x ** 2 - 2 * x) - 3)
+    r['u8-l1-e1'] = distinct_real((x ** 2 - 4 * x) ** 2 + (x ** 2 - 4 * x) - 12)
     r['u8-l1-c1'] = distinct_real((x ** 2 + x) ** 2 - 8 * (x ** 2 + x) + 12)
     rr = [v for v in real_roots(sp.expand(((x ** 2 + 1) ** 2 - 5 * x * (x ** 2 + 1) + 6 * x ** 2)), x) if v > 0]
     r['u8-l1-c2'] = len(rr)
@@ -419,7 +448,9 @@ def u8():
     # |x^2-4|=k 가 세 실근: 정수 k 훑기
     def count_abs(kv):
         return len({round(v, 6) for v in real_roots((x ** 2 - 4) ** 2 - kv ** 2)}) if kv > 0 else len(real_roots(x ** 2 - 4))
-    r['u8-l2-c2'] = [kv for kv in range(1, 10) if count_abs(kv) == 3][0]
+    def count_abs2(kv):  # |x^2-2x-3| = k
+        return len({round(v, 6) for v in real_roots((x ** 2 - 2 * x - 3) ** 2 - kv ** 2)})
+    r['u8-l2-c2'] = [kv for kv in range(1, 10) if count_abs2(kv) == 3][0]
 
     def count_w(kv):
         sols = set()
@@ -430,6 +461,138 @@ def u8():
         return len(sols)
     r['u8-l2-c3'] = [kv for kv in range(-5, 6) if count_w(kv) == 3][0]
     return r
+
+
+def statements():
+    """핵심 정리에 적은 공식과 적용 조건이 맞는지, 정례와 반례로 확인한다(#5)."""
+    out = []
+    # 1) y=sqrt(ax)의 역함수는 y=x^2/a, 정의역은 a의 부호와 관계없이 x>=0
+    ok = True
+    for av in (2, sp.Rational(1, 2), -1, -3):
+        f = lambda v, av=av: sp.sqrt(av * v)
+        g = lambda v, av=av: v ** 2 / av
+        dom = [sp.Rational(i, 4) * (1 if av > 0 else -1) for i in range(0, 20)]  # f의 정의역 ax>=0
+        rng = [f(v) for v in dom]
+        ok &= all(sp.simplify(g(f(v)) - v) == 0 for v in dom)          # g(f(x)) = x
+        ok &= all(sp.simplify(f(g(w)) - w) == 0 for w in rng)          # f(g(y)) = y (y는 f의 치역)
+        ok &= all(w >= 0 for w in rng)                                  # 치역 y>=0 → 역함수 정의역 x>=0
+    # a<0에서 예전 문장(ax>=0)이 틀렸음을 보이는 예: f(-4)=2, 역함수의 입력 2는 -x>=0을 만족하지 않음
+    ok &= sp.sqrt(-1 * -4) == 2 and not (-1 * 2 >= 0)
+    out.append(('무리함수 y=√(ax)의 역함수 y=x²/a의 정의역은 x≥0 (a>0, a<0 모두)', ok))
+
+    # 2) (ax+b)/(cx+d): c≠0, ad-bc≠0이면 점근선 x=-d/c, y=a/c / ad-bc=0이면 상수함수
+    ok = True
+    for _ in range(40):
+        av, bv, cv, dv = (R.choice([v for v in range(-5, 6) if v]) for _ in range(4))
+        e = (av * x + bv) / (cv * x + dv)
+        if av * dv - bv * cv != 0:
+            ok &= sp.limit(e, x, sp.oo) == sp.Rational(av, cv) and sp.limit(e, x, sp.Rational(-dv, cv), '+') in (sp.oo, -sp.oo)
+        else:
+            ok &= sp.cancel(e).is_constant(x)
+    e = (2 * x + 4) / (x + 2)
+    ok &= sp.cancel(e) == 2 and sp.limit(e, x, -2) == 2  # x=-2는 구멍, 점근선 아님
+    out.append(('유리함수 점근선 공식은 c≠0, ad-bc≠0일 때만 (ad-bc=0이면 상수함수)', ok))
+
+    # 3) D=0 ⇔ a(x-p)^2 꼴, 실수 계수 일차식의 제곱은 a>0도 필요
+    ok = True
+    for av in (1, 3, -1, -2):
+        for pv in (0, 1, -2):
+            e = sp.expand(av * (x - pv) ** 2)
+            ok &= sp.discriminant(e, x) == 0
+            vals = [e.subs(x, v) for v in range(-5, 6)]
+            ok &= (min(vals) >= 0) == (av > 0)  # (mx+n)^2이면 값이 항상 0 이상
+    out.append(('D=0이면 a(x-p)² 꼴, (mx+n)²이려면 a>0', ok))
+
+    # 4) 코시-슈바르츠: 등호 ⇔ ay=bx (a 또는 b가 0인 경우 포함)
+    ok = True
+    for _ in range(300):
+        av, bv, xv, yv = (R.randint(-3, 3) for _ in range(4))
+        lhs, rhs = (av ** 2 + bv ** 2) * (xv ** 2 + yv ** 2), (av * xv + bv * yv) ** 2
+        ok &= lhs >= rhs and ((lhs == rhs) == (av * yv == bv * xv))
+    out.append(('코시-슈바르츠 부등식의 등호 조건 ay=bx (0 포함)', ok))
+
+    # 5) 켤레근: 실수 계수 + 허근이면 켤레도 근 / 계수가 실수가 아니면 반례
+    ok = True
+    for _ in range(30):
+        pv, qv = R.randint(-5, 5), R.choice([v for v in range(-5, 6) if v])
+        z = pv + qv * I
+        e = sp.expand(R.randint(1, 4) * (x - z) * (x - sp.conjugate(z)))
+        ok &= all(c.is_real for c in sp.Poly(e, x).all_coeffs()) and sp.expand(e.subs(x, sp.conjugate(z))) == 0
+    ok &= sp.expand((x ** 2 - (2 + I) * x + 2 * I).subs(x, -I)) != 0
+    # 유리수 계수: p+q√m 근이면 p-q√m도 근 / 무리수 계수면 반례 (x-√2)(x-1)
+    ok &= sp.expand((x ** 2 - 2 * x - 1).subs(x, 1 - sp.sqrt(2))) == 0
+    ok &= sp.expand(((x - sp.sqrt(2)) * (x - 1)).subs(x, -sp.sqrt(2))) != 0
+    out.append(('켤레근은 계수 조건(실수/유리수)과 q≠0이 있을 때만', ok))
+
+    # 6) 원 밖의 점에서 그은 접선: 기울기 m으로 두면 x=k 꼴 접선을 놓친다
+    mm = sp.symbols('mm', real=True)
+    slopes = sp.solve(sp.Eq(sp.Abs(-2 * mm + 3) / sp.sqrt(mm ** 2 + 1), 2), mm)  # (2,3)을 지나는 y-3=m(x-2)
+    ok = len(slopes) == 1 and sp.Line(sp.Point(2, -5), sp.Point(2, 5)).distance(sp.Point(0, 0)) == 2
+    out.append(('원 x²+y²=4 밖의 점 (2,3)에서 그은 접선 중 x=2는 기울기 방법으로 나오지 않음', ok))
+
+    # 7) 일반형 평행 조건 ab'-a'b=0 이고 일치하지 않음 (0인 계수 포함)
+    ok = True
+    for _ in range(200):
+        a1, b1, c1, a2, b2, c2 = (R.randint(-2, 2) for _ in range(6))
+        if (a1, b1) == (0, 0) or (a2, b2) == (0, 0):
+            continue
+        sols = sp.solve([a1 * x + b1 * y + c1, a2 * x + b2 * y + c2], [x, y], dict=True)
+        parallel = not sols  # 교점이 없음
+        coincident = sp.Matrix([[a1, b1, c1], [a2, b2, c2]]).rank() == 1
+        ok &= parallel == (a1 * b2 - a2 * b1 == 0 and not coincident)
+    out.append(('두 직선의 평행 조건 ab\'-a\'b=0이고 일치하지 않음', ok))
+
+    # 8) 두 원의 위치 관계 다섯 가지(교점 개수로 확인)
+    ok = True
+    for r1, r2, dd, n in [(2, 1, 4, 0), (2, 1, 3, 1), (2, 1, 2, 2), (2, 1, 1, 1), (3, 1, 1, 0)]:
+        pts = sp.Circle(sp.Point(0, 0), r1).intersection(sp.Circle(sp.Point(dd, 0), r2))
+        ok &= len(pts) == n
+    out.append(('두 원의 위치 관계(밖, 외접, 두 점, 내접, 안)', ok))
+    return out
+
+
+def range_examples():
+    """답이 범위인 예제 중 학생이 자주 보는 것들을 매개변수 전수 조사로 확인한다."""
+    out = []
+    grid = [F(i, 20) for i in range(-800, 801)]
+    def k_set(pred):
+        return [kv for kv in grid if pred(kv)]
+    def same(found, lo, hi, lo_in=False, hi_in=False):
+        exp = [kv for kv in grid if (kv > lo or (lo_in and kv == lo)) and (kv < hi or (hi_in and kv == hi))]
+        return found == exp
+    # u2-l11-e2: 모든 x에서 x^2+2kx+2k+3>0  ⇔ -1<k<3
+    xs = [F(i, 10) for i in range(-200, 201)]
+    out.append(('u2-l11-e2: -1<k<3', same(k_set(lambda kv: kv * kv - (2 * kv + 3) < 0), -1, 3)))
+    # u2-l11-e3: x^2-2mx+m+2=0의 두 근이 모두 1보다 큼 ⇔ 2≤m<3
+    def both_gt1(mv):
+        mv = sp.Rational(mv)
+        rr = sp.solve(x ** 2 - 2 * mv * x + mv + 2, x)
+        return len(rr) >= 1 and all(r_.is_real and r_ > 1 for r_ in rr)
+    out.append(('u2-l11-e3: 2≤m<3', all(both_gt1(mv) == (2 <= mv < 3) for mv in [F(i, 4) for i in range(-24, 25)])))
+    # u7-l5-e2: √(x+3)와 y=x+k가 두 점에서 만남 ⇔ 3≤k<13/4
+    def two_pts(kv):
+        sols = [v for v in sp.solve((x + sp.Rational(kv)) ** 2 - (x + 3), x) if v.is_real and v >= -3 and v + sp.Rational(kv) >= 0]
+        return len(set(sols)) == 2
+    out.append(('u7-l5-e2: 3≤k<13/4', all(two_pts(kv) == (3 <= kv < F(13, 4)) for kv in [F(i, 8) for i in range(0, 40)])))
+    # u8-l1-e2: (x²-4x)²-2(x²-4x)+k=0이 서로 다른 네 실근 ⇔ -24<k<1
+    def four(kv):
+        return len(real_roots((x ** 2 - 4 * x) ** 2 - 2 * (x ** 2 - 4 * x) + sp.Rational(kv))) == 4
+    out.append(('u8-l1-e2: -24<k<1', all(four(kv) == (-24 < kv < 1) for kv in [F(i, 2) for i in range(-60, 8)])))
+    # u8-l2-e1·e2: |x²-4|=k 네 근 ⇔ 0<k<4, x²-2|x|=k 네 근 ⇔ -1<k<0
+    def n_abs(kv):
+        return len(real_roots((x ** 2 - 4) ** 2 - sp.Rational(kv) ** 2)) if kv > 0 else (len(real_roots(x ** 2 - 4)) if kv == 0 else 0)
+    out.append(('u8-l2-e1: 0<k<4', all((n_abs(kv) == 4) == (0 < kv < 4) for kv in [F(i, 4) for i in range(-8, 30)])))
+    def n_w(kv):
+        sols = set()
+        for sg in (1, -1):
+            for v in real_roots(x ** 2 - 2 * sg * x - sp.Rational(kv)):
+                if (sg == 1 and v >= -1e-12) or (sg == -1 and v < -1e-12):
+                    sols.add(round(v, 6))
+        return len(sols)
+    out.append(('u8-l2-e2: -1<k<0', all((n_w(kv) == 4) == (-1 < kv < 0) for kv in [F(i, 8) for i in range(-16, 12)])))
+    # u2-l2-e2: 서로 다른 두 허근 ⇔ a>-1
+    out.append(('u2-l2-e2: a>-1', all(((av - 1) ** 2 - (av * av + 3) < 0) == (av > -1) for av in [F(i, 4) for i in range(-20, 20)])))
+    return out
 
 
 def main():
@@ -466,7 +629,17 @@ def main():
     for e in sorted(extra):
         print(f'✗ {e}: 데이터에 없는 항목을 계산함')
         fails += 1
-    print(f"\n{'실패 ' + str(fails) + '건' if fails else '개념 학습 정답 검증 통과'} (예제·확인 문제 {seen}개)")
+    print('\n[범위를 답하는 예제 검사]')
+    re_ = range_examples()
+    for name, ok in re_:
+        print(f"{'✓' if ok else '✗'} {name}")
+        fails += 0 if ok else 1
+    print('\n[핵심 정리 문장 검사]')
+    st = statements()
+    for name, ok in st:
+        print(f"{'✓' if ok else '✗'} {name}")
+        fails += 0 if ok else 1
+    print(f"\n{'실패 ' + str(fails) + '건' if fails else '개념 학습 정답 검증 통과'} (예제·확인 문제 {seen}개, 범위 예제 {len(re_)}개, 정리 문장 {len(st)}개)")
     sys.exit(1 if fails else 0)
 
 

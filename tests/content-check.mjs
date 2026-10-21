@@ -50,6 +50,7 @@ for (const p of [...PROBLEMS, ...DIAGNOSIS]) {
   if (p.fig && !(p.fig.alt && p.fig.alt.length > 10)) fail(`${p.id}: 그림 설명(alt)이 없거나 너무 짧음`);
 }
 for (const u of UNITS) u.traps.forEach((t, i) => check(`${u.id}.traps[${i}]`, t));
+for (const u of UNITS) if (!Array.isArray(u.next) || !u.next.length || !u.next.every((n) => n.subject && n.what)) fail(`${u.id}: 후속 과목 연결(next)이 없음`);
 
 // 개념 학습: 본문 수식·태그, 확인 문제 형식, 관련 문제 연결
 const lessonIds = new Set(), checkIds = new Set(), covered = new Set();
@@ -95,6 +96,39 @@ for (const L of LESSONS) {
   for (const pid of L.related) { if (!PROBLEM_BY_ID[pid]) fail(`${w}.related: 없는 문제 ${pid}`); covered.add(pid); }
 }
 for (const p of PROBLEMS) if (!covered.has(p.id)) fail(`${p.id}: 연결된 개념 소단원이 없음`);
+// 학습 사다리(#7): 소단원마다 관련 문제 2개 이상, 공통수학 단원은 기본 문제부터 시작
+for (const L of LESSONS) {
+  const rel = L.related.map((pid) => PROBLEM_BY_ID[pid]).filter(Boolean);
+  if (rel.length < 2) fail(`${L.id}: 관련 문제가 ${rel.length}개뿐(2개 이상 필요)`);
+  if (L.unit !== 'u8' && !rel.some((p) => p.level === 'basic')) fail(`${L.id}: 관련 문제에 기본 문제가 없음`);
+}
+
+// 학습용(예제·확인 문제), 문제 은행, 진단 사이에 사실상 같은 문항이 없는지(#7)
+// 수식 기호와 한글 낱말의 집합이 90% 이상 겹치면 같은 문항으로 본다. 같은 유형의 다른 숫자 문항은 통과한다.
+{
+  const toks = (q) => new Set((q.match(/\$[^$]+\$/g) || []).join(' ').replace(/\\[a-z]+/g, ' ').replace(/[{}\\$ ,]/g, ' ').split(/(?=[^a-z0-9])|\s+/).filter(Boolean)
+    .concat(q.replace(/\$[^$]+\$/g, '').match(/[가-힣]+/g) || []));
+  const pool = [
+    ...PROBLEMS.map((p) => ({ id: p.id, kind: '은행', q: p.q })),
+    ...DIAGNOSIS.map((p) => ({ id: p.id, kind: '진단', q: p.q })),
+    ...LESSONS.flatMap((l) => [...l.examples.map((e, i) => ({ id: `${l.id}-e${i + 1}`, kind: '학습', q: e.q })), ...l.checks.map((c) => ({ id: c.id, kind: '학습', q: c.q }))]),
+  ].map((it) => ({ ...it, t: toks(it.q) }));
+  for (let i = 0; i < pool.length; i++) for (let j = i + 1; j < pool.length; j++) {
+    const A = pool[i], B = pool[j];
+    if (A.kind === B.kind && A.kind !== '학습') continue;
+    let inter = 0; for (const x of A.t) if (B.t.has(x)) inter++;
+    const jac = inter / (A.t.size + B.t.size - inter);
+    if (jac >= 0.9) fail(`${A.id}(${A.kind}) ↔ ${B.id}(${B.kind}): 사실상 같은 문항 (겹침 ${Math.round(jac * 100)}%)`);
+  }
+}
+
+// 진단: 문항마다 먼저 볼 소단원이 있고, 공통수학 단원(Ⅰ~Ⅶ)마다 2문항 이상(#8)
+const { LESSON_BY_ID } = await import('../assets/js/content/lessons/index.js');
+for (const q of DIAGNOSIS) if (!LESSON_BY_ID[q.lesson] || LESSON_BY_ID[q.lesson].unit !== q.unit) fail(`${q.id}: lesson이 없거나 다른 단원의 소단원`);
+for (const u of UNITS.filter((x) => x.id !== 'u8')) {
+  const n = DIAGNOSIS.filter((q) => q.unit === u.id).length;
+  if (n < 2) fail(`${u.id}: 진단 문항이 ${n}개뿐(2개 이상 필요)`);
+}
 
 // 단원마다 모든 난이도가 있는지(u8 제외)
 for (const u of UNITS.filter((x) => x.id !== 'u8')) {
@@ -102,6 +136,10 @@ for (const u of UNITS.filter((x) => x.id !== 'u8')) {
     if (!PROBLEMS.some((p) => p.unit === u.id && p.level === lv)) fail(`${u.id}: ${lv} 문제가 없음`);
   }
 }
+
+// 범위 표가 최신인지
+const { renderCoverage } = await import('../tools/coverage.mjs');
+if (readFileSync(new URL('../docs/COVERAGE.md', import.meta.url), 'utf8') !== renderCoverage()) fail('docs/COVERAGE.md 가 최신이 아닙니다. node tools/coverage.mjs 를 실행하세요.');
 
 // 서비스 워커가 최신인지(파일 목록과 버전 해시)
 const swNow = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');

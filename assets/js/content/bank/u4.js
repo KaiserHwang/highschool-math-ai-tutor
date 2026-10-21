@@ -185,4 +185,22 @@ export default [
     ],
     solution: t`$A^n$의 $(1,1)$ 성분은 $n+1$이므로 $n+1=100$, $n=99$<br>(확인: $A^{n+1}=A^nA$를 계산하면 같은 꼴이 유지됩니다.)`,
   },
+
+  // ── 소단원 사다리 보강(#7)
+  {
+    id: 'u4-17', unit: 'u4', level: 'basic', topic: '곱셈의 순서', type: 'short',
+    q: t`두 행렬 $A=\begin{pmatrix}1&2\\0&1\end{pmatrix},\ B=\begin{pmatrix}1&0\\1&1\end{pmatrix}$에 대하여 행렬 $AB-BA$의 $(1,\ 1)$ 성분을 구하시오.`,
+    answer: '2',
+    skills: { calc: 1, concept: 0.5 },
+    hints: [t`$AB$와 $BA$를 각각 계산하세요. 행렬의 곱은 순서를 바꾸면 달라질 수 있습니다.`, t`$AB=\begin{pmatrix}3&2\\1&1\end{pmatrix}$`],
+    solution: t`$BA=\begin{pmatrix}1&2\\1&3\end{pmatrix}$이므로 $AB-BA$의 $(1,\ 1)$ 성분은 $3-1=2$`,
+  },
+  {
+    id: 'u4-18', unit: 'u4', level: 'core', topic: '행렬 방정식', type: 'short',
+    q: t`두 행렬 $A=\begin{pmatrix}1&3\\-1&0\end{pmatrix},\ B=\begin{pmatrix}3&-1\\5&2\end{pmatrix}$에 대하여 $2X-A=B$를 만족하는 행렬 $X$의 모든 성분의 합을 구하시오.`,
+    answer: '6',
+    skills: { calc: 1, concept: 0.5 },
+    hints: [t`일차방정식처럼 $X$에 대해 먼저 정리하세요.`, t`$X=\dfrac12(A+B)$`],
+    solution: t`$A+B=\begin{pmatrix}4&2\\4&2\end{pmatrix}$이므로 $X=\begin{pmatrix}2&1\\2&1\end{pmatrix}$, 합은 $6$`,
+  },
 ];

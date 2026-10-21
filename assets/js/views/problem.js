@@ -2,13 +2,13 @@
 import { PROBLEM_BY_ID, problemsOfUnit } from '../content/problems.js';
 import { UNIT_BY_ID, LEVELS, unitLabel } from '../content/units.js';
 import { makeVariant, generatorFor, newSeed, GENERATORS } from '../content/generators.js';
-import { getState, update, logActivity } from '../store.js';
-import { isCorrect, normalizeAnswer, addWrong, reviewResult, REASONS, REVIEW_GAPS, statusOf } from '../model.js';
+import { getState, update, logActivity, today } from '../store.js';
+import { isCorrect, normalizeAnswer, addWrong, reviewResult, recheckResult, REASONS, REVIEW_GAPS, statusOf } from '../model.js';
 import { tex, esc, CIRCLED, gradeMark, toast, fmtDate, statusGlyph, optionsClass } from '../lib/ui.js';
 import { mountScratchpad, scratchpadHTML } from '../lib/scratchpad.js';
 import { figure } from '../lib/plot.js';
 import { AI_SERVICES, problemPrompt, sendToAI, copyText } from '../lib/ai.js';
-import { lessonForProblem } from '../content/lessons/index.js';
+import { lessonForProblem, LESSON_BY_ID } from '../content/lessons/index.js';
 
 
 /** 해시 경로 링크를 만든다. 쿼리 값은 인코딩하고, 결과는 HTML 속성에 넣을 수 있게 이스케이프한다. */
@@ -41,6 +41,9 @@ export function renderProblem(view, { args: [ref], params }) {
   const fromParam = params.get('from');
   const fromPid = isVariant ? (fromParam && PROBLEM_BY_ID[fromParam] ? fromParam : reviewPid) : null;
   const genKey = isVariant ? ref : generatorFor(pid);
+  // 개념 재확인(#9): URL의 값은 실제 소단원 id일 때만 받는다
+  const recheckParam = params.get('recheck');
+  const recheckLesson = recheckParam && LESSON_BY_ID[recheckParam] ? LESSON_BY_ID[recheckParam] : null;
   const st = getState();
   const att0 = isVariant ? null : st.attempts[pid];
   const wasSolved = !!(att0 && att0.solved);
@@ -70,10 +73,17 @@ export function renderProblem(view, { args: [ref], params }) {
   // 단원 문제 지도(답안지처럼 상태를 한눈에)
   const strip = isVariant ? '' : `<nav class="strip" aria-label="${esc(unit.title)} 문제 목록">${siblings.map((q, i) => `<a href="#/p/${q.id}" class="strip-i lv-${q.level}${q.id === pid ? ' is-cur' : ''}" ${q.id === pid ? 'aria-current="page"' : ''} title="${i + 1}번 ${esc(q.topic)}">${statusGlyph(statusOf(q.id))}<span class="strip-n">${i + 1}</span></a>`).join('')}</nav>`;
 
+  // 복습 자격: 예정일 전이나 졸업한 문제는 풀어도 간격 반복 단계가 오르지 않는다(#11)
+  const rEntry = reviewMode ? getState().wrong[reviewPid] : null;
+  const reviewNote = !rEntry ? ''
+    : rEntry.resolved ? ' 이미 졸업한 문제라 맞혀도 기록은 바뀌지 않습니다. 틀리면 오답노트로 돌아갑니다.'
+      : rEntry.due > today() ? ` 예정일(${fmtDate(rEntry.due)}) 전이라 맞혀도 연습으로만 기록되고, 복습 단계는 예정일에 오릅니다.`
+        : rEntry.history.some((h) => h.date === today()) ? ' 오늘은 이미 복습 결과가 기록되어, 다시 풀어도 단계는 바뀌지 않습니다.' : '';
+  const recheckBanner = recheckLesson ? `<p class="banner">개념 재확인 중입니다: <a href="#/l/${recheckLesson.id}">${esc(recheckLesson.title)}</a>. 힌트 없이 맞히면 "다시 확인할 개념" 표시가 사라집니다.</p>` : '';
   const variantBanner = isVariant
-    ? `<p class="banner variant">숫자를 바꾼 연습 문제입니다. ${reviewMode ? '힌트 없이 맞히면 원래 문제의 복습을 통과한 것으로 기록합니다.' : '숙련도에는 반영되지 않고, 몇 번이든 새로 만들 수 있어요.'}</p>`
+    ? `<p class="banner variant">숫자를 바꾼 연습 문제입니다. ${reviewMode ? `힌트 없이 맞히면 원래 문제의 복습을 통과한 것으로 기록합니다.${reviewNote}` : '숙련도에는 반영되지 않고, 몇 번이든 새로 만들 수 있어요.'}</p>`
     : reviewMode
-      ? `<p class="banner">오답 복습 중입니다. 힌트 없이 맞히면 다음 복습이 ${REVIEW_GAPS.map((g) => g + '일').join(' → ')} 순서로 늘어납니다.${genKey ? ` 답을 기억하고 있다면 <a href="${link(`/v/${genKey}`, { s: newSeed(), review: pid })}">숫자를 바꾼 문제로 복습</a>하세요.` : ''}</p>`
+      ? `<p class="banner">오답 복습 중입니다. 힌트 없이 맞히면 다음 복습이 ${REVIEW_GAPS.map((g) => g + '일').join(' → ')} 순서로 늘어납니다.${reviewNote}${genKey ? ` 답을 기억하고 있다면 <a href="${link(`/v/${genKey}`, { s: newSeed(), review: pid })}">숫자를 바꾼 문제로 복습</a>하세요.` : ''}</p>`
       : '';
 
   view.innerHTML = `
@@ -81,7 +91,7 @@ export function renderProblem(view, { args: [ref], params }) {
     <nav class="crumbs" aria-label="위치"><a href="#/units">단원</a><span aria-hidden="true">/</span><a href="#/u/${unit.id}">${esc(unitLabel(unit))}</a><span aria-hidden="true">/</span><span>${isVariant ? '비슷한 문제 연습' : `${n}번`}</span></nav>
     <h1 class="sr">${esc(unit.title)} ${isVariant ? '비슷한 문제' : `${n}번 문제`}</h1>
     ${strip}
-    ${variantBanner}
+    ${variantBanner}${recheckBanner}
     <div class="study-grid">
       <div class="study-main">
         <article class="paper problem" aria-labelledby="q-${esc(pid)}">
@@ -272,6 +282,7 @@ export function renderProblem(view, { args: [ref], params }) {
     session.submitted = true;
     session.lastResponse = response;
     let reviewOutcome = null;
+    let recheckOutcome = null;
     update((s) => {
       if (isVariant) {
         const pr = (s.practice[ref] ||= { tried: 0, solved: 0 });
@@ -293,9 +304,13 @@ export function renderProblem(view, { args: [ref], params }) {
       }
       if (reviewMode && !session.reviewDone && s.wrong[reviewPid]) {
         const clean = ok && session.hints === 0;
-        reviewResult(s, reviewPid, clean);
+        const res = reviewResult(s, reviewPid, clean);
         session.reviewDone = true;
-        reviewOutcome = { clean, entry: s.wrong[reviewPid] };
+        reviewOutcome = { clean, ...res, entry: s.wrong[reviewPid] };
+      }
+      if (recheckLesson && !session.recheckDone) {
+        session.recheckDone = true;
+        recheckOutcome = recheckResult(s, recheckLesson.id, ok && session.hints === 0);
       }
       if (firstSubmitThisVisit) logActivity({ attempted: 1 });
       if (ok && !session.solvedNow && (isVariant || !wasSolved || reviewMode)) logActivity({ solved: 1 });
@@ -310,13 +325,22 @@ export function renderProblem(view, { args: [ref], params }) {
       view.querySelectorAll('[data-hint]').forEach((b) => (b.disabled = false));
       openSolutionQuiet();
       let msg = '<p class="fb-right">정답입니다.</p>';
-      if (reviewOutcome) {
+      if (reviewOutcome && !reviewOutcome.counted) {
+        msg += {
+          early: `<p class="fb-note">예정일 전이라 연습으로 기록했어요. 복습 단계는 ${fmtDate(reviewOutcome.entry.due)}에 다시 풀어 맞히면 오릅니다.</p>`,
+          today: '<p class="fb-note">오늘은 이미 복습 결과가 기록되어 단계는 그대로입니다.</p>',
+          resolved: '<p class="fb-note">졸업한 문제입니다. 기억하고 있네요.</p>',
+        }[reviewOutcome.why] || '';
+      } else if (reviewOutcome) {
         msg += reviewOutcome.clean
           ? reviewOutcome.entry.resolved
             ? '<p class="fb-note">네 번의 복습을 모두 통과해 오답노트에서 졸업했어요.</p>'
             : `<p class="fb-note">복습 통과. 다음 복습일은 ${fmtDate(reviewOutcome.entry.due)}입니다.</p>`
           : '<p class="fb-note">힌트를 봤으니 이번 복습은 다시 처음 단계로 돌아갑니다. 내일 한 번 더 풀어 보세요.</p>';
       }
+      if (recheckOutcome && recheckOutcome.counted && session.hints === 0) msg += `<p class="fb-note">개념 재확인을 통과했어요. <a href="#/l/${recheckLesson.id}">${esc(recheckLesson.title)}</a>의 "다시 확인할 개념" 표시를 지웠습니다.</p>`;
+      else if (recheckOutcome && recheckOutcome.why === 'early') msg += '<p class="fb-note">재확인 예정일 전이라 연습으로 기록했어요. 예정일에 처음 보는 문제로 한 번 더 확인합니다.</p>';
+      else if (recheckOutcome && recheckOutcome.counted) msg += '<p class="fb-note">힌트를 봤으니 개념 재확인은 내일 다시 합니다.</p>';
       const nextBtn = isVariant
         ? `<a class="btn btn-primary" href="${link(`/v/${ref}`, { s: newSeed(), from: fromPid })}">다른 숫자로 한 문제 더</a>`
         : next ? `<a class="btn btn-primary" href="${link(`/p/${next.id}`)}">다음 문제</a>` : `<a class="btn btn-primary" href="${link(`/u/${unit.id}`)}">단원으로 돌아가기</a>`;
@@ -325,7 +349,9 @@ export function renderProblem(view, { args: [ref], params }) {
       fb.innerHTML = msg;
     } else {
       const tries = isVariant ? 2 : getState().attempts[pid].tries;
-      fb.innerHTML = `<p class="fb-wrong">다시 생각해 보세요.${tries >= 2 && session.hints === 0 ? ' 1단계 힌트를 열어 보는 것도 방법입니다.' : ''}</p>
+      const reopened = reviewOutcome && reviewOutcome.why === 'reopened' ? '<p class="fb-note">졸업했던 문제를 틀려 오답노트로 다시 넣었어요. 내일 다시 복습합니다.</p>' : '';
+      const rechk = recheckOutcome && recheckOutcome.counted ? `<p class="fb-note">개념 재확인은 내일 다시 합니다. 그 전에 <a href="#/l/${recheckLesson.id}">${esc(recheckLesson.title)}</a>의 핵심 정리와 예제를 한 번 더 보세요.</p>` : '';
+      fb.innerHTML = `<p class="fb-wrong">다시 생각해 보세요.${tries >= 2 && session.hints === 0 ? ' 1단계 힌트를 열어 보는 것도 방법입니다.' : ''}</p>${reopened}${rechk}
         ${isVariant ? '' : `<p class="fb-note">틀린 문제는 오답노트에 저장됩니다. 어디서 틀렸는지 골라 두면 복습할 때 도움이 됩니다.</p>${reasonPicker()}`}
         <p class="row"><button type="button" class="btn btn-quiet" data-act="open-ask">AI에게 물어보기</button></p>`;
       if (p.type === 'mc') {

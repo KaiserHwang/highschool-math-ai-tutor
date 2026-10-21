@@ -120,6 +120,26 @@ async function run(viewport, tag) {
   await page.waitForSelector('text=복습 통과');
   const stage = await page.evaluate(() => JSON.parse(localStorage.getItem('mathpulse:v2')).wrong['u1-05'].stage);
   ok(stage === 1, `[${tag}] 힌트 없이 복습을 통과하면 다음 단계로 (stage=${stage})`);
+  // #11 회귀: 같은 날 다시 들어가 맞혀도 단계가 오르지 않는다(원래 문제와 숫자 변형 모두)
+  for (let i = 0; i < 2; i++) {
+    await page.goto(BASE + '#/p/u1-05?review=1');
+    await page.reload();
+    await page.waitForSelector('.banner:has-text("예정일")');
+    await page.fill('.short-in', p.answer);
+    await page.click('.short-form button[type="submit"]');
+    await page.waitForSelector('text=연습으로 기록');
+  }
+  const gk = (await import('../assets/js/content/generators.js')).generatorFor('u1-05');
+  if (gk) {
+    await page.goto(BASE + `#/v/${gk}?s=77&review=u1-05`);
+    await page.waitForSelector('.banner.variant');
+    const vp = makeVariant(gk, 77);
+    if (vp.type === 'mc') { await page.click(`[data-opt="${vp.answer}"]`); await page.click('[data-act="submit"]'); }
+    else { await page.fill('.short-in', vp.answer); await page.click('.short-form button[type="submit"]'); }
+    await page.waitForSelector('.fb-right');
+  }
+  const w05 = await page.evaluate(() => JSON.parse(localStorage.getItem('mathpulse:v2')).wrong['u1-05']);
+  ok(w05.stage === 1 && w05.history.length === 1 && !w05.resolved, `[${tag}] 같은 날 다시 풀거나 숫자를 바꿔 풀어도 복습 단계는 한 번만 오른다 (stage=${w05.stage}, 기록 ${w05.history.length})`);
 
   // ── #1 회귀: URL 매개변수로 HTML을 끼워 넣을 수 없다
   for (const payload of ['"><img src=x onerror="window.__xss=1">', "'><span id=injected>x</span>", 'u1-01" onmouseover="window.__xss=1', 'u1-01&s=1#<b>', '<script>window.__xss=1</script>']) {
@@ -168,6 +188,8 @@ async function run(viewport, tag) {
   await page.click(`[data-opt="${(PROBLEM_BY_ID['u1-04'].answer + 1) % 5}"]`);
   await page.click('[data-act="submit"]');
   await page.waitForSelector('.fb-wrong');
+  await page.goto(BASE + '#/review'); // 문제 화면을 떠나며 기록이 저장된 뒤에 복습일을 당긴다
+  await page.waitForSelector('.wn');
   await page.evaluate(() => { const k = 'mathpulse:v2'; const s = JSON.parse(localStorage.getItem(k)); s.wrong['u1-04'].due = '2000-01-01'; localStorage.setItem(k, JSON.stringify(s)); });
   await page.goto(BASE + '#/p/u1-04?review=1');
   await page.reload();
@@ -222,11 +244,17 @@ async function run(viewport, tag) {
   await page.click('[data-act="done"]');
   await page.waitForSelector('[data-act="undone"]');
   const lessonRec = await page.evaluate(() => JSON.parse(localStorage.getItem('mathpulse:v2')).lessons['u2-l1']);
-  ok(lessonRec && lessonRec.done && lessonRec.checks['u2-l1-c1'] === true, `[${tag}] 이해 표시와 확인 문제 결과를 저장한다`);
+  const c1 = lessonRec && lessonRec.checks['u2-l1-c1'];
+  ok(lessonRec && lessonRec.done && c1 && c1.solved && c1.firstCorrect === false && c1.sawSolution && c1.tries === 2, `[${tag}] 이해 표시와 확인 문제 기록(첫 시도 오답, 풀이 봄, 시도 2회)을 저장한다`);
+  ok(lessonRec.recheck && (await page.locator('.recheck-box').count()) === 1, `[${tag}] 틀리고 풀이를 본 개념은 다시 확인하도록 예약된다`);
+  ok(/혼자 맞힘 0/.test(await page.textContent('[data-progress]')), `[${tag}] 도움받아 맞힌 확인 문제는 "혼자 맞힘"으로 세지 않는다`);
   await shot('lesson');
   await page.goto(BASE + '#/u/u2');
   await page.waitForSelector('.lesson-toc');
-  ok(await page.locator('.lt-row.is-done').count() === 1, `[${tag}] 단원 목차에 이해 완료가 표시된다`);
+  ok(await page.locator('.lt-row.st-recheck').count() === 1, `[${tag}] 단원 목차에 다시 확인할 개념이 표시된다`);
+  await page.goto(BASE + '#/review');
+  await page.waitForSelector('.rc-list .rc-row');
+  ok((await page.locator('.rc-row').count()) === 1, `[${tag}] 오답 복습 화면에 다시 확인할 개념이 나온다`);
   await page.goto(BASE + '#/p/u2-10');
   await page.waitForSelector('.concept-link a');
   ok((await page.getAttribute('.concept-link a', 'href')) === '#/l/u2-l11', `[${tag}] 문제 화면에서 관련 개념으로 갈 수 있다`);
@@ -248,6 +276,26 @@ async function run(viewport, tag) {
   await page.goto(BASE + '#/');
   await page.waitForSelector('.next-problem');
   await shot('home');
+
+  // ── #7 혼합 평가: 단원 이름 없이 출제, 모두 제출한 뒤에 정답 공개, 결과 기록
+  await page.goto(BASE + '#/quiz?view=intro');
+  await page.click('[data-act="start"]');
+  await page.waitForSelector('.quiz .q-text');
+  const nq = await page.evaluate(() => Number(document.querySelector('.diag-progress').textContent.split('/')[1]));
+  const { UNITS: UL, unitLabel: ulabel } = await import('../assets/js/content/units.js');
+  const unitTitles = UL.map(ulabel);
+  let leaked = false, revealed = false;
+  for (let i = 0; i < nq; i++) {
+    const txt = (await page.textContent('.quiz .diag-head')) + (await page.locator('.crumbs').count() ? await page.textContent('.crumbs') : '');
+    if (unitTitles.some((t) => txt.includes(t))) leaked = true;  // 문제 본문이 아닌 머리말·위치 표시에 단원 이름이 있으면 안 된다
+    if (await page.locator('.quiz .sol, .quiz .fb-right, .quiz .fb-wrong').count()) revealed = true;
+    await page.click('[data-act="skip"]');
+  }
+  await page.waitForSelector('text=혼합 평가 결과');
+  ok(nq >= 3 && !leaked && !revealed, `[${tag}] 혼합 평가는 단원 이름과 정답을 제출 전에 보여 주지 않는다 (${nq}문제)`);
+  const qz = await page.evaluate(() => JSON.parse(localStorage.getItem('mathpulse:v2')).quizzes);
+  ok(qz.length === 1 && qz[0].items.length === nq && (await page.locator('.dr-item').count()) === nq, `[${tag}] 혼합 평가 결과를 기록하고 문항별 정답과 풀이를 공개한다`);
+  await shot('quiz-result');
 
   // ── 백업 내보내기
   await page.goto(BASE + '#/settings');

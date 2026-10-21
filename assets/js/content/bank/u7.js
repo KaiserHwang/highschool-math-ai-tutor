@@ -352,4 +352,22 @@ export default [
     ],
     solution: t`$f(x)=1$: $x=\frac12,\ \frac72$ / $f(x)=3$: $x=\frac32,\ \frac52$<br>서로 다른 실근은 $4$개`,
   },
+
+  // ── 소단원 사다리 보강(#7)
+  {
+    id: 'u7-23', unit: 'u7', level: 'basic', topic: '유리함수의 점근선 읽기', type: 'short',
+    q: t`유리함수 $y=\dfrac2{x-3}+1$의 그래프의 점근선이 $x=a,\ y=b$일 때, $a+b$의 값을 구하시오.`,
+    answer: '4',
+    skills: { concept: 1 },
+    hints: [t`$y=\dfrac k{x-p}+q$의 점근선은 $x=p,\ y=q$입니다.`, t`$p=3,\ q=1$`],
+    solution: t`$a=3,\ b=1$이므로 $a+b=4$`,
+  },
+  {
+    id: 'u7-24', unit: 'u7', level: 'basic', topic: '무리함수의 정의역과 치역', type: 'short',
+    q: t`함수 $y=-\sqrt{4-x}+2$의 정의역이 $\{x\mid x\le a\}$, 치역이 $\{y\mid y\le b\}$일 때, $a+b$의 값을 구하시오.`,
+    answer: '6',
+    skills: { concept: 1, visual: 0.5 },
+    hints: [t`근호 안이 $0$ 이상이어야 합니다: $4-x\ge0$`, t`$-\sqrt{4-x}\le0$이므로 $y\le2$`],
+    solution: t`정의역 $x\le4$, 치역 $y\le2$이므로 $a+b=6$`,
+  },
 ];

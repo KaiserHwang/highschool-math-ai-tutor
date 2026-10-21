@@ -1,9 +1,10 @@
 import { getState, today, addDays } from '../store.js';
 import { UNITS, TRACKS, UNIT_BY_ID, LEVELS, COURSE_SHORT, unitLabel } from '../content/units.js';
 import { generatorsOfUnit, newSeed } from '../content/generators.js';
-import { latestDiagnosis, recommendNext, dueReviews, unitMastery, streak, activeTrack, totals, weakestUnit, lessonTotals } from '../model.js';
+import { latestDiagnosis, recommendNext, dueReviews, unitMastery, streak, activeTrack, totals, weakestUnit, lessonTotals, lessonRechecks } from '../model.js';
 import { lessonForProblem } from '../content/lessons/index.js';
 import { tex, esc } from '../lib/ui.js';
+import { DIAGNOSIS } from '../content/diagnosis.js';
 import { figure } from '../lib/plot.js';
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -40,7 +41,11 @@ export function renderHome(view) {
 
   const steps = [];
   const nextLesson = next ? lessonForProblem(next.id) : null;
-  const lessonFirst = nextLesson && !st.lessons[nextLesson.id]?.done;
+  const lessonFirst = nextLesson && !st.lessons[nextLesson.id]?.done && !Object.values(st.lessons[nextLesson.id]?.checks || {}).some((c) => c.solved);
+  const rechecksDue = lessonRechecks().filter((x) => x.pr.recheckDue);
+  if (rechecksDue.length) {
+    steps.push(`<li class="plan-step"><div class="plan-body"><h2 class="h3">다시 확인할 개념 ${rechecksDue.length}개</h2><p class="hint-text">${rechecksDue.slice(0, 3).map((x) => esc(x.l.title)).join(', ')}${rechecksDue.length > 3 ? ' 등' : ''} · 처음 보는 문제로 확인합니다.</p></div><a class="btn" href="#/review">확인하기</a></li>`);
+  }
   if (due.length) {
     steps.push(`<li class="plan-step"><div class="plan-body"><h2 class="h3">틀렸던 문제 ${due.length}개 복습</h2><p class="hint-text">힌트 없이 맞히면 다음 복습까지 간격이 늘어납니다.</p></div><a class="btn" href="#/review">복습하기</a></li>`);
   }
@@ -72,13 +77,14 @@ export function renderHome(view) {
       <div>
         <p class="meta">${now.getMonth() + 1}월 ${now.getDate()}일 ${DAYS[now.getDay()]}요일${streak() ? ` · ${streak()}일째 연속 공부` : ''}</p>
         <h1 class="page-title">${st.profile.name ? `${esc(st.profile.name)}, ` : ''}오늘도 한 문제씩</h1>
+        <p class="scope-note">학습 범위: 고1 공통수학1·2 (2022 개정 교육과정)</p>
       </div>
       ${goalRing(todayAct.solved, goal)}
     </header>
     ${diag ? '' : `
       <section class="first-run">
         <h2 class="h2">먼저 지금 실력을 확인해 볼까요</h2>
-        <p>공통수학1·2 전 단원에서 고른 14문제를 풉니다. 약 30분 걸리고, 결과에 따라 학습 트랙과 순서를 추천해 드려요.</p>
+        <p>고1 공통수학1·2의 일곱 단원에서 단원마다 2~4문제씩, 모두 ${DIAGNOSIS.length}문제를 풉니다. 약 35분 걸리고, 결과에 따라 학습 트랙과 순서를 추천해 드려요.</p>
         <p class="row"><a class="btn btn-primary" href="#/diagnosis">수준 진단 시작</a><a class="btn btn-quiet" href="#/units">진단 없이 단원부터 보기</a></p>
       </section>`}
     <div class="home-grid">
@@ -94,8 +100,9 @@ export function renderHome(view) {
         <section class="side-block">
           <h2 class="h3">단원별 숙련도</h2>
           <ul class="unit-minis">${units}</ul>
-          <p class="hint-text">개념 ${lessonTotals().done}/${lessonTotals().total} 이해 · 문제 은행 ${tt.total}문제 중 ${tt.solved}문제 해결</p>
+          <p class="hint-text">개념 ${lessonTotals().total}개 중 혼자 확인 ${lessonTotals().verified} · 문제 은행 ${tt.total}문제 중 ${tt.solved}문제 해결</p>
         </section>
+        <section class="side-block"><h2 class="h3">혼합 평가</h2><p class="hint-text">공부한 단원에서 처음 보는 문제 8개를 단원 이름 없이 섞어 풉니다. 힌트와 정답은 끝나고 공개됩니다.</p><p class="row"><a class="btn btn-quiet" href="#/quiz?view=intro">혼합 평가 보기</a></p></section>
         ${diag ? `<section class="side-block"><h2 class="h3">수준 진단</h2><p class="hint-text">최근 진단 ${diag.overall}점 · ${TRACKS[diag.track].label} 트랙 추천</p><p class="row"><a class="btn btn-quiet" href="#/diagnosis?view=result">결과 보기</a><a class="btn btn-quiet" href="#/diagnosis">다시 진단</a></p></section>` : ''}
       </aside>
     </div>

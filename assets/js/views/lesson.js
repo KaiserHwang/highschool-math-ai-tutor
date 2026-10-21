@@ -2,9 +2,10 @@
 import { LESSONS, LESSON_BY_ID, lessonsOfUnit } from '../content/lessons/index.js';
 import { UNIT_BY_ID, LEVELS, unitLabel } from '../content/units.js';
 import { PROBLEM_BY_ID } from '../content/problems.js';
-import { getState, update, today } from '../store.js';
-import { isCorrect, statusOf, lessonProgress } from '../model.js';
-import { tex, esc, CIRCLED, gradeMark, statusGlyph, optionsClass, toast } from '../lib/ui.js';
+import { getState, update, today, logActivity } from '../store.js';
+import { isCorrect, statusOf, lessonProgress, blankLessonRec, recordCheck, markCheckSolution, recheckTarget, LESSON_STATE } from '../model.js';
+import { newSeed } from '../content/generators.js';
+import { tex, esc, CIRCLED, gradeMark, statusGlyph, optionsClass, toast, fmtDate } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 import { AI_SERVICES, lessonPrompt, sendToAI } from '../lib/ai.js';
 
@@ -23,7 +24,8 @@ function exampleHTML(ex, i) {
 }
 
 function checkHTML(c, i, rec) {
-  const right = rec.checks[c.id] === true;
+  const r = rec.checks[c.id];
+  const right = !!(r && r.solved);
   const answer = c.type === 'mc'
     ? `<div class="options${optionsClass(c.options)}" role="radiogroup" aria-label="보기">${c.options.map((o, k) => `<button type="button" class="opt" role="radio" aria-checked="false" data-opt="${k}"><span class="opt-n">${CIRCLED[k]}</span><span class="opt-t">${tex(o)}</span></button>`).join('')}</div>
        <div class="row"><button type="button" class="btn btn-primary" data-act="check">채점하기</button></div>`
@@ -32,7 +34,7 @@ function checkHTML(c, i, rec) {
     <div class="q-row"><span class="q-num ck-num">${i + 1}<span class="mark-slot">${right ? gradeMark('right').replace('class="mark mark-right"', 'class="mark mark-right static"') : ''}</span></span><div class="q-text compact">${tex(c.q)}</div></div>
     ${c.fig ? figure(c.fig) : ''}
     ${answer}
-    <div class="fb" aria-live="polite">${right ? `<p class="fb-note">맞힌 문제입니다.</p><div class="sol">${tex(c.solution)}</div>` : ''}</div>
+    <div class="fb" aria-live="polite">${right ? `<p class="fb-note">${r.firstCorrect === true && !r.sawSolution ? '처음에 혼자 맞힌 문제입니다.' : '도움을 받아 맞힌 문제입니다.'}</p><div class="sol">${tex(c.solution)}</div>` : ''}</div>
   </li>`;
 }
 
@@ -44,9 +46,11 @@ export function renderLesson(view, { args: [lessonId] }) {
   const no = siblings.indexOf(L) + 1;
   const gi = LESSONS.indexOf(L);
   const prev = LESSONS[gi - 1], next = LESSONS[gi + 1];
-  const rec = getState().lessons[L.id] || { done: null, checks: {} };
+  const rec = getState().lessons[L.id] || blankLessonRec();
 
-  const related = L.related.map((pid) => PROBLEM_BY_ID[pid]).filter(Boolean);
+  // 관련 문제는 쉬운 것부터: 기본 → 내신 필수 → 심화 → 최상위(학습 사다리)
+  const LV = Object.keys(LEVELS);
+  const related = L.related.map((pid) => PROBLEM_BY_ID[pid]).filter(Boolean).sort((a, b) => LV.indexOf(a.level) - LV.indexOf(b.level));
   const relHTML = related.length
     ? `<ul class="plist">${related.map((p) => `<li><a class="prow" href="#/p/${p.id}">${statusGlyph(statusOf(p.id))}<span class="prow-t">${esc(p.topic)}</span><span class="prow-k">${p.unit !== L.unit ? '융합 · ' : ''}<span class="lv lv-${p.level}">${LEVELS[p.level].label}</span></span></a></li>`).join('')}</ul>`
     : '';
@@ -56,7 +60,7 @@ export function renderLesson(view, { args: [lessonId] }) {
     <nav class="crumbs" aria-label="위치"><a href="#/units">단원</a><span aria-hidden="true">/</span><a href="#/u/${unit.id}">${esc(unitLabel(unit))}</a><span aria-hidden="true">/</span><span>개념 ${no}</span></nav>
     <nav class="lstrip" aria-label="${esc(unit.title)} 개념 목록">${siblings.map((l, i) => {
       const pr = lessonProgress(l);
-      return `<a href="#/l/${l.id}" class="lstrip-i${l === L ? ' is-cur' : ''}${pr.done ? ' is-done' : ''}" ${l === L ? 'aria-current="page"' : ''} title="${esc(l.title)}">${i + 1}</a>`;
+      return `<a href="#/l/${l.id}" class="lstrip-i${l === L ? ' is-cur' : ''} st-${pr.state}" ${l === L ? 'aria-current="page"' : ''} title="${esc(l.title)}${LESSON_STATE[pr.state] ? ' · ' + LESSON_STATE[pr.state] : ''}">${i + 1}</a>`;
     }).join('')}</nav>
     <header class="page-head lesson-head">
       <p class="kicker">개념 ${no} / ${siblings.length}</p>
@@ -108,19 +112,29 @@ export function renderLesson(view, { args: [lessonId] }) {
   const $ = (s) => view.querySelector(s);
   const selected = {};
 
+  function recheckHTML(pr) {
+    if (!pr.recheck) return '';
+    const tg = recheckTarget(L);
+    const href = !tg ? '' : tg.kind === 'variant' ? `#/v/${tg.key}?s=${newSeed()}&recheck=${L.id}` : `#/p/${tg.pid}?recheck=${L.id}`;
+    return `<div class="recheck-box"><p><strong>다시 확인할 개념</strong> 확인 문제를 틀렸거나 풀이를 본 기록이 있어요. ${pr.recheckDue ? '오늘' : fmtDate(pr.recheck.due) + '에'} 처음 보는 문제로 다시 확인해 보세요. 힌트 없이 맞히면 이 표시가 사라집니다.</p>
+      ${tg ? `<p class="row"><a class="btn${pr.recheckDue ? ' btn-primary' : ' btn-quiet'}" href="${href}">${pr.recheckDue ? '지금 다시 확인하기' : '미리 풀어 보기(연습)'}: ${esc(tg.topic)}</a></p>` : ''}</div>`;
+  }
+
   function paintProgress() {
     const pr = lessonProgress(L);
-    $('[data-progress]').innerHTML = `확인 문제 ${pr.right}/${pr.total} · ${pr.done ? '<span class="done-tag">이해 완료</span>' : '아직 확인 전'}`;
-    $('[data-done]').innerHTML = pr.done
-      ? `<p class="l-done-msg"><span class="done-tag">이해했어요</span> 표시를 했습니다.</p><p class="row">${related.length ? `<a class="btn btn-primary" href="#/p/${related[0].id}">관련 문제 풀기</a>` : ''}${next && next.unit === L.unit ? `<a class="btn${related.length ? ' btn-quiet' : ' btn-primary'}" href="#/l/${next.id}">다음 개념</a>` : ''}<button type="button" class="btn btn-quiet" data-act="undone">표시 취소</button></p>`
-      : `<p class="l-done-msg">예제와 확인 문제까지 마쳤다면 표시해 두세요. 단원 화면과 오늘 화면에 진행 상황이 나타납니다.</p><p class="row"><button type="button" class="btn btn-primary" data-act="done">이해했어요</button></p>`;
-    view.querySelectorAll('.lstrip-i.is-cur').forEach((a) => a.classList.toggle('is-done', !!pr.done));
+    const parts = [`혼자 맞힘 ${pr.independent}`, pr.helped ? `도움받아 맞힘 ${pr.helped}` : '', `남음 ${pr.total - pr.right}`].filter(Boolean).join(' · ');
+    $('[data-progress]').innerHTML = `확인 문제 ${parts}${pr.verified ? ' · <span class="done-tag">혼자 확인 완료</span>' : ''}${pr.done ? ' · 이해 표시함' : ''}${pr.recheck ? ' · <span class="recheck-tag">다시 확인할 개념</span>' : ''}`;
+    const self = pr.done
+      ? `<p class="l-done-msg"><span class="done-tag">이해했어요</span> 표시를 했습니다. ${pr.verified ? '확인 문제도 모두 혼자 맞혔어요.' : '이 표시는 스스로 판단한 것이고, 확인 문제를 혼자 맞히면 "혼자 확인"으로 따로 표시됩니다.'}</p><p class="row">${related.length ? `<a class="btn btn-primary" href="#/p/${related[0].id}">관련 문제 풀기</a>` : ''}${next && next.unit === L.unit ? `<a class="btn${related.length ? ' btn-quiet' : ' btn-primary'}" href="#/l/${next.id}">다음 개념</a>` : ''}<button type="button" class="btn btn-quiet" data-act="undone">표시 취소</button></p>`
+      : `<p class="l-done-msg">예제와 확인 문제까지 마쳤다면 표시해 두세요. 확인 문제를 아직 다 풀지 않았어도 표시할 수 있지만, 그때는 "이해 표시"로만 기록됩니다.</p><p class="row"><button type="button" class="btn btn-primary" data-act="done">이해했어요</button></p>`;
+    $('[data-done]').innerHTML = recheckHTML(pr) + self;
+    view.querySelectorAll('.lstrip-i.is-cur').forEach((a) => { a.className = a.className.replace(/st-\w+/, `st-${pr.state}`); });
   }
   paintProgress();
 
   function setDone(v) {
     update((s) => {
-      const r = s.lessons[L.id] || { done: null, checks: {} };
+      const r = s.lessons[L.id] || blankLessonRec();
       r.done = v ? today() : null;
       s.lessons[L.id] = r;
     });
@@ -133,9 +147,8 @@ export function renderLesson(view, { args: [lessonId] }) {
     if (response === null || response === undefined || response === '') { toast(c.type === 'mc' ? '보기를 하나 고르세요.' : '답을 입력하세요.'); return; }
     const ok = isCorrect(c, response);
     update((s) => {
-      const r = s.lessons[L.id] || { done: null, checks: {} };
-      if (r.checks[c.id] !== true) r.checks[c.id] = ok;
-      s.lessons[L.id] = r;
+      recordCheck(s, L.id, c.id, ok); // 틀리면 다음 날 다른 문항으로 다시 확인하도록 예약
+      logActivity({ checks: 1 });
     });
     li.querySelector('.mark-slot').innerHTML = gradeMark(ok ? 'right' : 'wrong');
     li.querySelectorAll('.opt.is-wrong').forEach((b) => b.classList.remove('is-wrong'));
@@ -185,6 +198,8 @@ export function renderLesson(view, { args: [lessonId] }) {
     if (act === 'show-sol') {
       const li = t.closest('[data-check]');
       const c = L.checks.find((x) => x.id === li.dataset.check);
+      update((s) => markCheckSolution(s, L.id, c.id));
+      paintProgress();
       t.closest('.row').outerHTML = `<div class="sol">${tex(c.solution)}</div>`;
       return;
     }

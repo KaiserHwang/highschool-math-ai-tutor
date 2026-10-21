@@ -1,10 +1,11 @@
-// 수준 진단 12문항. 학습 문제와 겹치지 않게 별도로 구성했다.
+// 수준 진단 17문항. 학습 문제와 겹치지 않게 별도로 구성했다. 공통수학 단원(Ⅰ~Ⅶ)마다 최소 2문항으로 준비도를 본다.
+// lesson: 틀렸을 때 먼저 볼 개념 소단원
 // skills: 역량별 가중치, sec: 고1 상위권 기준 예상 풀이 시간(초)
 const t = String.raw;
 
 export const DIAGNOSIS = [
   {
-    id: 'd01', unit: 'u1', level: 'basic', type: 'mc', sec: 60,
+    id: 'd01', unit: 'u1', level: 'basic', type: 'mc', sec: 60, lesson: 'u1-l1',
     q: t`두 실수 $x,\ y$에 대하여 $x+y=3,\ xy=-1$일 때, $x^3+y^3$의 값은?`,
     options: ['27', '30', '33', '36', '39'], answer: 3,
     skills: { calc: 1, concept: 0.5 },
@@ -12,7 +13,7 @@ export const DIAGNOSIS = [
     solution: t`$27-3\cdot(-1)\cdot3=36$`,
   },
   {
-    id: 'd02', unit: 'u1', level: 'core', type: 'short', sec: 120,
+    id: 'd02', unit: 'u1', level: 'core', type: 'short', sec: 120, lesson: 'u1-l4',
     q: t`다항식 $P(x)$를 $x-1$로 나눈 나머지는 $2$이고, $x-2$로 나눈 나머지는 $5$이다. $P(x)$를 $(x-1)(x-2)$로 나눈 나머지를 $R(x)$라 할 때, $R(3)$의 값을 구하시오.`,
     answer: '8',
     skills: { concept: 1, reason: 0.5 },
@@ -20,7 +21,7 @@ export const DIAGNOSIS = [
     solution: t`$a+b=2,\ 2a+b=5$에서 $R(x)=3x-1$, $R(3)=8$`,
   },
   {
-    id: 'd03', unit: 'u2', level: 'core', type: 'mc', sec: 120,
+    id: 'd03', unit: 'u2', level: 'core', type: 'mc', sec: 120, lesson: 'u2-l1',
     q: t`복소수 $z=\frac{1+i}{1-i}$에 대하여 $z+z^2+z^3+\cdots+z^{2026}$의 값은? (단, $i=\sqrt{-1}$)`,
     options: [t`$-1$`, t`$i-1$`, t`$i$`, t`$0$`, t`$1-i$`], answer: 1,
     skills: { calc: 1, reason: 0.5 },
@@ -28,7 +29,7 @@ export const DIAGNOSIS = [
     solution: t`$z=i$, $2026=4\times506+2$이므로 남는 항은 $i^{2025}+i^{2026}=i-1$`,
   },
   {
-    id: 'd04', unit: 'u2', level: 'adv', type: 'short', sec: 180,
+    id: 'd04', unit: 'u2', level: 'adv', type: 'short', sec: 180, lesson: 'u2-l6',
     q: t`$0\le x\le3$에서 이차함수 $f(x)=x^2-2ax+a^2+2$의 최솟값이 $6$일 때, 양수 $a$의 값을 구하시오.`,
     answer: '5',
     skills: { visual: 1, reason: 1 },
@@ -36,7 +37,7 @@ export const DIAGNOSIS = [
     solution: t`$a>3$이어야 하고 $f(3)=(3-a)^2+2=6$에서 $a=5$`,
   },
   {
-    id: 'd05', unit: 'u3', level: 'core', type: 'short', sec: 90,
+    id: 'd05', unit: 'u3', level: 'core', type: 'short', sec: 90, lesson: 'u3-l3',
     q: t`$1$부터 $6$까지의 자연수 중에서 서로 다른 세 수를 택하여 세 자리 자연수를 만들 때, 백의 자리의 수 $<$ 십의 자리의 수 $<$ 일의 자리의 수를 만족시키는 자연수의 개수를 구하시오.`,
     answer: '20',
     skills: { reason: 1, concept: 0.5 },
@@ -44,7 +45,15 @@ export const DIAGNOSIS = [
     solution: t`$_6\mathrm{C}_3=20$`,
   },
   {
-    id: 'd06', unit: 'u4', level: 'basic', type: 'short', sec: 60,
+    id: 'd15', unit: 'u3', level: 'basic', type: 'short', sec: 60, lesson: 'u3-l2',
+    q: t`다섯 개의 문자 $a,\ b,\ c,\ d,\ e$ 중에서 서로 다른 세 문자를 택하여 일렬로 나열할 때, $a$가 포함되는 경우의 수를 구하시오.`,
+    answer: '36',
+    skills: { concept: 1, calc: 0.5 },
+    hint: t`전체 나열의 수에서 $a$가 없는 나열의 수를 빼 보세요.`,
+    solution: t`$_5\mathrm P_3-{_4\mathrm P_3}=60-24=36$`,
+  },
+  {
+    id: 'd06', unit: 'u4', level: 'basic', type: 'short', sec: 60, lesson: 'u4-l3',
     q: t`행렬 $A=\begin{pmatrix}2&1\\1&1\end{pmatrix}$에 대하여 행렬 $A^2$의 모든 성분의 합을 구하시오.`,
     answer: '13',
     skills: { calc: 1 },
@@ -52,7 +61,15 @@ export const DIAGNOSIS = [
     solution: t`$A^2=\begin{pmatrix}5&3\\3&2\end{pmatrix}$, 합은 $13$`,
   },
   {
-    id: 'd07', unit: 'u5', level: 'adv', type: 'mc', sec: 180,
+    id: 'd16', unit: 'u4', level: 'core', type: 'short', sec: 90, lesson: 'u4-l3',
+    q: t`행렬 $A=\begin{pmatrix}1&2\\3&4\end{pmatrix}$와 $B=\begin{pmatrix}x\\y\end{pmatrix}$에 대하여 $AB=\begin{pmatrix}5\\11\end{pmatrix}$일 때, $x+y$의 값을 구하시오.`,
+    answer: '3',
+    skills: { calc: 1, concept: 0.5 },
+    hint: t`$AB$를 계산하면 $x,\ y$에 대한 연립일차방정식이 됩니다.`,
+    solution: t`$x+2y=5,\ 3x+4y=11$에서 $x=1,\ y=2$`,
+  },
+  {
+    id: 'd07', unit: 'u5', level: 'adv', type: 'mc', sec: 180, lesson: 'u5-l5',
     q: t`원 $x^2+y^2=5$ 위의 점 $(1,2)$에서의 접선이 원 $(x-3)^2+(y-a)^2=5$에도 접할 때, 모든 실수 $a$의 값의 합은?`,
     options: ['0', '1', '2', '3', '4'], answer: 2,
     skills: { visual: 1, concept: 0.5 },
@@ -60,7 +77,15 @@ export const DIAGNOSIS = [
     solution: t`$\frac{|3+2a-5|}{\sqrt5}=\sqrt5$에서 $|2a-2|=5$, 두 값의 합은 $2$`,
   },
   {
-    id: 'd08', unit: 'u6', level: 'core', type: 'short', sec: 90,
+    id: 'd17', unit: 'u5', level: 'basic', type: 'short', sec: 60, lesson: 'u5-l1',
+    q: t`두 점 $A(1,\ -2),\ B(7,\ 4)$에 대하여 선분 $AB$를 $2:1$로 내분하는 점을 $P$라 할 때, $\overline{OP}^2$의 값을 구하시오. (단, $O$는 원점)`,
+    answer: '29',
+    skills: { calc: 1, concept: 0.5 },
+    hint: t`내분점 공식 $\left(\dfrac{mx_2+nx_1}{m+n},\ \dfrac{my_2+ny_1}{m+n}\right)$에 $m=2,\ n=1$을 넣으세요.`,
+    solution: t`$P(5,\ 2)$이므로 $\overline{OP}^2=25+4=29$`,
+  },
+  {
+    id: 'd08', unit: 'u6', level: 'core', type: 'short', sec: 90, lesson: 'u6-l2',
     q: t`전체집합 $U=\{1,2,3,4,5\}$의 두 부분집합 $A,\ B$에 대하여 $A=\{1,2,3\}$이고 $A-B=\{1,2\}$일 때, 집합 $B$의 개수를 구하시오.`,
     answer: '4',
     skills: { reason: 1, concept: 0.5 },
@@ -68,7 +93,7 @@ export const DIAGNOSIS = [
     solution: t`$4,\ 5$의 포함 여부만 자유롭게 정하므로 $2^2=4$`,
   },
   {
-    id: 'd09', unit: 'u6', level: 'adv', type: 'short', sec: 180,
+    id: 'd09', unit: 'u6', level: 'adv', type: 'short', sec: 180, lesson: 'u6-l6',
     q: t`양수 $x,\ y$가 $x+y=1$을 만족시킬 때, $\left(1+\frac1x\right)\left(1+\frac1y\right)$의 최솟값을 구하시오.`,
     answer: '9',
     skills: { insight: 1, calc: 0.5 },
@@ -76,7 +101,7 @@ export const DIAGNOSIS = [
     solution: t`$1=x+y\ge2\sqrt{xy}$에서 $xy\le\frac14$이므로 최솟값은 $1+8=9$`,
   },
   {
-    id: 'd10', unit: 'u7', level: 'core', type: 'short', sec: 90,
+    id: 'd10', unit: 'u7', level: 'core', type: 'short', sec: 90, lesson: 'u7-l3',
     q: t`함수 $f(x)=2x+a$에 대하여 $f^{-1}(5)=3$일 때, $(f\circ f)(2)$의 값을 구하시오.`,
     answer: '5',
     skills: { concept: 1 },
@@ -84,7 +109,7 @@ export const DIAGNOSIS = [
     solution: t`$6+a=5$에서 $a=-1$, $f(2)=3$, $f(3)=5$`,
   },
   {
-    id: 'd11', unit: 'u7', level: 'adv', type: 'short', sec: 150,
+    id: 'd11', unit: 'u7', level: 'adv', type: 'short', sec: 150, lesson: 'u7-l4',
     q: t`$-1\le x\le1$에서 함수 $y=\frac{x+3}{x+2}$의 최댓값을 $M$, 최솟값을 $m$이라 할 때, $M+m$의 값을 구하시오. (분수는 a/b 꼴로 입력)`,
     answer: '10/3',
     skills: { visual: 1, concept: 0.5 },
@@ -92,7 +117,7 @@ export const DIAGNOSIS = [
     solution: t`$M=f(-1)=2,\ m=f(1)=\frac43$이므로 $M+m=\frac{10}{3}$`,
   },
   {
-    id: 'd12', unit: 'u2', level: 'killer', type: 'short', sec: 240,
+    id: 'd12', unit: 'u2', level: 'killer', type: 'short', sec: 240, lesson: 'u2-l4',
     q: t`이차함수 $f(x)$가 모든 실수 $x$에 대하여 $f(x+2)=f(-x)$를 만족시킨다. $f(0)=3$이고 $f(x)$의 최솟값이 $-1$일 때, $f(3)$의 값을 구하시오.`,
     answer: '15',
     skills: { insight: 1, reason: 1 },
@@ -100,7 +125,7 @@ export const DIAGNOSIS = [
     solution: t`$f(x)=a(x-1)^2-1$, $f(0)=a-1=3$에서 $a=4$<br>$f(3)=4\cdot4-1=15$`,
   },
   {
-    id: 'd13', unit: 'u2', level: 'core', type: 'short', sec: 90,
+    id: 'd13', unit: 'u2', level: 'core', type: 'short', sec: 90, lesson: 'u2-l4',
     q: t`이차함수 $y=f(x)$의 그래프가 그림과 같이 $x$축과 $x=-1,\ x=3$에서 만나고 꼭짓점의 $y$좌표가 $4$일 때, 직선 $y=k$와 이 그래프가 서로 다른 두 점에서 만나도록 하는 자연수 $k$의 개수를 구하시오.`,
     fig: {
       x: [-2.5, 4.5], y: [-2, 5], alt: '위로 볼록한 포물선이 x축과 x=-1, x=3에서 만나고 꼭짓점은 (1,4)',
@@ -113,7 +138,7 @@ export const DIAGNOSIS = [
     solution: t`$k<4$이어야 하므로 자연수 $k$는 $1,\ 2,\ 3$의 $3$개`,
   },
   {
-    id: 'd14', unit: 'u7', level: 'adv', type: 'short', sec: 150,
+    id: 'd14', unit: 'u7', level: 'adv', type: 'short', sec: 150, lesson: 'u7-l4',
     q: t`유리함수 $y=\frac{k}{x-p}+q$의 그래프가 그림과 같이 두 점근선이 $x=1,\ y=-1$이고 점 $(0,-3)$을 지날 때, 상수 $k,\ p,\ q$에 대하여 $k+p+q$의 값을 구하시오.`,
     fig: {
       x: [-3, 4.5], y: [-5, 3], alt: '점근선이 x=1, y=-1인 유리함수 그래프가 점 (0,-3)을 지난다',

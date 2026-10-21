@@ -34,7 +34,8 @@ export function blankState() {
     notes: {}, // pid → 풀이 메모
     activity: {}, // 'YYYY-MM-DD' → { solved, attempted, seconds }
     practice: {}, // 생성기 이름 → { tried, solved } (비슷한 문제 연습)
-    lessons: {}, // 소단원 id → { done: 'YYYY-MM-DD'|null, checks: { 확인 문제 id: 맞혔는지 } }
+    quizzes: [], // 혼합 평가 기록(최신이 마지막) { date, items:[{ ref, unit, correct, sec }] }
+    lessons: {}, // 소단원 id → { done: 이해 표시 날짜|null, checks: { 확인 문제 id: 풀이 기록 }, recheck: { due, since }|null, rechecked: 날짜|null }
     settings: { theme: 'auto', ai: { gemini: '', chatgpt: '', claude: '' }, preferredAi: 'claude' },
   };
 }
@@ -74,6 +75,7 @@ export function checkState(raw, { strict }) {
     else if (!isObj(raw[k])) bad(k, '객체가 아님');
   }
   if ('diagnoses' in raw && !Array.isArray(raw.diagnoses)) bad('diagnoses', '배열이 아님');
+  if ('quizzes' in raw && !Array.isArray(raw.quizzes)) bad('quizzes', '배열이 아님');
   for (const k of ['notes', 'practice', 'lessons', 'profile', 'settings']) if (k in raw && !isObj(raw[k])) bad(k, '객체가 아님');
 
   // 프로필
@@ -168,8 +170,9 @@ export function checkState(raw, { strict }) {
 
   // 날짜별 학습량
   for (const [d, v] of Object.entries(isObj(raw.activity) ? raw.activity : {})) {
-    if (!isDay(d) || !isObj(v) || !isInt(v.solved, 0, 1e6) || !isInt(v.attempted, 0, 1e6) || !isNum(v.seconds, 0, 1e9)) { bad(`activity.${String(d).slice(0, 12)}`, '형식 오류'); continue; }
-    out.activity[d] = { solved: v.solved, attempted: v.attempted, seconds: v.seconds };
+    if (!isDay(d) || !isObj(v) || !isInt(v.solved, 0, 1e6) || !isInt(v.attempted, 0, 1e6) || !isNum(v.seconds, 0, 1e9)
+      || (v.checks !== undefined && !isInt(v.checks, 0, 1e6))) { bad(`activity.${String(d).slice(0, 12)}`, '형식 오류'); continue; }
+    out.activity[d] = { solved: v.solved, attempted: v.attempted, seconds: v.seconds, ...(v.checks ? { checks: v.checks } : {}) };
   }
 
   // 비슷한 문제 연습
@@ -178,17 +181,33 @@ export function checkState(raw, { strict }) {
     if (Object.hasOwn(GENERATORS, g)) out.practice[g] = { tried: v.tried, solved: v.solved }; else dropped++;
   }
 
-  // 개념 학습
+  // 혼합 평가
+  (Array.isArray(raw.quizzes) ? raw.quizzes : []).slice(-50).forEach((qz, i) => {
+    const okItems = isObj(qz) && isIso(qz.date) && Array.isArray(qz.items) && qz.items.length <= 40
+      && qz.items.every((it) => isObj(it) && typeof it.ref === 'string' && it.ref.length <= 40 && UNIT_BY_ID[it.unit] && isBool(it.correct) && isNum(it.sec, 0, 86400));
+    if (!okItems) { bad(`quizzes[${i}]`, '형식 오류'); return; }
+    out.quizzes.push({ date: qz.date, items: qz.items.map((it) => ({ ref: it.ref, unit: it.unit, correct: it.correct, sec: it.sec })) });
+  });
+
+  // 개념 학습. 확인 문제 기록은 예전(맞혔는지 true/false)과 지금(시도 기록 객체) 형식을 모두 받는다.
+  const checkRec = (c) => {
+    if (isBool(c)) return { tries: 1, solved: c, firstCorrect: c ? null : false, sawSolution: false, lastAt: null }; // 예전 형식: 첫 시도 여부는 알 수 없음
+    if (!isObj(c) || !isInt(c.tries, 0, 100000) || !isBool(c.solved) || !(c.firstCorrect === null || isBool(c.firstCorrect))
+      || !isBool(c.sawSolution) || !(c.lastAt === null || c.lastAt === undefined || isIso(c.lastAt))) return null;
+    return { tries: c.tries, solved: c.solved, firstCorrect: c.firstCorrect, sawSolution: c.sawSolution, lastAt: c.lastAt ?? null };
+  };
   for (const [lid, v] of Object.entries(isObj(raw.lessons) ? raw.lessons : {})) {
     const w = `lessons.${lid.slice(0, 20)}`;
-    if (!isObj(v) || !(v.done === null || v.done === undefined || isDay(v.done)) || (v.checks !== undefined && !isObj(v.checks))
-      || !Object.values(v.checks || {}).every(isBool)) { bad(w, '형식 오류'); continue; }
+    const recs = isObj(v) && (v.checks === undefined || isObj(v.checks)) ? Object.entries(v.checks || {}).map(([cid, c]) => [cid, checkRec(c)]) : null;
+    if (!isObj(v) || !(v.done === null || v.done === undefined || isDay(v.done)) || !recs || recs.some(([, c]) => !c)
+      || !(v.recheck === null || v.recheck === undefined || (isObj(v.recheck) && isDay(v.recheck.due) && isDay(v.recheck.since)))
+      || !(v.rechecked === null || v.rechecked === undefined || isDay(v.rechecked))) { bad(w, '형식 오류'); continue; }
     if (!LESSON_BY_ID[lid]) { dropped++; continue; }
     const checks = {};
-    for (const [cid, ok] of Object.entries(v.checks || {})) {
-      if (CHECK_BY_ID[cid] && cid.startsWith(lid + '-')) checks[cid] = ok; else dropped++;
+    for (const [cid, c] of recs) {
+      if (CHECK_BY_ID[cid] && cid.startsWith(lid + '-')) checks[cid] = c; else dropped++;
     }
-    out.lessons[lid] = { done: v.done ?? null, checks };
+    out.lessons[lid] = { done: v.done ?? null, checks, recheck: v.recheck ? { due: v.recheck.due, since: v.recheck.since } : null, rechecked: v.rechecked ?? null };
   }
 
   // 설정

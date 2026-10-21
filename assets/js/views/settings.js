@@ -29,7 +29,7 @@ export function renderSettings(view) {
           <button type="button" class="chip" data-track="" aria-pressed="${!st.profile.track}">진단 추천 따르기${diagTrack ? ` (${TRACKS[diagTrack].label})` : ''}</button>
           ${Object.entries(TRACKS).map(([k, v]) => `<button type="button" class="chip" data-track="${k}" aria-pressed="${st.profile.track === k}">${v.label}</button>`).join('')}
         </div>
-        <p class="hint-text">트랙은 추천 문제의 난이도만 바꿉니다. 모든 문제는 언제든 풀 수 있어요.</p>
+        <p class="hint-text">트랙은 추천 문제의 난이도만 바꿉니다. 모든 문제는 언제든 풀 수 있어요. 트랙 이름은 학습 목표를 나타낼 뿐, 내신 등급이나 수능 성적을 예측하지 않습니다.</p>
       </fieldset>
       <fieldset class="field"><legend class="field-l">화면</legend>
         <div class="row">${[['auto', '기기 설정 따르기'], ['light', '밝게'], ['dark', '어둡게']].map(([k, v]) => `<button type="button" class="chip" data-theme="${k}" aria-pressed="${st.settings.theme === k}">${v}</button>`).join('')}</div>

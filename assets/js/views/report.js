@@ -1,6 +1,6 @@
 import { getState, today, addDays } from '../store.js';
-import { UNITS, SKILLS, TRACKS, unitLabel } from '../content/units.js';
-import { latestDiagnosis, currentSkills, unitMastery, periodStats, wrongList, REASONS, streak, totals, activeTrack } from '../model.js';
+import { UNITS, UNIT_BY_ID, SKILLS, TRACKS, unitLabel, NEXT_SUBJECTS_NOTE } from '../content/units.js';
+import { latestDiagnosis, currentSkills, unitMastery, periodStats, wrongList, REASONS, streak, totals, activeTrack, lessonTotals } from '../model.js';
 import { radar } from '../lib/radar.js';
 import { esc, fmtMinutes, fmtDate } from '../lib/ui.js';
 import { AI_SERVICES, reportPrompt, sendToAI } from '../lib/ai.js';
@@ -32,7 +32,7 @@ export function renderReport(view) {
 
   const unitRows = UNITS.map((u) => {
     const m = unitMastery(u.id);
-    return `<tr><th scope="row">${esc(unitLabel(u))}</th><td><span class="meter" role="img" aria-label="${m.pct}%"><span style="--v:${m.pct}%"></span></span></td><td class="num">${m.pct}%</td><td class="num">${m.solved}/${m.total}</td></tr>`;
+    return `<tr><th scope="row">${esc(unitLabel(u))}</th><td><span class="meter" role="img" aria-label="현재 숙련도 ${m.pct}%"><span style="--v:${m.pct}%"></span></span></td><td class="num">${m.pct}%</td><td class="num">${m.firstPct}%</td><td class="num">${m.triedPct == null ? '–' : m.triedPct + '%'}</td><td class="num">${m.solved}/${m.total}</td></tr>`;
   }).join('');
 
   const summary = buildSummary({ st, diag, now, w7, tt, wr });
@@ -41,7 +41,8 @@ export function renderReport(view) {
   <section class="page report">
     <header class="page-head">
       <h1 class="page-title">학습 리포트</h1>
-      <p class="lead">${st.profile.name ? esc(st.profile.name) + ' · ' : ''}${fmtDate(today())} 기준 · ${TRACKS[activeTrack()].label} 트랙</p>
+      <p class="lead">${st.profile.name ? esc(st.profile.name) + ' · ' : ''}${fmtDate(today())} 기준 · ${TRACKS[activeTrack()].label} 트랙 · 고1 공통수학1·2 범위</p>
+      <p class="hint-text">${esc(NEXT_SUBJECTS_NOTE)} 이 리포트의 숙련도는 그 기초 단계의 학습 기록이며, 수능 준비도 전체를 나타내지 않습니다.</p>
     </header>
     <dl class="stats">
       <div><dt>최근 7일 해결</dt><dd>${w7.solved}<small>문제</small></dd></div>
@@ -50,6 +51,8 @@ export function renderReport(view) {
       <div><dt>힌트·풀이 사용률</dt><dd>${w7.problems ? Math.round(w7.hintUse * 100) : '–'}<small>%</small></dd></div>
       <div><dt>공부 시간</dt><dd class="dd-text">${fmtMinutes(w7.seconds)}</dd></div>
       <div><dt>연속 학습</dt><dd>${streak()}<small>일</small></dd></div>
+      <div><dt>개념 확인 문제</dt><dd>${w7.checks}<small>번 풀이</small></dd></div>
+      <div><dt>혼자 확인한 개념</dt><dd>${lessonTotals().verified}<small>/${lessonTotals().total}</small></dd></div>
     </dl>
     <div class="result-grid">
       <section class="paper chart-paper">
@@ -71,9 +74,15 @@ export function renderReport(view) {
     </div>
     <section class="side-block">
       <h2 class="h3">단원별 숙련도</h2>
-      <table class="tbl"><thead><tr><th scope="col">단원</th><th scope="col"><span class="sr">막대</span></th><th scope="col" class="num">숙련도</th><th scope="col" class="num">해결</th></tr></thead><tbody>${unitRows}</tbody></table>
-      <p class="hint-text">숙련도는 난이도가 높은 문제일수록, 힌트 없이 한 번에 풀수록 크게 오릅니다.</p>
+      <div class="tbl-wrap"><table class="tbl"><thead><tr><th scope="col">단원</th><th scope="col"><span class="sr">막대</span></th><th scope="col" class="num">현재</th><th scope="col" class="num">처음</th><th scope="col" class="num">푼 문제만</th><th scope="col" class="num">해결</th></tr></thead><tbody>${unitRows}</tbody></table></div>
+      <ul class="hint-list">
+        <li><b>현재</b>: 단원 전체 문제 기준 숙련도. 처음에 틀렸거나 풀이를 본 문제도 날짜 간격을 두고 힌트 없이 다시 맞히면 회복하고, 복습에서 다시 틀리면 내려갑니다. 아직 안 푼 문제는 0으로 계산합니다.</li>
+        <li><b>처음</b>: 처음 풀었을 때의 성과. 복습해도 바뀌지 않습니다.</li>
+        <li><b>푼 문제만</b>: 아직 안 푼 문제를 빼고 계산한 현재 실력. 문제를 몇 개 안 풀었으면 근거가 적습니다.</li>
+      </ul>
+      <p class="hint-text">이 수치는 이 앱의 공통수학 문제 기준 학습 지표이며, 내신 등급이나 수능 성적을 예측하지 않습니다.</p>
     </section>
+    ${(st.quizzes || []).length ? `<section class="side-block"><h2 class="h3">혼합 평가</h2><table class="tbl"><thead><tr><th scope="col">날짜</th><th scope="col" class="num">정답</th><th scope="col">범위</th></tr></thead><tbody>${st.quizzes.slice(-6).reverse().map((q) => `<tr><th scope="row">${fmtDate(q.date)}</th><td class="num">${q.items.filter((i) => i.correct).length}/${q.items.length}</td><td>${[...new Set(q.items.map((i) => UNIT_BY_ID[i.unit].no))].join(', ')}</td></tr>`).join('')}</tbody></table><p class="hint-text">단원 이름 없이 처음 보는 문제로 본 결과입니다. 연습 문제보다 실제 실력에 가깝지만, 한 번에 8문제라 단원별 판단에는 여러 번의 결과를 보세요.</p></section>` : ''}
     <section class="side-block no-print">
       <h2 class="h3">AI와 학습 계획 세우기</h2>
       <p>아래 기록을 AI에게 보내 강점과 약점, 다음 주 학습 계획을 받아볼 수 있습니다. 이름은 보내지 않습니다.</p>
@@ -92,6 +101,7 @@ export function renderReport(view) {
 
 function buildSummary({ diag, now, w7, tt, wr }) {
   const lines = [];
+  lines.push('범위: 고1 공통수학1·2(2022 개정). 후속 과목(대수, 미적분Ⅰ, 확률과 통계)은 아직 이 앱에서 학습하지 않음');
   lines.push(`트랙: ${TRACKS[activeTrack()].label}`);
   if (diag) {
     lines.push(`최근 진단(${fmtDate(diag.date)}): ${diag.total}문제 중 ${diag.correctCount}개 정답, 확신도 반영 점수 ${diag.overall}점`);
@@ -102,7 +112,8 @@ function buildSummary({ diag, now, w7, tt, wr }) {
   lines.push(`누적: 문제 은행 ${tt.total}문제 중 ${tt.solved}문제 해결(그중 한 번에 해결 ${tt.clean})`);
   const prac = Object.values(getState().practice || {}).reduce((s, v) => s + v.solved, 0);
   if (prac) lines.push(`숫자를 바꾼 유형 연습: ${prac}문제 해결`);
-  lines.push('단원별 숙련도: ' + UNITS.map((u) => `${unitLabel(u)} ${unitMastery(u.id).pct}%`).join(', '));
+  { const lt = lessonTotals(); lines.push(`개념 학습: 소단원 ${lt.total}개 중 확인 문제를 모두 혼자 맞힌 것 ${lt.verified}개, 이해했다고 표시한 것 ${lt.done}개, 다시 확인할 것 ${lt.recheck}개 (최근 7일 확인 문제 ${w7.checks}번 풀이)`); }
+  lines.push('단원별 숙련도(현재/처음, 해결 문제 수): ' + UNITS.map((u) => { const m = unitMastery(u.id); return `${unitLabel(u)} ${m.pct}%/${m.firstPct}% (${m.solved}/${m.total})`; }).join(', '));
   if (wr.length) {
     const byReason = REASONS.map((r) => `${r} ${wr.filter((w) => w.reason === r).length}`).join(', ');
     lines.push(`남은 오답 ${wr.length}문제(원인: ${byReason})`);
