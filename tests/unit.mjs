@@ -69,6 +69,7 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
     s.practice['g-sym'] = { tried: 3, solved: 2 };
     s.settings.ai.claude = 'https://claude.ai/project/abc';
     s.settings.theme = 'dark';
+    s.lessons['u2-l3'] = { done: '2026-10-20', checks: { 'u2-l3-c1': true, 'u2-l3-c2': false } };
   });
   store.logActivity({ solved: 1, attempted: 2, seconds: 150 });
   store.update(() => {});
@@ -94,6 +95,8 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
     ['시도 횟수가 문자열', JSON.stringify({ app: 'MathPulse', data: { attempts: { 'u1-01': { tries: '5', solved: true } }, wrong: {}, activity: {} } })],
     ['javascript: AI 주소', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, settings: { ai: { claude: 'javascript:alert(1)' } } } })],
     ['오답 원인이 목록 밖', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: { 'u1-01': { stage: 0, due: '2026-10-22', reason: '<img>', resolved: false } }, activity: {} } })],
+    ['개념 학습 기록 형식 오류', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: 'yesterday', checks: {} } } } })],
+    ['확인 문제 결과가 불리언이 아님', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: null, checks: { 'u2-l3-c1': 'yes' } } } } })],
     ['다른 앱의 파일', JSON.stringify({ app: 'Other', data: { attempts: {}, wrong: {}, activity: {} } })],
     ['JSON이 아님', '{ 이건 JSON이 아님'],
   ];
@@ -106,8 +109,17 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   // 지금 앱에 없는 문제의 기록은 버리고 나머지는 가져온다
   const withUnknown = JSON.parse(exported);
   withUnknown.data.attempts['u9-99'] = { tries: 1, solved: true };
+  withUnknown.data.lessons['u9-l1'] = { done: null, checks: {} };
+  withUnknown.data.lessons['u2-l3'].checks['u2-l3-c9'] = true;
   const r2 = store.importData(JSON.stringify(withUnknown));
-  ok(r2.dropped === 1 && !store.getState().attempts['u9-99'] && store.getState().attempts['u1-05'], '없는 문제의 기록은 건너뛰고 개수를 알려 준다');
+  const ls = store.getState().lessons;
+  ok(r2.dropped === 3 && !store.getState().attempts['u9-99'] && store.getState().attempts['u1-05'] && !ls['u9-l1'] && ls['u2-l3'].done === '2026-10-20' && ls['u2-l3'].checks['u2-l3-c1'] === true && !('u2-l3-c9' in ls['u2-l3'].checks), '없는 문제·소단원·확인 문제의 기록은 건너뛰고 개수를 알려 준다');
+
+  // 예전 백업(개념 학습 기록이 없던 버전)도 그대로 가져온다
+  const old = JSON.parse(exported);
+  delete old.data.lessons;
+  const r3 = store.importData(JSON.stringify(old));
+  ok(r3.dropped === 0 && JSON.stringify(store.getState().lessons) === '{}', '개념 학습 기록이 없는 예전 백업도 가져온다');
 
   // 저장소에 이미 망가진 기록이 있어도 앱은 열리고, 망가진 부분만 버린다
   installStorage({ 'mathpulse:v2': JSON.stringify({ attempts: { 'u1-01': { tries: 1, solved: true } }, wrong: {}, activity: {}, profile: { track: 'invalid', name: '이름' }, diagnoses: [{ track: 'nope' }] }) });

@@ -2,7 +2,7 @@
 // 그림 데이터는 정답 검증 스크립트(tests/verify_answers.py)도 그대로 읽으므로,
 // 그림에 그린 수치와 문제의 정답이 항상 같은 데이터에서 나온다.
 //
-// fig = { kind: 'plane' | 'venn' | 'grid' | 'box', alt: '그림 설명(필수)', ... }
+// fig = { kind: 'plane' | 'venn' | 'grid' | 'box' | 'map', alt: '그림 설명(필수)', ... }
 //
 // plane: { x:[x0,x1], y:[y0,y1], equal:true, w:340, axes:true, xt:[[값,'라벨']], yt:[...], items:[...] }
 //   items:
@@ -19,6 +19,8 @@
 // venn:  { sets:['A','B'] 또는 ['A','B','C'], shade:['a','ab','u',...], u:'U' }
 // grid:  { w, h, blocked:[[[x1,y1],[x2,y2]],..], pts:{A:[0,0],B:[w,h],P:[..]} }
 // box:   { labels:{a:'a',b:'b',c:'c'} }                        직육면체 겨냥도
+// map:   { sets:[{n:'X', els:['1','2']}, ...], arrows:[[[0,1],[1,0]], ...], labels:['f','g'] }
+//        대응 그림. arrows[k]는 k번째 집합에서 k+1번째 집합으로 가는 화살표(원소 번호 쌍)
 import { esc } from './ui.js';
 
 const FMT = (n) => (Math.round(n * 10) / 10).toString();
@@ -79,6 +81,7 @@ export function figure(fig) {
   if (fig.kind === 'venn') body = venn(fig);
   else if (fig.kind === 'grid') body = grid(fig);
   else if (fig.kind === 'box') body = box(fig);
+  else if (fig.kind === 'map') body = map(fig);
   else body = plane(fig);
   return `<figure class="fig" role="img" aria-label="${alt}">${body}</figure>`;
 }
@@ -259,6 +262,37 @@ function grid(fig) {
     top += label(X(x), Y(y), name, pos, 'pl-lab big');
   }
   return `<svg class="plot" viewBox="0 0 ${W} ${H}" width="${W}" aria-hidden="true">${g}${top}</svg>`;
+}
+
+// ── 대응 그림(함수) ───────────────────────────
+function map(fig) {
+  const id = `mp${++uid}`;
+  const gap = 150, rx = 36, step = 34, pad = 14, head = 30;
+  const m = Math.max(...fig.sets.map((s) => s.els.length));
+  const ry = (m * step) / 2 + 12;
+  const W = 2 * pad + 2 * rx + (fig.sets.length - 1) * gap;
+  const cy = head + ry + 4, H = cy + ry + pad;
+  const cx = (k) => pad + rx + k * gap;
+  const ey = (k, i) => cy - ((fig.sets[k].els.length - 1) * step) / 2 + i * step;
+  let g = '', top = '';
+  fig.sets.forEach((s, k) => {
+    g += `<ellipse class="mp-set" cx="${cx(k)}" cy="${cy}" rx="${rx}" ry="${ry}"/>`;
+    top += `<text class="pl-lab big" x="${cx(k)}" y="${head - 8}" text-anchor="middle">${mathText(s.n)}</text>`;
+    s.els.forEach((e, i) => {
+      top += `<circle class="pl-pt" cx="${cx(k) - 12}" cy="${ey(k, i)}" r="3"/>`;
+      top += `<text class="pl-lab" x="${cx(k) + 2}" y="${ey(k, i) + 5}">${mathText(e)}</text>`;
+    });
+  });
+  (fig.arrows || []).forEach((pairs, k) => {
+    for (const [i, j] of pairs) {
+      g += `<line class="mp-arr" x1="${cx(k) + 20}" y1="${ey(k, i)}" x2="${cx(k + 1) - 18}" y2="${ey(k + 1, j)}" marker-end="url(#${id}a)"/>`;
+    }
+    const lb = (fig.labels || [])[k];
+    if (lb) top += `<text class="pl-lab big" x="${(cx(k) + cx(k + 1)) / 2}" y="${head - 8}" text-anchor="middle">${mathText(lb)}</text>`;
+  });
+  return `<svg class="plot" viewBox="0 0 ${W} ${H}" width="${W}" aria-hidden="true">
+    <defs><marker id="${id}a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 1L9 5L0 9" class="pl-arrow mp-head"/></marker></defs>
+    ${g}${top}</svg>`;
 }
 
 // ── 직육면체 겨냥도 ───────────────────────────

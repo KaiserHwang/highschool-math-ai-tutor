@@ -16,6 +16,7 @@ if (shotsDir) mkdirSync(shotsDir, { recursive: true });
 const { DIAGNOSIS } = await import('../assets/js/content/diagnosis.js');
 const { PROBLEM_BY_ID } = await import('../assets/js/content/problems.js');
 const { makeVariant } = await import('../assets/js/content/generators.js');
+const { LESSONS, lessonsOfUnit, LESSON_BY_ID } = await import('../assets/js/content/lessons/index.js');
 
 let failures = 0;
 const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!cond) failures++; };
@@ -194,8 +195,56 @@ async function run(viewport, tag) {
 
   // ── 단원, 홈
   await page.goto(BASE + '#/u/u2');
-  await page.waitForSelector('.concept .katex');
+  await page.waitForSelector('.lesson-toc .lt-row .katex');
+  ok(await page.locator('.lesson-toc .lt-row').count() === lessonsOfUnit('u2').length, `[${tag}] 단원 화면에 소단원 목차가 모두 보인다`);
   await shot('unit');
+
+  // ── 개념 학습: 예제 단계 펼치기, 확인 문제 채점, 이해 표시
+  await page.click('.lesson-toc .lt-row >> nth=0');
+  await page.waitForSelector('.lesson .box .katex');
+  ok(page.url().endsWith('#/l/u2-l1'), `[${tag}] 목차에서 첫 소단원을 연다`);
+  const ex0 = page.locator('[data-ex="0"]');
+  const nSteps = LESSON_BY_ID['u2-l1'].examples[0].steps.length;
+  await ex0.locator('[data-act="ex-next"]').click();
+  ok(await ex0.locator('.ex-step:not([hidden])').count() === 1, `[${tag}] 예제 풀이를 한 단계씩 연다`);
+  await ex0.locator('[data-act="ex-all"]').click();
+  ok(await ex0.locator('.ex-step:not([hidden])').count() === nSteps && !(await ex0.locator('[data-act="ex-next"]').count()), `[${tag}] 예제 풀이를 한 번에 모두 연다`);
+  const ck = page.locator('[data-check="u2-l1-c1"]');
+  await ck.locator('.short-in').fill('31');
+  await ck.locator('button[type="submit"]').click();
+  await ck.locator('.fb-wrong').waitFor();
+  await ck.locator('[data-act="show-sol"]').click();
+  ok(await ck.locator('.sol .katex').count() > 0, `[${tag}] 확인 문제를 틀리면 풀이를 볼 수 있다`);
+  await ck.locator('.short-in').fill('32');
+  await ck.locator('button[type="submit"]').click();
+  await ck.locator('.fb-right').waitFor();
+  ok(await page.locator('.ck.is-right').count() >= 1, `[${tag}] 확인 문제를 맞히면 채점 표시가 남는다`);
+  await page.click('[data-act="done"]');
+  await page.waitForSelector('[data-act="undone"]');
+  const lessonRec = await page.evaluate(() => JSON.parse(localStorage.getItem('mathpulse:v2')).lessons['u2-l1']);
+  ok(lessonRec && lessonRec.done && lessonRec.checks['u2-l1-c1'] === true, `[${tag}] 이해 표시와 확인 문제 결과를 저장한다`);
+  await shot('lesson');
+  await page.goto(BASE + '#/u/u2');
+  await page.waitForSelector('.lesson-toc');
+  ok(await page.locator('.lt-row.is-done').count() === 1, `[${tag}] 단원 목차에 이해 완료가 표시된다`);
+  await page.goto(BASE + '#/p/u2-10');
+  await page.waitForSelector('.concept-link a');
+  ok((await page.getAttribute('.concept-link a', 'href')) === '#/l/u2-l11', `[${tag}] 문제 화면에서 관련 개념으로 갈 수 있다`);
+  await page.goto(BASE + '#/l/u7-l2');
+  await page.waitForSelector('.lesson svg ellipse.mp-set');
+  await shot('lesson-map');
+
+  // 모든 소단원이 오류 없이 그려지는지(넓은 화면에서만)
+  if (viewport.width >= 1100) {
+    let bad = [];
+    for (const L of LESSONS) {
+      await page.goto(BASE + `#/l/${L.id}`);
+      await page.waitForSelector(`.lesson-head h1:has-text("${L.title}")`);
+      const n = await page.evaluate(() => ({ katexErr: document.querySelectorAll('.lesson .katex-error').length, checks: document.querySelectorAll('.ck').length, ex: document.querySelectorAll('.ex').length }));
+      if (n.katexErr || n.checks !== L.checks.length || n.ex !== L.examples.length) bad.push(L.id);
+    }
+    ok(bad.length === 0, `[${tag}] 소단원 ${LESSONS.length}개가 모두 수식 오류 없이 그려진다${bad.length ? ': ' + bad.join(', ') : ''}`);
+  }
   await page.goto(BASE + '#/');
   await page.waitForSelector('.next-problem');
   await shot('home');

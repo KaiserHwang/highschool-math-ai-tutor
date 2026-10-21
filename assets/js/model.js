@@ -3,6 +3,7 @@ import { PROBLEMS, problemsOfUnit, PROBLEM_BY_ID } from './content/problems.js';
 import { DIAGNOSIS } from './content/diagnosis.js';
 import { UNITS, SKILLS, LEVELS, TRACKS, REVIEW_GAPS } from './content/units.js';
 import { getState, today, addDays, localDay } from './store.js';
+import { LESSONS, lessonsOfUnit } from './content/lessons/index.js';
 
 // ── 답 비교 ──────────────────────────────────────────
 function gcd(a, b) {
@@ -289,4 +290,23 @@ export function totals() {
     clean: atts.filter((a) => a.solved && a.firstCorrect && !a.hints && !a.sawSolution).length,
     total: PROBLEMS.length,
   };
+}
+
+// ── 개념 학습 ─────────────────────────────────────
+/** 소단원 진행 상황: 이해 표시, 맞힌 확인 문제 수 */
+export function lessonProgress(lesson) {
+  const rec = getState().lessons[lesson.id] || { done: null, checks: {} };
+  const right = lesson.checks.filter((c) => rec.checks[c.id] === true).length;
+  return { done: rec.done, right, total: lesson.checks.length, complete: !!rec.done && right === lesson.checks.length };
+}
+
+export function unitLessonStats(unitId) {
+  const ls = lessonsOfUnit(unitId);
+  const done = ls.filter((l) => getState().lessons[l.id]?.done).length;
+  return { done, total: ls.length, next: ls.find((l) => !getState().lessons[l.id]?.done) || null };
+}
+
+export function lessonTotals() {
+  const done = LESSONS.filter((l) => getState().lessons[l.id]?.done).length;
+  return { done, total: LESSONS.length };
 }

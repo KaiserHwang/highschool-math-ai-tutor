@@ -17,10 +17,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: 정답 독립 검증
+      - name: 정답 독립 검증(문제 은행, 개념 학습)
         run: |
           pip install sympy
           python3 tests/verify_answers.py
+          python3 tests/verify_lessons.py
       - name: 비슷한 문제 생성기 검사
         run: node tests/gen-check.mjs
       - name: 수식·HTML·그림·서비스 워커 검사

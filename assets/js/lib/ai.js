@@ -36,6 +36,16 @@ export function problemPrompt({ p, question, note, lastResponse, hintsSeen, solv
   return lines.join('\n');
 }
 
+export function lessonPrompt({ lesson, question }) {
+  const unit = UNIT_BY_ID[lesson.unit];
+  return [
+    `너는 고등학교 1학년 학생의 수학 과외 선생님이야. 2022 개정 교육과정 공통수학1·2 범위 안에서 설명해 줘. 수식은 LaTeX로 써 줘.`,
+    `지금 "${unitLabel(unit)} · ${lesson.title}" 개념을 공부하고 있어. 앱에 있는 개념 정리는 아래와 같아.`,
+    '', '[개념 정리]', plain(lesson.core),
+    '', '[내 질문]', question && question.trim() ? question.trim() : '이 개념을 교과서와 다른 예를 들어 쉽게 다시 설명해 줘. 설명이 끝나면 내가 이해했는지 확인할 짧은 질문을 하나 내 줘(답은 내가 말한 뒤에 알려 줘).',
+  ].join('\n');
+}
+
 export function reportPrompt(summary) {
   return `너는 고등학교 1학년 수학 학습 코치야. 아래는 우리 아이가 수학 앱에서 공부한 기록이야. 2022 개정 공통수학1·2 기준으로 강점과 약점을 짚고, 다음 1주일 학습 계획을 요일별로 짜 줘. 계획은 하루 40분 안쪽으로 현실적으로.\n\n${summary}`;
 }

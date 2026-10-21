@@ -7,6 +7,7 @@ import { TRACKS, SKILLS, UNIT_BY_ID, REASONS, REVIEW_GAPS } from './content/unit
 import { PROBLEM_BY_ID } from './content/problems.js';
 import { DIAGNOSIS } from './content/diagnosis.js';
 import { GENERATORS } from './content/generators.js';
+import { LESSON_BY_ID, CHECK_BY_ID } from './content/lessons/index.js';
 
 export const STATE_VERSION = 2;
 export const AI_KEYS = ['claude', 'chatgpt', 'gemini'];
@@ -33,6 +34,7 @@ export function blankState() {
     notes: {}, // pid → 풀이 메모
     activity: {}, // 'YYYY-MM-DD' → { solved, attempted, seconds }
     practice: {}, // 생성기 이름 → { tried, solved } (비슷한 문제 연습)
+    lessons: {}, // 소단원 id → { done: 'YYYY-MM-DD'|null, checks: { 확인 문제 id: 맞혔는지 } }
     settings: { theme: 'auto', ai: { gemini: '', chatgpt: '', claude: '' }, preferredAi: 'claude' },
   };
 }
@@ -72,7 +74,7 @@ export function checkState(raw, { strict }) {
     else if (!isObj(raw[k])) bad(k, '객체가 아님');
   }
   if ('diagnoses' in raw && !Array.isArray(raw.diagnoses)) bad('diagnoses', '배열이 아님');
-  for (const k of ['notes', 'practice', 'profile', 'settings']) if (k in raw && !isObj(raw[k])) bad(k, '객체가 아님');
+  for (const k of ['notes', 'practice', 'lessons', 'profile', 'settings']) if (k in raw && !isObj(raw[k])) bad(k, '객체가 아님');
 
   // 프로필
   const pf = isObj(raw.profile) ? raw.profile : {};
@@ -174,6 +176,19 @@ export function checkState(raw, { strict }) {
   for (const [g, v] of Object.entries(isObj(raw.practice) ? raw.practice : {})) {
     if (!isObj(v) || !isInt(v.tried, 0, 1e6) || !isInt(v.solved, 0, 1e6)) { bad(`practice.${g.slice(0, 20)}`, '형식 오류'); continue; }
     if (Object.hasOwn(GENERATORS, g)) out.practice[g] = { tried: v.tried, solved: v.solved }; else dropped++;
+  }
+
+  // 개념 학습
+  for (const [lid, v] of Object.entries(isObj(raw.lessons) ? raw.lessons : {})) {
+    const w = `lessons.${lid.slice(0, 20)}`;
+    if (!isObj(v) || !(v.done === null || v.done === undefined || isDay(v.done)) || (v.checks !== undefined && !isObj(v.checks))
+      || !Object.values(v.checks || {}).every(isBool)) { bad(w, '형식 오류'); continue; }
+    if (!LESSON_BY_ID[lid]) { dropped++; continue; }
+    const checks = {};
+    for (const [cid, ok] of Object.entries(v.checks || {})) {
+      if (CHECK_BY_ID[cid] && cid.startsWith(lid + '-')) checks[cid] = ok; else dropped++;
+    }
+    out.lessons[lid] = { done: v.done ?? null, checks };
   }
 
   // 설정

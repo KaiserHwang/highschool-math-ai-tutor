@@ -8,6 +8,7 @@ import { tex, esc, CIRCLED, gradeMark, toast, fmtDate, statusGlyph, optionsClass
 import { mountScratchpad, scratchpadHTML } from '../lib/scratchpad.js';
 import { figure } from '../lib/plot.js';
 import { AI_SERVICES, problemPrompt, sendToAI, copyText } from '../lib/ai.js';
+import { lessonForProblem } from '../content/lessons/index.js';
 
 
 /** 해시 경로 링크를 만든다. 쿼리 값은 인코딩하고, 결과는 HTML 속성에 넣을 수 있게 이스케이프한다. */
@@ -43,6 +44,7 @@ export function renderProblem(view, { args: [ref], params }) {
   const st = getState();
   const att0 = isVariant ? null : st.attempts[pid];
   const wasSolved = !!(att0 && att0.solved);
+  const lesson = lessonForProblem(isVariant ? (GENERATORS[ref].like || [])[0] : pid);
 
   const session = {
     hints: 0,
@@ -95,6 +97,7 @@ export function renderProblem(view, { args: [ref], params }) {
 
         <section class="coach" aria-labelledby="coach-h">
           <h2 id="coach-h" class="h3">막히면 한 단계씩</h2>
+          ${lesson ? `<p class="concept-link"><a href="#/l/${lesson.id}"><span class="cl-tag">개념</span>${esc(lesson.title)}</a><span class="hint-text">힌트를 열기 전에 개념을 다시 볼 수 있어요</span></p>` : ''}
           <ol class="steps">
             <li class="step" data-step="1">
               <button type="button" class="step-btn" data-hint="1"><span class="step-n">1</span><span>조건을 식으로 번역하기</span></button>

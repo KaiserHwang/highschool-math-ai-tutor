@@ -1,7 +1,8 @@
 import { getState, today, addDays } from '../store.js';
 import { UNITS, TRACKS, UNIT_BY_ID, LEVELS, COURSE_SHORT, unitLabel } from '../content/units.js';
 import { generatorsOfUnit, newSeed } from '../content/generators.js';
-import { latestDiagnosis, recommendNext, dueReviews, unitMastery, streak, activeTrack, totals, weakestUnit } from '../model.js';
+import { latestDiagnosis, recommendNext, dueReviews, unitMastery, streak, activeTrack, totals, weakestUnit, lessonTotals } from '../model.js';
+import { lessonForProblem } from '../content/lessons/index.js';
 import { tex, esc } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 
@@ -38,6 +39,8 @@ export function renderHome(view) {
   }
 
   const steps = [];
+  const nextLesson = next ? lessonForProblem(next.id) : null;
+  const lessonFirst = nextLesson && !st.lessons[nextLesson.id]?.done;
   if (due.length) {
     steps.push(`<li class="plan-step"><div class="plan-body"><h2 class="h3">틀렸던 문제 ${due.length}개 복습</h2><p class="hint-text">힌트 없이 맞히면 다음 복습까지 간격이 늘어납니다.</p></div><a class="btn" href="#/review">복습하기</a></li>`);
   }
@@ -49,7 +52,7 @@ export function renderHome(view) {
             <span class="meta">${esc(unitLabel(UNIT_BY_ID[next.unit]))} · ${esc(next.topic)} · <span class="lv lv-${next.level}">${LEVELS[next.level].label}</span></span>
           </header>
           <div class="q-text">${tex(next.q)}</div>${figure(next.fig)}
-          <p class="row"><a class="btn btn-primary" href="#/p/${next.id}">이 문제 풀기</a><span class="hint-text">${track.label} 트랙 기준으로 고른 문제</span></p>
+          <p class="row"><a class="btn btn-primary" href="#/p/${next.id}">이 문제 풀기</a>${lessonFirst ? `<a class="btn btn-quiet" href="#/l/${nextLesson.id}">개념 먼저: ${esc(nextLesson.title)}</a>` : ''}<span class="hint-text">${track.label} 트랙 기준으로 고른 문제</span></p>
         </article>
       </li>`
     : `<li class="plan-step"><div class="plan-body"><h2 class="h3">문제 은행을 모두 풀었어요</h2><p class="hint-text">비슷한 문제 연습과 오답 복습으로 실력을 굳혀 보세요.</p></div></li>`);
@@ -91,7 +94,7 @@ export function renderHome(view) {
         <section class="side-block">
           <h2 class="h3">단원별 숙련도</h2>
           <ul class="unit-minis">${units}</ul>
-          <p class="hint-text">문제 은행 ${tt.total}문제 중 ${tt.solved}문제 해결</p>
+          <p class="hint-text">개념 ${lessonTotals().done}/${lessonTotals().total} 이해 · 문제 은행 ${tt.total}문제 중 ${tt.solved}문제 해결</p>
         </section>
         ${diag ? `<section class="side-block"><h2 class="h3">수준 진단</h2><p class="hint-text">최근 진단 ${diag.overall}점 · ${TRACKS[diag.track].label} 트랙 추천</p><p class="row"><a class="btn btn-quiet" href="#/diagnosis?view=result">결과 보기</a><a class="btn btn-quiet" href="#/diagnosis">다시 진단</a></p></section>` : ''}
       </aside>

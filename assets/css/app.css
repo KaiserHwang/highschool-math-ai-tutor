@@ -654,6 +654,9 @@ img, svg { display: block; }
 .plot .it { font-style: italic; }
 .vn-u, .vn-c { fill: none; stroke: var(--ink); stroke-width: 1.6; }
 .vn-fill { fill: var(--hl); }
+.mp-set { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+.mp-arr { stroke: var(--blue-pen); stroke-width: 1.5; }
+.mp-head { stroke: var(--blue-pen); }
 .gr-road { stroke: var(--ink-2); stroke-width: 2; stroke-linecap: round; }
 .bx-e { stroke: var(--ink); stroke-width: 1.6; }
 .bx-diag { stroke: var(--red-pen); stroke-width: 1.8; stroke-dasharray: 6 4; }
@@ -783,3 +786,75 @@ img, svg { display: block; }
 .options-mid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important; }
 .opt .katex { white-space: nowrap; }
 .options-mid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important; }
+
+/* ── 개념 학습 ─────────────────────────── */
+.lstrip { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 14px; }
+.lstrip-i { display: grid; place-items: center; min-width: 34px; height: 34px; padding: 0 6px; border: 1px solid var(--rule); border-radius: 999px; background: var(--paper); text-decoration: none; font: 600 13px var(--serif); color: var(--ink-2); }
+.lstrip-i.is-done { border-color: var(--ok); color: var(--ok); background: color-mix(in srgb, var(--ok) 10%, var(--paper)); }
+.lstrip-i.is-cur { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.lstrip-i:hover:not(.is-cur) { background: var(--paper-2); }
+.kicker { font: 600 13px var(--sans); color: var(--pencil); margin: 0 0 4px; letter-spacing: 0.02em; }
+.lesson-head .lead { font-family: var(--serif); }
+
+.lesson { font-family: var(--serif); }
+.l-sec + .l-sec { margin-top: 30px; padding-top: 22px; border-top: 1px dashed var(--rule); }
+.l-h { display: flex; align-items: center; gap: 10px; font: 700 19px var(--serif); margin: 0 0 12px; }
+.l-no { width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--paper); display: grid; place-items: center; font: 600 13px var(--sans); flex: none; }
+.lesson .c-body { max-width: 44em; }
+.lesson .c-body p, .lesson .c-body li { line-height: 1.95; }
+.lesson .c-body ul, .lesson .c-body ol { padding-left: 1.3em; margin: 6px 0; }
+.box { border: 1px solid var(--rule); border-left: 4px solid var(--ink-2); background: var(--paper-2); border-radius: var(--r-sm); padding: 12px 16px; margin: 12px 0; }
+.box-t { font: 700 14px var(--sans); color: var(--ink-2); margin: 0 0 4px !important; }
+.box ul { margin: 0; }
+.box .eq, .c-body .eq { text-align: center; margin: 10px 0; overflow-x: auto; overflow-y: hidden; }
+.c-body .katex-display, .c-body .katex { max-width: 100%; }
+table.mini { border-collapse: collapse; margin: 6px 0; font-size: 15px; width: 100%; max-width: 30em; }
+table.mini th, table.mini td { border-bottom: 1px solid var(--grid); padding: 6px 10px; text-align: left; }
+table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
+
+.ex-list, .ck-list { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 18px; }
+.ex { border: 1px solid var(--rule); border-radius: var(--r); padding: 16px 18px; background: var(--paper); }
+.ex-h { margin: 0 0 6px; }
+.ex-tag { font: 700 13px var(--sans); color: var(--red-pen); border-bottom: 2px solid currentColor; padding-bottom: 1px; }
+.ex-q { font: 400 17px/1.85 var(--serif); }
+.ex-steps { margin: 10px 0 0; padding-left: 1.4em; display: grid; gap: 6px; }
+.ex-steps:not(:has(li:not([hidden]))) { display: none; }
+.ex-step { line-height: 1.9; padding-left: 4px; }
+.ex-step::marker { color: var(--pencil); font: 600 14px var(--sans); }
+.ex-step:not([hidden]) { animation: rise 0.25s ease-out; }
+@keyframes rise { from { opacity: 0; transform: translateY(4px); } }
+.ex-ans { margin: 12px 0 0; font: 600 15px var(--sans); color: var(--ink-2); }
+.ex-ans strong { font-family: var(--serif); color: var(--ink); margin-left: 8px; }
+.ck { border-top: 1px solid var(--grid); padding-top: 14px; }
+.ck:first-child { border-top: 0; padding-top: 0; }
+.ck-num { font-size: 22px; }
+.ck .short-form, .ck .options { margin-top: 12px; }
+.ck .sol { margin-top: 8px; font-size: 15px; }
+.tips { margin: 0; padding-left: 1.2em; }
+.tips li { line-height: 1.9; color: var(--ink-2); }
+.tips li + li { margin-top: 6px; }
+.l-done { margin-top: 28px; padding: 16px 18px; border-radius: var(--r); background: var(--paper-2); border: 1px solid var(--rule); font-family: var(--sans); }
+.l-done-msg { margin: 0; font-size: 14px; color: var(--ink-2); }
+.l-done .row { margin-top: 10px; }
+.l-related { margin-top: 24px; }
+.l-related .prow { grid-template-columns: 22px minmax(0, 1fr) auto; }
+.c-figs:has(> .c-fig:only-child) .c-fig { max-width: 440px; }
+.lesson-toc + .c-sec { margin-top: 22px; padding-top: 18px; border-top: 1px dashed var(--rule); }
+@media (max-width: 520px) { .box { padding: 10px 12px; } .lesson .c-body ul, .lesson .c-body ol, .box ul { padding-left: 1.1em; } .ex { padding: 14px; } }
+.lesson-page .ask { margin-top: 20px; }
+
+.lesson-toc { list-style: none; margin: 0 0 8px; padding: 0; border: 1px solid var(--rule); border-radius: var(--r-sm); background: var(--paper); }
+.lesson-toc li + li { border-top: 1px solid var(--grid); }
+.lt-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 12px 14px; text-decoration: none; }
+.lt-row:hover { background: var(--paper-2); }
+.lt-n { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--rule); display: grid; place-items: center; font: 600 13px var(--sans); color: var(--ink-2); }
+.lt-row.is-done .lt-n { background: var(--ok); border-color: var(--ok); color: var(--paper); }
+.lt-t { display: block; font: 600 16px var(--serif); }
+.lt-s { display: block; font: 13px/1.6 var(--sans); color: var(--pencil); }
+.lt-st { display: grid; justify-items: end; gap: 2px; font: 12px var(--sans); color: var(--pencil); white-space: nowrap; }
+
+.concept-link { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 12px; }
+.concept-link a { font-weight: 600; }
+.concept-link .hint-text { margin: 0; }
+.cl-tag { font: 700 11px var(--sans); color: var(--paper); background: var(--ink-2); border-radius: 4px; padding: 2px 6px; margin-right: 6px; vertical-align: 1px; }
+@media print { .lstrip, .lesson-page .ask, .l-done .row, .ex-ctl { display: none !important; } .ex-step[hidden] { display: list-item !important; } }

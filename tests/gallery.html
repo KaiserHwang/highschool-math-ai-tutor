@@ -15,11 +15,14 @@
 <script type="module">
   import { PROBLEMS } from '../assets/js/content/problems.js';
   import { DIAGNOSIS } from '../assets/js/content/diagnosis.js';
-  import { UNITS } from '../assets/js/content/units.js';
+  import { LESSONS } from '../assets/js/content/lessons/index.js';
   import { figure } from '../assets/js/lib/plot.js';
   import { tex } from '../assets/js/lib/ui.js';
   const items = [...PROBLEMS, ...DIAGNOSIS].filter((p) => p.fig).map((p) => ({ id: p.id, q: p.q, fig: p.fig }));
-  for (const u of UNITS) for (const c of u.concept) for (const f of c.figs || []) items.push({ id: u.id + ' 개념: ' + c.title, q: f.cap, fig: f.fig });
+  for (const l of LESSONS) {
+    for (const f of l.figs || []) items.push({ id: `${l.id} 개념: ${l.title}`, q: f.cap, fig: f.fig });
+    for (const [i, x] of [...l.examples, ...l.checks].entries()) if (x.fig) items.push({ id: `${l.id} ${x.id || '예제 ' + (i + 1)}`, q: x.q, fig: x.fig });
+  }
   document.getElementById('g').innerHTML = items.map((p) => `<article class="paper"><h2>${p.id}</h2><div class="q-text compact">${tex(p.q)}</div>${figure(p.fig)}</article>`).join('');
   document.body.dataset.count = items.length;
 </script>
