@@ -366,7 +366,7 @@ export function totals() {
 // ── 개념 학습 ─────────────────────────────────────
 // 확인 문제 기록: { tries, solved, firstCorrect(true|false|null=예전 기록), sawSolution, lastAt }
 // "이해했어요"는 학생의 자기 표시이고, "혼자 확인"은 모든 확인 문제를 첫 시도에 풀이 없이 맞힌 경우다(#9).
-export const blankLessonRec = () => ({ done: null, checks: {}, recheck: null, rechecked: null, note: '' });
+export const blankLessonRec = () => ({ done: null, checks: {}, recheck: null, rechecked: null, note: '', cq: {} });
 
 export function lessonProgress(lesson) {
   const rec = getState().lessons[lesson.id] || blankLessonRec();
@@ -533,6 +533,13 @@ export function conceptMemory() {
  */
 export function conceptItems(lesson, round = 0) {
   const gens = Object.entries(GENERATORS).filter(([, g]) => g.like.some((pid) => lesson.related.includes(pid))).map(([k]) => k);
+  const cqs = lesson.cq || [];
+  if (cqs.length >= 2) {
+    // 개념 질문을 돌려 가며 낸다. 소단원 화면에서 본 앞의 두 문항은 순서상 뒤로 보낸다.
+    const order = cqs.length > 2 ? [...cqs.slice(2), ...cqs.slice(0, 2)] : cqs;
+    const pick = (k) => ({ kind: 'cq', id: order[k % order.length].id });
+    return gens.length ? [{ kind: 'variant', key: gens[round % gens.length] }, pick(round)] : [pick(2 * round), pick(2 * round + 1)];
+  }
   const checks = lesson.checks.map((c) => c.id);
   const items = [];
   if (gens.length) items.push({ kind: 'variant', key: gens[round % gens.length] });
@@ -601,4 +608,50 @@ export function makeQuiz(units, n = 8, seed = Date.now()) {
     if (units.every((u) => !pools[u].gens.length && !pools[u].bank.length)) break;
   }
   return shuffle(out);
+}
+
+// ── 개념 질문(답 + 이유) ─────────────────────────────
+/**
+ * 답과 이유를 함께 채점한다. 둘 다 맞아야 이해로 본다.
+ * kind: both(이해) | luck(답만 맞음: 이유가 틀림) | apply(이유만 맞음) | none
+ */
+export function gradeCQ(q, a, r) {
+  const ansOk = a === q.answer, reasonOk = r === q.reason;
+  return { ok: ansOk && reasonOk, ansOk, reasonOk, kind: ansOk ? (reasonOk ? 'both' : 'luck') : (reasonOk ? 'apply' : 'none'), mis: reasonOk ? null : q.mis[r] || null };
+}
+
+/** 개념 질문 풀이 기록: lessons[id].cq[qid].log = [{ d, a, r }] (최근 12개) */
+export function recordCQ(st, lessonId, qid, a, r) {
+  const rec = (st.lessons[lessonId] ||= blankLessonRec());
+  const cq = (rec.cq ||= {});
+  const e = (cq[qid] ||= { log: [] });
+  e.log = [...e.log, { d: today(), a, r }].slice(-12);
+}
+
+/** 개념 질문의 마지막 풀이(없으면 null) */
+export function lastCQ(lessonId, qid) {
+  const e = getState().lessons[lessonId]?.cq?.[qid];
+  return e && e.log.length ? e.log[e.log.length - 1] : null;
+}
+
+/** 최근 days일 동안 개념 질문에서 고른 틀린 이유를 오개념별로 센다(많은 순). */
+export function misconceptionStats(days = 60) {
+  const st = getState();
+  const from = addDays(today(), -(days - 1));
+  const acc = {};
+  for (const L of LESSONS) {
+    const rec = st.lessons[L.id];
+    if (!rec || !rec.cq) continue;
+    for (const q of L.cq || []) {
+      for (const h of rec.cq[q.id]?.log || []) {
+        if (h.d < from || h.r === q.reason) continue;
+        const tag = q.mis[h.r];
+        if (!tag) continue;
+        const x = (acc[tag] ||= { tag, n: 0, lessons: [] });
+        x.n += 1;
+        if (!x.lessons.includes(L.id)) x.lessons.push(L.id);
+      }
+    }
+  }
+  return Object.values(acc).sort((a, b) => b.n - a.n);
 }

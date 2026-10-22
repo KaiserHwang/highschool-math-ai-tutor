@@ -643,6 +643,26 @@ def main():
     for e in sorted(extra):
         print(f'✗ {e}: 데이터에 없는 항목을 계산함')
         fails += 1
+    # 개념 질문(답 + 이유): 답 보기를 계산으로 판정할 수 있는 문항은 독립 계산과 대조한다.
+    # 이유 보기는 정의·논리로 판정하므로 콘텐츠 검사(정답 이유가 하나뿐인지, 오개념 분류가 붙었는지)에 맡긴다.
+    from verify_plus import expected_cq
+    cqcalc = expected_cq()
+    # 화면에서는 보기 순서를 섞으므로, 작성한 그대로의 데이터(CQ_RAW)로 대조한다.
+    CQ_RAW = data['CQ_RAW']
+    cq_ids = {q['id'] for qs in CQ_RAW.values() for q in qs}
+    n_cq = len(cq_ids)
+    print('\n[개념 질문 답 보기 계산 검사]')
+    for qs in CQ_RAW.values():
+        for q in qs:
+            if q['id'] not in cqcalc:
+                continue
+            got = cqcalc[q['id']]
+            ok = got == q['answer']
+            fails += 0 if ok else 1
+            print(f"{'✓' if ok else '✗'} {q['id']}: 데이터 보기 {q['answer']} / 계산 보기 {got}")
+    for e in sorted(set(cqcalc) - cq_ids):
+        print(f'✗ {e}: 데이터에 없는 개념 질문을 계산함')
+        fails += 1
     print('\n[범위를 답하는 예제 검사]')
     re_ = range_examples()
     for name, ok in re_:
@@ -653,7 +673,7 @@ def main():
     for name, ok in st:
         print(f"{'✓' if ok else '✗'} {name}")
         fails += 0 if ok else 1
-    print(f"\n{'실패 ' + str(fails) + '건' if fails else '개념 학습 정답 검증 통과'} (예제·확인 문제 {seen}개, 범위 예제 {len(re_)}개, 정리 문장 {len(st)}개)")
+    print(f"\n{'실패 ' + str(fails) + '건' if fails else '개념 학습 정답 검증 통과'} (예제·확인 문제 {seen}개, 개념 질문 {n_cq}개 중 계산 검증 {len(cqcalc)}개, 범위 예제 {len(re_)}개, 정리 문장 {len(st)}개)")
     sys.exit(1 if fails else 0)
 
 

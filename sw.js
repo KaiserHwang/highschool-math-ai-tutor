@@ -1,6 +1,6 @@
 // 자동 생성 파일입니다. 직접 고치지 말고 node tools/gen-sw.mjs 를 실행하세요.
 // 오프라인에서도 열리도록 앱 파일을 미리 받아 두고, 온라인일 때는 항상 서버의 최신 파일을 먼저 씁니다.
-const VERSION = 'mathpulse-43e9f4a14cb6';
+const VERSION = 'mathpulse-36a35b2dd37f';
 const ASSETS = [
   './',
   'assets/css/app.css',
@@ -20,6 +20,14 @@ const ASSETS = [
   'assets/js/content/bank/u8.js',
   'assets/js/content/diagnosis.js',
   'assets/js/content/generators.js',
+  'assets/js/content/lessons/concept/u1.js',
+  'assets/js/content/lessons/concept/u2.js',
+  'assets/js/content/lessons/concept/u3.js',
+  'assets/js/content/lessons/concept/u4.js',
+  'assets/js/content/lessons/concept/u5.js',
+  'assets/js/content/lessons/concept/u6.js',
+  'assets/js/content/lessons/concept/u7.js',
+  'assets/js/content/lessons/concept/u8.js',
   'assets/js/content/lessons/index.js',
   'assets/js/content/lessons/plus/kit.js',
   'assets/js/content/lessons/plus/u1.js',
@@ -38,6 +46,7 @@ const ASSETS = [
   'assets/js/content/lessons/u6.js',
   'assets/js/content/lessons/u7.js',
   'assets/js/content/lessons/u8.js',
+  'assets/js/content/misconceptions.js',
   'assets/js/content/problems.js',
   'assets/js/content/units.js',
   'assets/js/lib/ai.js',
@@ -48,6 +57,7 @@ const ASSETS = [
   'assets/js/model.js',
   'assets/js/store.js',
   'assets/js/views/concepts.js',
+  'assets/js/views/cq.js',
   'assets/js/views/diagnosis.js',
   'assets/js/views/home.js',
   'assets/js/views/lesson.js',

@@ -2,6 +2,6 @@
 import { PROBLEMS } from '../assets/js/content/problems.js';
 import { DIAGNOSIS } from '../assets/js/content/diagnosis.js';
 import { UNITS, SKILLS, LEVELS } from '../assets/js/content/units.js';
-import { LESSONS } from '../assets/js/content/lessons/index.js';
+import { LESSONS, CQ_RAW } from '../assets/js/content/lessons/index.js';
 
-process.stdout.write(JSON.stringify({ PROBLEMS, DIAGNOSIS, UNITS, SKILLS, LEVELS, LESSONS }));
+process.stdout.write(JSON.stringify({ PROBLEMS, DIAGNOSIS, UNITS, SKILLS, LEVELS, LESSONS, CQ_RAW }));

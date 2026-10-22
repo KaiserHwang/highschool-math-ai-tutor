@@ -7,7 +7,7 @@ import { TRACKS, SKILLS, UNIT_BY_ID, REASONS, REVIEW_GAPS } from './content/unit
 import { PROBLEM_BY_ID } from './content/problems.js';
 import { DIAGNOSIS } from './content/diagnosis.js';
 import { GENERATORS } from './content/generators.js';
-import { LESSON_BY_ID, CHECK_BY_ID } from './content/lessons/index.js';
+import { LESSON_BY_ID, CHECK_BY_ID, CQ_BY_ID } from './content/lessons/index.js';
 
 export const STATE_VERSION = 2;
 export const AI_KEYS = ['claude', 'chatgpt', 'gemini'];
@@ -199,6 +199,9 @@ export function checkState(raw, { strict }) {
   // 개념 간격 복습 기록
   const okSpaced = (sp) => isObj(sp) && isInt(sp.stage, 0, 3) && isDay(sp.due) && (sp.keptAt === null || sp.keptAt === undefined || isDay(sp.keptAt))
     && Array.isArray(sp.history) && sp.history.length <= 50 && sp.history.every((h) => isObj(h) && isDay(h.date) && isBool(h.ok));
+  // 개념 질문 기록: { qid: { log:[{ d, a, r }] } }
+  const okCQ = (cq) => isObj(cq) && Object.values(cq).every((e) => isObj(e) && Array.isArray(e.log) && e.log.length <= 50
+    && e.log.every((h) => isObj(h) && isDay(h.d) && isInt(h.a, 0, 9) && isInt(h.r, 0, 9)));
   for (const [lid, v] of Object.entries(isObj(raw.lessons) ? raw.lessons : {})) {
     const w = `lessons.${lid.slice(0, 20)}`;
     const recs = isObj(v) && (v.checks === undefined || isObj(v.checks)) ? Object.entries(v.checks || {}).map(([cid, c]) => [cid, checkRec(c)]) : null;
@@ -206,13 +209,18 @@ export function checkState(raw, { strict }) {
       || !(v.recheck === null || v.recheck === undefined || (isObj(v.recheck) && isDay(v.recheck.due) && isDay(v.recheck.since)))
       || !(v.rechecked === null || v.rechecked === undefined || isDay(v.rechecked))
       || !(v.note === undefined || (typeof v.note === 'string' && v.note.length <= 4000))
-      || !(v.spaced === null || v.spaced === undefined || okSpaced(v.spaced))) { bad(w, '형식 오류'); continue; }
+      || !(v.spaced === null || v.spaced === undefined || okSpaced(v.spaced))
+      || !(v.cq === undefined || okCQ(v.cq))) { bad(w, '형식 오류'); continue; }
     if (!LESSON_BY_ID[lid]) { dropped++; continue; }
     const checks = {};
     for (const [cid, c] of recs) {
       if (CHECK_BY_ID[cid] && cid.startsWith(lid + '-')) checks[cid] = c; else dropped++;
     }
     out.lessons[lid] = { done: v.done ?? null, checks, recheck: v.recheck ? { due: v.recheck.due, since: v.recheck.since } : null, rechecked: v.rechecked ?? null, note: v.note ?? '' };
+    out.lessons[lid].cq = {};
+    for (const [qid, e] of Object.entries(v.cq || {})) {
+      if (CQ_BY_ID[qid] && qid.startsWith(lid + '-')) out.lessons[lid].cq[qid] = { log: e.log.map((h) => ({ d: h.d, a: h.a, r: h.r })) }; else dropped++;
+    }
     if (v.spaced) out.lessons[lid].spaced = { stage: v.spaced.stage, due: v.spaced.due, keptAt: v.spaced.keptAt ?? null, history: v.spaced.history.map((h) => ({ date: h.date, ok: h.ok })) };
   }
 

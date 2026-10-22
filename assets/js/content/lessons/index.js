@@ -12,6 +12,9 @@
 //   deep:    { intro, ideas:[{ title, body, example:{ q, fig?, think:[...], steps:[...], answer? } }],
 //              checks:[{ id:'u2-l3-d1', type, q, options?, answer, solution, traps? }] }   한 걸음 더(심화)
 //   explain: { prompt, model, keys:[...] }      직접 설명해 보기
+// 개념 질문(concept/uN.js, 소단원 id → 문항 목록). 답과 그렇게 고른 이유를 함께 묻는다.
+//   { id:'u2-l3-q1', q, options:[답 보기], answer, reasons:[이유 4개], reason, mis:[오개념 키|null(정답 이유)], note }
+//   앞의 두 문항은 소단원 화면의 "이유까지 답하기"에, 모든 문항은 오늘의 개념 확인에 돌아가며 나온다.
 import u1 from './u1.js';
 import u2 from './u2.js';
 import u3 from './u3.js';
@@ -28,17 +31,40 @@ import p5 from './plus/u5.js';
 import p6 from './plus/u6.js';
 import p7 from './plus/u7.js';
 import p8 from './plus/u8.js';
+import q1 from './concept/u1.js';
+import q2 from './concept/u2.js';
+import q3 from './concept/u3.js';
+import q4 from './concept/u4.js';
+import q5 from './concept/u5.js';
+import q6 from './concept/u6.js';
+import q7 from './concept/u7.js';
+import q8 from './concept/u8.js';
 
 const PLUS = { ...p1, ...p2, ...p3, ...p4, ...p5, ...p6, ...p7, ...p8 };
+// 개념 질문은 정답을 맨 앞에 두고 작성하므로, 문항 id로 정해지는 순서로 답 보기와 이유 보기를 섞는다(늘 같은 순서).
+const hash = (s) => { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+function perm(n, seed) {
+  const a = [...Array(n).keys()];
+  let x = seed || 1;
+  for (let i = n - 1; i > 0; i--) { x ^= x << 13; x >>>= 0; x ^= x >> 17; x ^= x << 5; x >>>= 0; const j = x % (i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function mixCQ(q) {
+  const po = perm(q.options.length, hash(q.id)), pr = perm(q.reasons.length, hash(q.id + '#r'));
+  return { ...q, options: po.map((i) => q.options[i]), answer: po.indexOf(q.answer), reasons: pr.map((i) => q.reasons[i]), reason: pr.indexOf(q.reason), mis: pr.map((i) => q.mis[i]) };
+}
+export const CQ_RAW = { ...q1, ...q2, ...q3, ...q4, ...q5, ...q6, ...q7, ...q8 }; // 작성한 그대로(검증용)
+const CQ = Object.fromEntries(Object.entries(CQ_RAW).map(([k, v]) => [k, v.map(mixCQ)]));
 
 export const LESSONS = [...u1, ...u2, ...u3, ...u4, ...u5, ...u6, ...u7, ...u8].map((l) => {
   const x = PLUS[l.id];
-  if (!x) return l;
+  if (!x) return { ...l, cq: CQ[l.id] || [] };
   const { traps = {}, deep = null, ...rest } = x;
   const withTraps = (c) => (traps[c.id] ? { ...c, traps: traps[c.id] } : c);
   return {
     ...l,
     ...rest,
+    cq: CQ[l.id] || [],
     checks: l.checks.map(withTraps),
     deep: deep ? { ...deep, checks: (deep.checks || []).map((c) => ({ ...withTraps(c), tier: 'deep' })) } : null,
   };
@@ -47,6 +73,7 @@ export const PLUS_IDS = Object.keys(PLUS);
 export const LESSON_BY_ID = Object.fromEntries(LESSONS.map((l) => [l.id, l]));
 /** 소단원의 모든 확인 문제(기본 + 심화) */
 export const allChecks = (l) => [...l.checks, ...((l.deep && l.deep.checks) || [])];
+export const CQ_BY_ID = Object.fromEntries(LESSONS.flatMap((l) => l.cq.map((q) => [q.id, q])));
 export const CHECK_BY_ID = Object.fromEntries(LESSONS.flatMap((l) => allChecks(l).map((c) => [c.id, c])));
 export const lessonsOfUnit = (unitId) => LESSONS.filter((l) => l.unit === unitId);
 

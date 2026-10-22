@@ -1,6 +1,8 @@
 import { getState, today, addDays } from '../store.js';
 import { UNITS, UNIT_BY_ID, SKILLS, TRACKS, unitLabel, NEXT_SUBJECTS_NOTE } from '../content/units.js';
-import { latestDiagnosis, currentSkills, unitMastery, periodStats, wrongList, REASONS, streak, totals, activeTrack, lessonTotals, conceptMemory } from '../model.js';
+import { latestDiagnosis, currentSkills, unitMastery, periodStats, wrongList, REASONS, streak, totals, activeTrack, lessonTotals, conceptMemory, misconceptionStats } from '../model.js';
+import { MISCONCEPTIONS } from '../content/misconceptions.js';
+import { LESSON_BY_ID } from '../content/lessons/index.js';
 import { radar } from '../lib/radar.js';
 import { esc, fmtMinutes, fmtDate } from '../lib/ui.js';
 import { AI_SERVICES, reportPrompt, sendToAI } from '../lib/ai.js';
@@ -73,6 +75,14 @@ export function renderReport(view) {
         </section>
       </div>
     </div>
+    ${(() => {
+      const ms = misconceptionStats(60).slice(0, 5);
+      if (!ms.length) return '';
+      const mx = ms[0].n;
+      return `<section class="side-block"><h2 class="h3">자주 보인 오개념 (최근 60일)</h2>
+        <ul class="bars mis-bars">${ms.map((m) => `<li><span class="bar-l">${esc(MISCONCEPTIONS[m.tag].name)}</span><span class="bar"><span style="--v:${(m.n / mx) * 100}%"></span></span><span class="bar-n">${m.n}</span><span class="mis-where">${m.lessons.slice(0, 3).map((id) => `<a href="#/l/${id}">${esc(LESSON_BY_ID[id].title)}</a>`).join(', ')}</span></li>`).join('')}</ul>
+        <p class="hint-text">개념 질문에서 고른 틀린 이유를 오해의 종류별로 셌습니다. 같은 오해가 여러 소단원에서 반복되면 그 습관을 먼저 고치는 것이 효과적입니다.</p></section>`;
+    })()}
     <section class="side-block">
       <h2 class="h3">단원별 숙련도</h2>
       <div class="tbl-wrap"><table class="tbl"><thead><tr><th scope="col">단원</th><th scope="col"><span class="sr">막대</span></th><th scope="col" class="num">현재</th><th scope="col" class="num">처음</th><th scope="col" class="num">푼 문제만</th><th scope="col" class="num">해결</th></tr></thead><tbody>${unitRows}</tbody></table></div>
@@ -113,7 +123,7 @@ function buildSummary({ diag, now, w7, tt, wr }) {
   lines.push(`누적: 문제 은행 ${tt.total}문제 중 ${tt.solved}문제 해결(그중 한 번에 해결 ${tt.clean})`);
   const prac = Object.values(getState().practice || {}).reduce((s, v) => s + v.solved, 0);
   if (prac) lines.push(`숫자를 바꾼 유형 연습: ${prac}문제 해결`);
-  { const lt = lessonTotals(); lines.push(`개념 학습: 소단원 ${lt.total}개 중 확인 문제를 모두 혼자 맞힌 것 ${lt.verified}개, 이해했다고 표시한 것 ${lt.done}개, 다시 확인할 것 ${lt.recheck}개 (최근 7일 확인 문제 ${w7.checks}번 풀이)`); const cm = conceptMemory(); lines.push(`개념 기억: 배운 개념 ${cm.learned}개 중 1주·3주·2개월 간격 확인을 모두 통과한 것 ${cm.kept}개, 오늘 확인할 것 ${cm.due}개`); }
+  { const lt = lessonTotals(); lines.push(`개념 학습: 소단원 ${lt.total}개 중 확인 문제를 모두 혼자 맞힌 것 ${lt.verified}개, 이해했다고 표시한 것 ${lt.done}개, 다시 확인할 것 ${lt.recheck}개 (최근 7일 확인 문제 ${w7.checks}번 풀이)`); const ms = misconceptionStats(60).slice(0, 3); if (ms.length) lines.push(`자주 보인 오개념(최근 60일, 개념 질문의 틀린 이유 기준): ${ms.map((m) => `${MISCONCEPTIONS[m.tag].name} ${m.n}회(${m.lessons.slice(0, 2).map((id) => LESSON_BY_ID[id].title).join(', ')})`).join('; ')}`); const cm = conceptMemory(); lines.push(`개념 기억: 배운 개념 ${cm.learned}개 중 1주·3주·2개월 간격 확인을 모두 통과한 것 ${cm.kept}개, 오늘 확인할 것 ${cm.due}개`); }
   lines.push('단원별 숙련도(현재/처음, 해결 문제 수): ' + UNITS.map((u) => { const m = unitMastery(u.id); return `${unitLabel(u)} ${m.pct}%/${m.firstPct}% (${m.solved}/${m.total})`; }).join(', '));
   if (wr.length) {
     const byReason = REASONS.map((r) => `${r} ${wr.filter((w) => w.reason === r).length}`).join(', ');

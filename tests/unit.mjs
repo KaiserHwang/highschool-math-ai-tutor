@@ -209,7 +209,8 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
       'u2-l3-c2': { tries: 2, solved: true, firstCorrect: false, sawSolution: true, lastAt: '2026-10-20T03:05:00.000Z' },
       'u2-l3-d1': { tries: 1, solved: false, firstCorrect: false, sawSolution: false, lastAt: '2026-10-20T03:06:00.000Z' },
     }, recheck: { due: '2026-10-21', since: '2026-10-20' }, rechecked: null, note: '두 근의 합과 곱으로 식을 다시 쓴다',
-      spaced: { stage: 1, due: '2026-11-10', keptAt: null, history: [{ date: '2026-10-20', ok: true }] } };
+      spaced: { stage: 1, due: '2026-11-10', keptAt: null, history: [{ date: '2026-10-20', ok: true }] },
+      cq: { 'u2-l3-q1': { log: [{ d: '2026-10-20', a: 1, r: 2 }, { d: '2026-10-21', a: 0, r: 0 }] } } };
   });
   store.logActivity({ solved: 1, attempted: 2, seconds: 150 });
   store.update(() => {});
@@ -237,6 +238,7 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
     ['오답 원인이 목록 밖', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: { 'u1-01': { stage: 0, due: '2026-10-22', reason: '<img>', resolved: false } }, activity: {} } })],
     ['개념 학습 기록 형식 오류', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: 'yesterday', checks: {} } } } })],
     ['개념 간격 복습 기록 형식 오류', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: null, checks: {}, spaced: { stage: 9, due: 'soon', history: 'x' } } } } })],
+    ['개념 질문 기록 형식 오류', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: null, checks: {}, cq: { 'u2-l3-q1': { log: [{ d: 'today', a: '1', r: 0 }] } } } } } })],
     ['확인 문제 결과가 불리언이 아님', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: null, checks: { 'u2-l3-c1': 'yes' } } } } })],
     ['다른 앱의 파일', JSON.stringify({ app: 'Other', data: { attempts: {}, wrong: {}, activity: {} } })],
     ['JSON이 아님', '{ 이건 JSON이 아님'],
@@ -252,9 +254,11 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   withUnknown.data.attempts['u9-99'] = { tries: 1, solved: true };
   withUnknown.data.lessons['u9-l1'] = { done: null, checks: {} };
   withUnknown.data.lessons['u2-l3'].checks['u2-l3-c9'] = true;
+  withUnknown.data.lessons['u2-l3'].cq['u2-l3-q9'] = { log: [] };
+  withUnknown.data.lessons['u2-l3'].cq['u1-l1-q1'] = { log: [] };
   const r2 = store.importData(JSON.stringify(withUnknown));
   const ls = store.getState().lessons;
-  ok(r2.dropped === 3 && !store.getState().attempts['u9-99'] && store.getState().attempts['u1-05'] && !ls['u9-l1'] && ls['u2-l3'].done === '2026-10-20' && ls['u2-l3'].checks['u2-l3-c1'].firstCorrect === true && !('u2-l3-c9' in ls['u2-l3'].checks), '없는 문제·소단원·확인 문제의 기록은 건너뛰고 개수를 알려 준다');
+  ok(r2.dropped === 5 && ls['u2-l3'].cq['u2-l3-q1'].log.length === 2 && !ls['u2-l3'].cq['u2-l3-q9'] && !ls['u2-l3'].cq['u1-l1-q1'] && !store.getState().attempts['u9-99'] && store.getState().attempts['u1-05'] && !ls['u9-l1'] && ls['u2-l3'].done === '2026-10-20' && ls['u2-l3'].checks['u2-l3-c1'].firstCorrect === true && !('u2-l3-c9' in ls['u2-l3'].checks), '없는 문제·소단원·확인 문제·개념 질문의 기록은 건너뛰고 개수를 알려 준다');
 
   // 예전 형식(확인 문제를 true/false로만 기록)도 가져오되, 첫 시도 정답 여부는 '알 수 없음'으로 둔다(#9)
   const legacy = JSON.parse(exported);
@@ -277,6 +281,41 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   const fresh = await import('../assets/js/store.js?reload');
   const s = fresh.getState();
   ok(s.profile.track === null && s.profile.name === '이름' && s.diagnoses.length === 0 && s.attempts['u1-01'].solved === true, '저장된 기록이 일부 망가져도 나머지를 살려서 연다');
+}
+
+// ── 개념 질문: 채점, 기록, 오개념 통계 ──────────────
+{
+  const store = await import('../assets/js/store.js');
+  const model = await import('../assets/js/model.js');
+  const { LESSONS, LESSON_BY_ID, CQ_RAW } = await import('../assets/js/content/lessons/index.js');
+  const { MISCONCEPTIONS } = await import('../assets/js/content/misconceptions.js');
+  ok(LESSONS.every((l) => l.cq.length >= 4), '모든 소단원에 개념 질문이 4개 이상 있다');
+  // 화면용으로 섞은 순서도 정답·이유·오개념 짝이 그대로다
+  let pairOk = true, moved = 0;
+  for (const l of LESSONS) l.cq.forEach((q, i) => {
+    const raw = CQ_RAW[l.id][i];
+    pairOk = pairOk && q.options[q.answer] === raw.options[raw.answer] && q.reasons[q.reason] === raw.reasons[raw.reason] && q.mis[q.reason] === null
+      && q.reasons.every((rs, k) => q.mis[k] === raw.mis[raw.reasons.indexOf(rs)]);
+    if (q.answer !== 0 || q.reason !== 0) moved++;
+  });
+  ok(pairOk, '보기와 이유를 섞어도 정답·정답 이유·오개념 표시가 함께 움직인다');
+  ok(moved > LESSONS.length, `정답이 늘 첫 번째 자리에 있지 않다 (${moved}문항이 자리 이동)`);
+  const L = LESSON_BY_ID['u3-l1'];
+  const q = L.cq[0];
+  const wrongA = (q.answer + 1) % q.options.length, wrongR = q.mis.findIndex((m) => m);
+  const g = [model.gradeCQ(q, q.answer, q.reason), model.gradeCQ(q, q.answer, wrongR), model.gradeCQ(q, wrongA, q.reason), model.gradeCQ(q, wrongA, wrongR)];
+  ok(g.map((x) => x.kind).join() === 'both,luck,apply,none' && g[0].ok && !g[1].ok && !g[2].ok && g[0].mis === null && g[1].mis === q.mis[wrongR] && g[2].mis === null,
+    '답과 이유를 따로 채점한다(둘 다 맞음 / 답만 맞음 / 이유만 맞음 / 둘 다 틀림)');
+  store.update((s) => { for (let k = 0; k < 14; k++) model.recordCQ(s, L.id, q.id, wrongA, wrongR); model.recordCQ(s, L.id, q.id, q.answer, q.reason); });
+  const log = store.getState().lessons[L.id].cq[q.id].log;
+  ok(log.length === 12 && model.lastCQ(L.id, q.id).r === q.reason, '개념 질문 기록은 최근 12번만 남기고 마지막 풀이를 알려 준다');
+  const ms = model.misconceptionStats();
+  const top = ms.find((x) => x.tag === q.mis[wrongR]);
+  ok(top && top.n === 11 && top.lessons.join() === L.id && ms.every((x) => MISCONCEPTIONS[x.tag]), `틀린 이유를 오개념별로 센다 (${q.mis[wrongR]} ${top && top.n}번)`);
+  const items = [0, 1, 2, 3].map((k) => model.conceptItems(L, k));
+  const cqIds = items.flat().filter((it) => it.kind === 'cq').map((it) => it.id);
+  ok(items.every((it) => it.length === 2) && cqIds.length >= 4 && cqIds.every((id) => L.cq.some((x) => x.id === id)) && new Set(cqIds).size >= 2,
+    '오늘의 개념 확인에는 개념 질문이 돌아가며 나온다');
 }
 
 // ── #3 서비스 워커 캐시 정리 ───────────────────────

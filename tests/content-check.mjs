@@ -203,6 +203,38 @@ for (const L of LESSONS) {
 }
 const ids = LESSONS.flatMap((l) => ALLC(l).map((c) => c.id));
 if (new Set(ids).size !== ids.length) fail('확인 문제 id 중복');
+// 개념 질문(답 + 이유): 소단원마다 4개 이상, 정답 이유는 하나, 틀린 이유마다 오개념 분류
+{
+  const { MISCONCEPTIONS } = await import('../assets/js/content/misconceptions.js');
+  const seenQ = new Set();
+  let nCQ = 0;
+  const tagUse = {};
+  for (const l of LESSONS) {
+    const cqs = l.cq || [];
+    if (cqs.length < 4) fail(`${l.id}: 개념 질문이 ${cqs.length}개(4개 이상 필요)`);
+    cqs.forEach((q, i) => {
+      const w = `${l.id}.cq[${i}]`;
+      nCQ++;
+      if (q.id !== `${l.id}-q${i + 1}`) fail(`${w}: id는 ${l.id}-q${i + 1}이어야 함`);
+      if (seenQ.has(q.id)) fail(`${w}: id 중복`); seenQ.add(q.id);
+      check(`${w}.q`, q.q); check(`${w}.note`, q.note || '');
+      if (!q.note) fail(`${w}: 해설(note) 없음`);
+      if (!Array.isArray(q.options) || q.options.length < 2 || q.options.length > 5) fail(`${w}: 답 보기는 2~5개`);
+      else { q.options.forEach((o, k) => check(`${w}.options[${k}]`, o)); if (new Set(q.options).size !== q.options.length) fail(`${w}: 답 보기 중복`); }
+      if (!Number.isInteger(q.answer) || q.answer < 0 || q.answer >= (q.options || []).length) fail(`${w}: answer 범위`);
+      if (!Array.isArray(q.reasons) || q.reasons.length !== 4) fail(`${w}: 이유 보기는 4개`);
+      else { q.reasons.forEach((o, k) => check(`${w}.reasons[${k}]`, o)); if (new Set(q.reasons).size !== 4) fail(`${w}: 이유 보기 중복`); }
+      if (!Number.isInteger(q.reason) || q.reason < 0 || q.reason > 3) fail(`${w}: reason 범위`);
+      if (!Array.isArray(q.mis) || q.mis.length !== 4) fail(`${w}: mis는 이유 보기 수와 같아야 함`);
+      else q.mis.forEach((m, k) => {
+        if (k === q.reason ? m !== null : !MISCONCEPTIONS[m]) fail(`${w}.mis[${k}]: ${k === q.reason ? '정답 이유에는 null' : `알 수 없는 오개념 "${m}"`}`);
+        if (m) tagUse[m] = (tagUse[m] || 0) + 1;
+      });
+    });
+  }
+  const unused = Object.keys(MISCONCEPTIONS).filter((k) => !tagUse[k]);
+  console.log(`개념 질문: ${nCQ}개, 오개념 분류 ${Object.keys(tagUse).length}종 사용${unused.length ? ` (안 쓰인 분류: ${unused.join(', ')})` : ''}`);
+}
 // 모든 소단원이 보강을 갖추었는지(문서에 "모든 소단원"이라고 쓰므로 빠지면 실패)
 for (const l of LESSONS) {
   const miss = ['predict', 'explore', 'derive', 'deep', 'explain'].filter((k) => !l[k]);

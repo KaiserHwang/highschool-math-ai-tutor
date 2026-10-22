@@ -295,6 +295,37 @@ async function run(viewport, tag) {
   await page.goto(BASE + '#/p/u2-10');
   await page.waitForSelector('.concept-link a');
   ok((await page.getAttribute('.concept-link a', 'href')) === '#/l/u2-l11', `[${tag}] 문제 화면에서 관련 개념으로 갈 수 있다`);
+  // ── 이유까지 답하기(개념 질문)
+  {
+    const { MISCONCEPTIONS } = await import('../assets/js/content/misconceptions.js');
+    const CL = LESSON_BY_ID['u2-l1'];
+    await page.goto(BASE + '#/l/u2-l1');
+    await page.waitForSelector('[aria-labelledby="h-cq"] .cq');
+    ok((await page.locator('[aria-labelledby="h-cq"] .cq').count()) === 2, `[${tag}] 소단원 화면에 "이유까지 답하기" 개념 질문 두 개가 있다`);
+    const q = CL.cq[0], li = page.locator(`[aria-labelledby="h-cq"] [data-cq="${q.id}"]`);
+    const wr = q.mis.findIndex((m) => m);
+    await li.locator(`[data-cq-a="${q.answer}"]`).click();
+    await li.locator('[data-act="cq-check"]').click();
+    ok((await page.textContent('.toast')).includes('이유'), `[${tag}] 이유를 고르지 않으면 채점하지 않고 알려 준다`);
+    await li.locator(`[data-cq-r="${wr}"]`).click();
+    await li.locator('[data-act="cq-check"]').click();
+    const li2 = page.locator(`[aria-labelledby="h-cq"] [data-cq="${q.id}"]`);
+    await li2.locator('.mis-tag').waitFor();
+    ok((await li2.locator('.mis-tag').textContent()).includes(MISCONCEPTIONS[q.mis[wr]].name) && (await li2.locator('.fb-wrong').count()) === 1 && (await li2.locator('.opt.is-ans').count()) === 2,
+      `[${tag}] 답은 맞고 이유가 틀리면 어떤 오개념인지와 맞는 답·이유를 보여 준다`);
+    await page.reload();
+    await page.waitForSelector(`[aria-labelledby="h-cq"] [data-cq="${q.id}"] .mis-tag`);
+    await page.click(`[aria-labelledby="h-cq"] [data-cq="${q.id}"] [data-act="cq-retry"]`);
+    const li3 = page.locator(`[aria-labelledby="h-cq"] [data-cq="${q.id}"]`);
+    await li3.locator(`[data-cq-a="${q.answer}"]`).click();
+    await li3.locator(`[data-cq-r="${q.reason}"]`).click();
+    await li3.locator('[data-act="cq-check"]').click();
+    await page.locator(`[aria-labelledby="h-cq"] [data-cq="${q.id}"] .fb-right`).waitFor();
+    ok((await page.locator(`[aria-labelledby="h-cq"] [data-cq="${q.id}"].is-right`).count()) === 1, `[${tag}] 기록이 남아 다시 들어와도 보이고, 다시 풀어 답과 이유를 모두 맞힐 수 있다`);
+    await page.goto(BASE + '#/report');
+    await page.waitForSelector('.mis-bars li');
+    ok((await page.textContent('.mis-bars')).includes(MISCONCEPTIONS[q.mis[wr]].name), `[${tag}] 리포트에 자주 보인 오개념이 나온다`);
+  }
   await page.goto(BASE + '#/l/u7-l2');
   await page.waitForSelector('.lesson svg ellipse.mp-set');
   await shot('lesson-map');
@@ -322,21 +353,29 @@ async function run(viewport, tag) {
     const secA = page.locator('.cr-lesson', { has: page.locator(`a[href="#/l/${A.id}"]`) });
     const secB = page.locator('.cr-lesson', { has: page.locator(`a[href="#/l/${B.id}"]`) });
     ok((await secA.locator('.cr-item').count()) === 2 && (await secB.locator('.cr-item .cr-tag:has-text("처음 보는 숫자")').count()) === 1, `[${tag}] 개념마다 두 문항, 비슷한 문제 생성기가 있으면 처음 보는 숫자 문제가 섞인다`);
-    // A는 모두 맞히기: 문항 순서는 확인 문제 1, 2(복습 0회차)
-    const answerItem = async (sec, k, c, right) => {
+    // A는 모두 맞히기: 개념 질문 두 개(소단원 화면에서 보지 않은 3·4번)
+    const CQS = Object.fromEntries(LESSONS.flatMap((l) => l.cq).map((q) => [q.id, q]));
+    const answerItem = async (sec, k, right) => {
       const li = sec.locator(`[data-cr-item="${k}"]`);
-      if (c.type === 'mc') { await li.locator(`[data-cr-opt="${right ? c.answer : (c.answer + 1) % c.options.length}"]`).click(); await li.locator('[data-act="cr-check"]').click(); }
-      else { await li.locator('.short-in').fill(right ? c.answer : '98765'); await li.locator('button[type="submit"]').click(); }
+      const qid = await li.getAttribute('data-cq');
+      if (qid) {
+        const q = CQS[qid];
+        await li.locator(`[data-cq-a="${right ? q.answer : (q.answer + 1) % q.options.length}"]`).click();
+        await li.locator(`[data-cq-r="${right ? q.reason : (q.reason + 1) % q.reasons.length}"]`).click();
+        await li.locator('[data-act="cq-check"]').click();
+      } else if (await li.locator('.short-in').count()) { await li.locator('.short-in').fill('98765'); await li.locator('button[type="submit"]').click(); }
+      else { await li.locator('[data-cr-opt="0"]').click(); await li.locator('[data-act="cr-check"]').click(); }
     };
-    await answerItem(secA, 0, A.checks[0], true);
-    await answerItem(page.locator('.cr-lesson', { has: page.locator(`a[href="#/l/${A.id}"]`) }), 1, A.checks[1], true);
+    ok((await secA.locator('[data-cr-item][data-cq]').count()) === 2 && (await secA.getAttribute('data-cr-lesson')) !== null
+      && [await secA.locator('[data-cr-item="0"]').getAttribute('data-cq'), await secA.locator('[data-cr-item="1"]').getAttribute('data-cq')].join() === [A.cq[2].id, A.cq[3].id].join(),
+      `[${tag}] 오늘의 개념 확인에는 소단원 화면에서 보지 않은 개념 질문이 나온다`);
+    await answerItem(secA, 0, true);
+    await answerItem(page.locator('.cr-lesson', { has: page.locator(`a[href="#/l/${A.id}"]`) }), 1, true);
     await page.locator('.cr-out.ok').first().waitFor();
     // B는 첫 문항(처음 보는 숫자)을 틀리게: 정답을 모르므로 범위 밖 값을 넣는다
     const b0 = secB.locator('[data-cr-item="0"]');
-    if (await b0.locator('.short-in').count()) { await b0.locator('.short-in').fill('98765'); await b0.locator('button[type="submit"]').click(); }
-    else { await b0.locator('[data-cr-opt="0"]').click(); await b0.locator('[data-act="cr-check"]').click(); }
-    const b1c = B.checks[0]; // 복습 0회차: 생성기 + 확인 문제 1
-    await answerItem(secB, 1, b1c, true);
+    await answerItem(secB, 0, false);
+    await answerItem(secB, 1, true);
     await page.locator('.cr-done').waitFor();
     const recs = await page.evaluate(([a, b]) => { const s = JSON.parse(localStorage.getItem('mathpulse:v2')); return [s.lessons[a], s.lessons[b]]; }, [A.id, B.id]);
     const firstWrong = (await b0.getAttribute('class')).includes('is-wrong');
@@ -353,12 +392,12 @@ async function run(viewport, tag) {
     for (const L of LESSONS) {
       await page.goto(BASE + `#/l/${L.id}`);
       await page.waitForSelector(`.lesson-head h1:has-text("${L.title}")`);
-      const n = await page.evaluate(() => ({ katexErr: document.querySelectorAll('.lesson .katex-error').length, checks: document.querySelectorAll('.ck').length, ex: document.querySelectorAll('.ex').length, xp: document.querySelectorAll('.xp [data-xp-fig] figure').length, pd: document.querySelectorAll('[data-pd]').length }));
+      const n = await page.evaluate(() => ({ katexErr: document.querySelectorAll('.lesson .katex-error').length, checks: document.querySelectorAll('.ck:not(.cq)').length, cq: document.querySelectorAll('.cq').length, ex: document.querySelectorAll('.ex').length, xp: document.querySelectorAll('.xp [data-xp-fig] figure').length, pd: document.querySelectorAll('[data-pd]').length }));
       const nCk = L.checks.length + (L.deep ? L.deep.checks.length : 0);
       const nEx = L.examples.length + (L.deep ? L.deep.ideas.filter((d) => d.example).length : 0);
-      if (n.katexErr || n.checks !== nCk || n.ex !== nEx || n.xp !== (L.explore || []).length || n.pd !== (L.predict ? 1 : 0)) bad.push(L.id);
+      if (n.katexErr || n.checks !== nCk || n.ex !== nEx || n.xp !== (L.explore || []).length || n.pd !== (L.predict ? 1 : 0) || n.cq !== Math.min(2, L.cq.length)) bad.push(L.id);
     }
-    ok(bad.length === 0, `[${tag}] 소단원 ${LESSONS.length}개가 예측·탐구·심화까지 모두 수식 오류 없이 그려진다${bad.length ? ': ' + bad.join(', ') : ''}`);
+    ok(bad.length === 0, `[${tag}] 소단원 ${LESSONS.length}개가 예측·탐구·심화·개념 질문까지 모두 수식 오류 없이 그려진다${bad.length ? ': ' + bad.join(', ') : ''}`);
   }
   await page.goto(BASE + '#/');
   await page.waitForSelector('.next-problem');

@@ -708,3 +708,311 @@ def expected_plus():
     crit = sp.solve(sp.diff(d2, s_), s_)
     E['u2-l5-d2'] = min(d2.subs(s_, c) for c in crit)
     return E
+
+
+def expected_cq():
+    """개념 질문 중 답 보기를 계산으로 정할 수 있는 것: 문항 id → 정답 보기 번호"""
+    C = {}
+    xr = sp.Symbol('xr', real=True)
+    yes_no = lambda cond: 0 if cond else 1  # 보기 ['예 쪽', '아니오 쪽'] 꼴
+
+    # ── u1
+    A, B, Cc = sp.symbols('A B Cc')
+    C['u1-l1-q1'] = yes_no(sp.expand((A + B)**2 - A**2 - B**2) == 0)
+    opts = [x**3 - 1, x**3 + 1, x**3 - x**2 + x - 1]
+    C['u1-l1-q3'] = [sp.expand((x - 1) * (x**2 + x + 1) - o) == 0 for o in opts].index(True)
+    C['u1-l1-q4'] = yes_no(sp.expand((A**3 + B**3 + Cc**3 - 3 * A * B * Cc).subs(Cc, -A - B)) == 0)
+    degs = [sp.degree(o, x) for o in (2 * x - 3, x**2, x**3 + 1)]
+    C['u1-l2-q1'] = only_true([lambda i=i: degs[i] < 2 for i in range(3)])
+    C['u1-l2-q3'] = [-1, 1, 2].index(sp.solve(x + 1, x)[0])
+    Pq = sp.Function('P')
+    # ax+b=0이 x=1에서 성립하는 (a, b) 중 (0, 0)이 아닌 것이 있으면 "할 수 없다"
+    C['u1-l3-q1'] = yes_no(not any((av * 1 + bv == 0) and (av, bv) != (0, 0) for av in range(-3, 4) for bv in range(-3, 4)))
+    sl = sp.solve(sp.Poly((a - 1) * x**2 + (b + 2) * x + k, x).coeffs(), [a, b, k], dict=True)
+    C['u1-l3-q2'] = yes_no(len(sl) == 1)
+    f = sp.expand((x + 1)**4)
+    total = sum(sp.Poly(f, x).all_coeffs())
+    C['u1-l3-q4'] = [f.subs(x, v) == total for v in (1, 0, -1)].index(True)
+    P1 = x**3 + 2 * x + 5
+    r = sp.rem(P1, 2 * x - 1, x)
+    vals = [P1.subs(x, sp.Rational(1, 2)), P1.subs(x, 1), P1.subs(x, -sp.Rational(1, 2)), 2 * P1.subs(x, sp.Rational(1, 2))]
+    C['u1-l4-q1'] = only_true([lambda i=i: vals[i] == r for i in range(4)])
+    sl = sp.solve([a + b - 2, 2 * a + b - 3], [a, b])
+    rem_ = sl[a] * x + sl[b]
+    C['u1-l4-q4'] = [sp.expand(rem_ - o) == 0 for o in (x + 1, 2 * x + 3, sp.Integer(5))].index(True)
+    fl = sp.factor_list(x**4 + 4)[1]
+    C['u1-l5-q1'] = yes_no(len(fl) > 1)
+    pairs = [{2, 3}, {-2, -3}, {1, 6}]
+    sols = {frozenset(-r_ for r_ in sp.solve(x**2 + 5 * x + 6, x))}
+    C['u1-l5-q4'] = [frozenset(p_) in sols for p_ in pairs].index(True)
+
+    # ── u2
+    C['u2-l1-q1'] = [-sp.sqrt(6), sp.sqrt(6), sp.sqrt(6) * I].index(sp.simplify(sp.sqrt(-2) * sp.sqrt(-3)))
+    C['u2-l1-q2'] = [1, -1, I].index(I**100)
+    ar, br = sp.symbols('ar br', real=True)
+    sl = sp.solve([sp.re(ar + br * I), sp.im(ar + br * I)], [ar, br], dict=True)
+    C['u2-l1-q3'] = 0 if sl == [{ar: 0, br: 0}] else '없음'
+    zz = sp.expand((ar + br * I) * (ar - br * I))
+    C['u2-l1-q4'] = 0 if zz == ar**2 + br**2 else '없음'
+    rr = sp.Poly(x**2 + 2 * x + 5, x).all_roots()
+    C['u2-l2-q1'] = 1 if len(set(rr)) == 2 and all(not r_.is_real for r_ in rr) else '없음'
+    C['u2-l2-q3'] = [9, 36, 3].index(sp.solve(sp.discriminant(x**2 - 6 * x + k, x), k)[0])
+    C['u2-l2-q4'] = yes_no(sp.solve_univariate_inequality(sp.discriminant(x**2 + k * x - 1, x).subs(k, xr) > 0, xr, relational=False) == sp.S.Reals)
+    C['u2-l3-q1'] = [3, 6, -3].index(sum(sp.solve(2 * x**2 - 6 * x + 1, x)).simplify())
+    zc = sp.Symbol('zc')
+    r1, r2 = sp.solve(zc**2 + zc + 1, zc)
+    C['u2-l3-q2'] = yes_no(sp.simplify(r1 + r2 + 1) == 0 and sp.simplify(r1 * r2 - 1) == 0)
+    sl = sp.solve([sp.re((1 + I)**2 + ar * (1 + I) + br), sp.im((1 + I)**2 + ar * (1 + I) + br)], [ar, br])
+    other = [r_ for r_ in sp.solve(zc**2 + sl[ar] * zc + sl[br], zc) if sp.simplify(r_ - (1 + I)) != 0][0]
+    C['u2-l3-q3'] = [1 - I, -1 - I].index(sp.simplify(other))
+    ok_all = True
+    for (av, bv, cv) in [(1, 3, -2), (2, -5, -7), (-1, 4, 3), (3, 0, -1)]:
+        rr = sp.Poly(av * x**2 + bv * x + cv, x).all_roots()
+        ok_all &= all(r_.is_real for r_ in rr) and rr[0] * rr[1] < 0
+    C['u2-l3-q4'] = 0 if ok_all else '없음'
+    pp, qq = sp.symbols('pp qq')
+    C['u2-l4-q2'] = 0 if sp.expand(sp.discriminant(sp.expand(a * (x - pp)**2 + qq), x)) == -4 * a * qq else '없음'
+    dists = [sp.sqrt(sp.discriminant(x**2 - 4 * x + kv, x)) for kv in (0, 1, 2, 3)]
+    C['u2-l4-q3'] = 0 if all(dists[i] > dists[i + 1] for i in range(3)) else '없음'
+    kt = sp.solve(sp.discriminant(x**2 - 2 * x - k, x), k)[0]
+    D_ = sp.discriminant(x**2 - 2 * x - kt, x)
+    C['u2-l5-q1'] = 0 if D_ == 0 else '없음'
+    nn = sp.Symbol('nn', positive=True)
+    C['u2-l5-q2'] = 0 if sp.simplify(sp.discriminant(x**2 - m * x - nn, x) - (m**2 + 4 * nn)) == 0 else '없음'
+    C['u2-l5-q3'] = 0 if sp.simplify(sum(sp.solve(x**2 - m * x - nn, x)) / 2 - m / 2) == 0 else '없음'
+    fx = (x - 2)**2 + 1
+    mx = max(fx.subs(x, v) for v in [sp.Rational(i, 10) for i in range(10, 31)])
+    C['u2-l6-q1'] = [2, 1, 5].index(mx)
+    C['u2-l6-q3'] = 0 if sp.minimum(x**2 - 2 * x, x) == -1 else '없음'
+    rnd2 = __import__('random').Random(3)
+    C['u2-l7-q1'] = yes_no(all(n_real(rnd2.choice([1, 2, -1]) * x**3 + sum(rnd2.randint(-9, 9) * x**i for i in range(3))) >= 1 for _ in range(150)))
+    C['u2-l7-q2'] = [1, 3, -1].index(sum(set(sp.real_roots(sp.Poly(x**3 - 3 * x**2 + 4, x)))))
+    w_ = sp.solve(zc**2 + zc + 1, zc)[0]
+    C['u2-l7-q3'] = [1, -1].index(sp.simplify(sp.expand(w_**3)))
+    C['u2-l8-q1'] = yes_no(n_real(t**2 - 2 * t - 3, t) == 2)
+    ss, pq = sp.symbols('ss pq', real=True)
+    C['u2-l8-q4'] = 0 if sp.expand(sp.discriminant(t**2 - ss * t + pq, t) - (ss**2 - 4 * pq)) == 0 else '없음'
+    def sol_set(av):
+        return [F(n_, 4) for n_ in range(-40, 41) if F(n_, 4) >= av and F(n_, 4) <= 3]
+    C['u2-l9-q1'] = only_true([lambda: sol_set(3) == [3] and len(sol_set(F(5, 2))) > 1 and sol_set(F(7, 2)) == [], lambda: False, lambda: False])
+    C['u2-l9-q2'] = 0 if sp.solve_univariate_inequality(-2 * xr > 6, xr, relational=False) == sp.Interval.open(-sp.oo, -3) else '없음'
+    S = sp.solve_univariate_inequality(sp.Abs(xr + 1) <= 3, xr, relational=False)
+    C['u2-l10-q1'] = [sp.Interval(-4, 2), sp.Interval(-2, 4), sp.Interval(-sp.oo, 2)].index(S)
+    holds = lambda v: abs(v) == v
+    cands = [lambda v: v >= 0, lambda v: True, lambda v: v > 0]
+    grid = [F(n_, 4) for n_ in range(-20, 21)]
+    C['u2-l10-q2'] = only_true([lambda c=c: all(holds(v) == c(v) for v in grid) for c in cands])
+    vals = {v: abs(v - 1) + abs(v - 3) for v in [F(n_, 4) for n_ in range(-20, 30)]}
+    mn = min(vals.values())
+    argmin = [v for v, f_ in vals.items() if f_ == mn]
+    C['u2-l10-q3'] = 0 if mn == 2 and min(argmin) == 1 and max(argmin) == 3 and len(argmin) > 1 else '없음'
+    S = sp.solve_univariate_inequality(xr**2 - 4 * xr + 4 > 0, xr, relational=False)
+    C['u2-l11-q1'] = [sp.S.Reals - sp.FiniteSet(2), sp.S.Reals, sp.S.EmptySet].index(S)
+    S = sp.solve_univariate_inequality((xr - 1) * (xr - 4) < 0, xr, relational=False)
+    C['u2-l11-q2'] = [sp.Interval.open(1, 4), sp.Union(sp.Interval.open(-sp.oo, 1), sp.Interval.open(4, sp.oo)), sp.Interval.open(-sp.oo, 4)].index(S)
+
+    # ── u3
+    dice = list(itertools.product(range(1, 7), repeat=2))
+    C['u3-l1-q1'] = [5, 6, 2].index(sum(1 for d1, d2 in dice if d1 + d2 in (3, 4)))
+    aa_, bb_, xx_, yy_, zz_ = sp.symbols('aa_ bb_ xx_ yy_ zz_')
+    C['u3-l1-q2'] = [6, 5, 9].index(len(sp.expand((aa_ + bb_) * (xx_ + yy_ + zz_)).as_ordered_terms()))
+    C['u3-l1-q3'] = [12, 6, 5].index(sum(1 for d in range(1, 73) if 72 % d == 0))
+    C['u3-l2-q1'] = [1, 0, 5].index(perm(5, 0))
+    C['u3-l2-q2'] = [12, 6, 24].index(sum(1 for q in itertools.permutations('abcd') if abs(q.index('a') - q.index('b')) == 1))
+    C['u3-l3-q1'] = only_true([lambda: comb(7, 5) == comb(7, 2), lambda: comb(7, 3) == comb(7, 2), lambda: perm(7, 2) == comb(7, 2)])
+    groups = set()
+    for q in itertools.permutations(range(6)):
+        groups.add(frozenset(frozenset(q[i:i + 2]) for i in (0, 2, 4)))
+    raw = comb(6, 2) * comb(4, 2) * comb(2, 2)
+    C['u3-l3-q2'] = only_true([lambda: raw // factorial(3) == len(groups), lambda: raw == len(groups), lambda: raw // 2 == len(groups)])
+    people = ['B1', 'B2', 'B3', 'B4', 'G1', 'G2', 'G3']
+    true_n = sum(1 for c in itertools.combinations(people, 3) if any(v[0] == 'G' for v in c))
+    C['u3-l3-q4'] = only_true([lambda: comb(7, 3) - comb(4, 3) == true_n, lambda: 3 * comb(6, 2) == true_n, lambda: False])
+    def paths_n(w, h):
+        return len(set(itertools.permutations('R' * w + 'U' * h)))
+    C['u3-l4-q1'] = [10, 6, 5].index(paths_n(2, 3))
+    n_or = sum(1 for n_ in range(1, 101) if n_ % 2 == 0 or n_ % 3 == 0)
+    C['u3-l4-q2'] = only_true([lambda: 50 + 33 > n_or, lambda: 50 + 33 == n_or, lambda: 50 + 33 < n_or])
+    tot = list(itertools.permutations('abcde'))
+    frac_ = F(sum(1 for q in tot if q.index('a') < q.index('b') < q.index('c')), len(tot))
+    C['u3-l4-q3'] = [F(1, 6), F(1, 3), F(1, 2)].index(frac_)
+
+    # ── u4
+    M_ = sp.Matrix
+    A2 = M_(2, 2, lambda i, j: (i + 1) - (j + 1))
+    C['u4-l1-q3'] = [-1, 1, 0].index(A2[0, 1])
+    A_, B_ = M_(2, 2, sp.symbols('p0:4')), M_(2, 2, sp.symbols('q0:4'))
+    X_ = M_(2, 2, sp.symbols('w0:4'))
+    sol = sp.solve(list(3 * X_ - A_ - (X_ + B_)), list(X_), dict=True)[0]
+    Xs = X_.subs(sol)
+    C['u4-l2-q2'] = only_true([lambda: sp.simplify(Xs - (A_ + B_) / 2) == sp.zeros(2, 2), lambda: sp.simplify(Xs - (B_ - A_) / 2) == sp.zeros(2, 2), lambda: sp.simplify(Xs - (A_ + B_) / 4) == sp.zeros(2, 2)])
+    P_ = M_([[1, 2], [3, 4]]); Q_ = M_([[5, 6], [7, 8]])
+    C['u4-l3-q2'] = only_true([lambda: (P_ * Q_)[0, 1] == P_.row(0).dot(Q_.col(1)), lambda: (P_ * Q_)[0, 1] == P_.col(0).dot(Q_.row(1)), lambda: (P_ * Q_)[0, 1] == P_[0, 1] * Q_[0, 1]])
+    E1, E2 = M_([[1, 1], [0, 1]]), M_([[1, 0], [1, 1]])
+    C['u4-l3-q3'] = only_true([lambda: E1 * E2 != E2 * E1 and E1 * (2 * E1) == (2 * E1) * E1, lambda: False, lambda: False])
+    gap = sp.expand((A_ - B_) * (A_ + B_) - (A_**2 - B_**2))
+    C['u4-l4-q1'] = 0 if gap == sp.expand(A_ * B_ - B_ * A_) else '없음'
+    N_ = M_([[0, 1], [0, 0]])
+    C['u4-l4-q2'] = yes_no(N_ != sp.zeros(2, 2) and N_ * N_ == sp.zeros(2, 2))
+    C['u4-l4-q3'] = only_true([lambda: all((M_([[1, 0], [1, 1]])**n_)[1, 0] == n_ for n_ in range(1, 8)), lambda: False, lambda: False])
+    R_ = M_([[0, -1], [1, 0]])
+    assert R_**2 == -sp.eye(2)
+    C['u4-l4-q4'] = [-sp.eye(2), sp.eye(2), R_].index(R_**2026)
+
+    # ── u5
+    Pt_ = sp.Point
+    ip = Pt_((2 * 7 + 1 * 1) / sp.Integer(3), (2 * 4 + 1 * 1) / sp.Integer(3))
+    C['u5-l1-q1'] = [Pt_(5, 3), Pt_(3, 2), Pt_(4, sp.Rational(5, 2))].index(ip)
+    T1, T2, T3 = Pt_(0, 0), Pt_(6, 0), Pt_(2, 5)
+    G_ = sp.Line(T1, T2.midpoint(T3)).intersection(sp.Line(T2, T1.midpoint(T3)))[0]
+    C['u5-l1-q2'] = 0 if G_ == Pt_((0 + 6 + 2) / sp.Integer(3), (0 + 0 + 5) / sp.Integer(3)) else '없음'
+    xv_ = sp.Symbol('xv_', real=True)
+    fq = (xv_ - 1)**2 + 4 + (xv_ - 5)**2 + 16
+    C['u5-l1-q4'] = [3, 1, sp.Rational(11, 3)].index(sp.solve(sp.diff(fq, xv_), xv_)[0])
+    mm = sp.Symbol('mm', nonzero=True)
+    perp = [s_ for s_ in (-1 / mm, -mm, 1 / mm) if sp.simplify(s_ * mm + 1) == 0]
+    C['u5-l2-q1'] = [-1 / mm, -mm, 1 / mm].index(perp[0])
+    C['u5-l2-q2'] = 0 if sp.solve([y - 2 * x - 1, y - 2 * x + 3], [x, y]) == [] else '없음'
+    d1 = sp.Line(Pt_(4, 0), Pt_(0, 3)).distance(Pt_(0, 0))
+    l2 = sp.Line(Pt_(4, 0), Pt_(0, 3))  # 6x+8y-24=0도 같은 직선
+    C['u5-l3-q1'] = 0 if d1 == sp.Rational(12, 5) and sp.Rational(24, 10) == d1 else '없음'
+    kk_ = sp.Symbol('kk_', real=True)
+    r2 = sp.expand((x - 2)**2 + (y + 1)**2 - (x**2 + y**2 - 4 * x + 2 * y))
+    C['u5-l4-q1'] = 0 if sp.solve_univariate_inequality(r2 - kk_ > 0, kk_, relational=False) == sp.Interval.open(-sp.oo, 5) else '없음'
+    eq_ = sp.expand(4 * (x**2 + y**2) - ((x - 3)**2 + y**2))  # PA=2PB, A(0,0), B(3,0)
+    C['u5-l4-q4'] = 0 if eq_.coeff(x, 2) == eq_.coeff(y, 2) != 0 and eq_.coeff(x * y) == 0 else '없음'
+    dd = sp.Line(Pt_(5, 0), Pt_(1, 3)).distance(Pt_(0, 0))  # 3x+4y-15=0
+    C['u5-l5-q1'] = only_true([lambda: dd > 2, lambda: dd == 2, lambda: dd < 2])
+    c_ = sp.Circle(Pt_(0, 0), sp.sqrt(13)); L_ = sp.Line(Pt_(2, 1), Pt_(-2, 4))  # 3x+4y-10=0
+    P1_, P2_ = c_.intersection(L_)
+    l_ = P1_.distance(P2_); d_ = L_.distance(Pt_(0, 0))
+    C['u5-l5-q2'] = only_true([lambda: sp.simplify((l_ / 2)**2 + d_**2 - 13) == 0, lambda: sp.simplify(l_**2 + d_**2 - 13) == 0, lambda: sp.simplify(l_ - 2 * (sp.sqrt(13) - d_)) == 0])
+    Pp = Pt_(4, 3); cc = sp.Circle(Pt_(0, 0), 3)
+    tp = cc.tangent_lines(Pp)[0].intersection(cc)[0]
+    tl = Pp.distance(tp)
+    C['u5-l5-q3'] = only_true([lambda: tl == sp.sqrt(25 - 9), lambda: tl == 5 - 3, lambda: tl == 5 + 3])
+    shift = (3 - 1, -1 - 2)
+    C['u5-l6-q1'] = [Pt_(2, -3), Pt_(-2, 3), Pt_(3, -1)].index(Pt_(0 + shift[0], 0 + shift[1]))
+    moved = sp.expand((y - 2 * x).subs(x, x - 1))
+    C['u5-l6-q2'] = [sp.expand(y - 2 * (x - 1)) == moved, sp.expand(y - 2 * (x + 1)) == moved, sp.expand(y - 2 * x - 1) == moved].index(True)
+    av_, bv_ = sp.symbols('av_ bv_')
+    cond_ = sp.solve(sp.Poly(sp.expand((y - bv_) - 3 * (x - av_) - 1 - (y - 3 * x - 1)), x, y).coeffs(), bv_)
+    bsol = cond_[bv_] if isinstance(cond_, dict) else cond_[0]
+    C['u5-l6-q4'] = [3 * av_, av_, -3 * av_].index(bsol)
+    C['u5-l7-q1'] = [Pt_(-1, 2), Pt_(1, 2), Pt_(-2, 1)].index(Pt_(1, -2).scale(-1, -1))
+    refl_line = sp.Line(Pt_(0, 0), Pt_(1, 1))
+    img = [Pt_(px_, 2 * px_ + 1).reflect(refl_line) for px_ in (0, 1)]
+    cands_ = [lambda X_, Y_: X_ - 2 * Y_ - 1, lambda X_, Y_: Y_ + 2 * X_ - 1, lambda X_, Y_: Y_ - 2 * X_ + 1]
+    C['u5-l7-q2'] = only_true([lambda c=c: all(c(p_.x, p_.y) == 0 for p_ in img) for c in cands_])
+    a0, b0 = sp.symbols('a0 b0')
+    p1 = Pt_(a0, -b0)  # x축 대칭
+    res = (p1.y, p1.x)  # y=x 대칭
+    C['u5-l7-q4'] = [(-b0, a0), (b0, -a0), (-a0, b0)].index(res)
+
+    # ── u6
+    C['u6-l1-q1'] = ['거짓', '참'].index('참' if frozenset({1}) in {1, 2, 3} else '거짓')
+    C['u6-l1-q2'] = [8, 7, 6].index(len([c for r_ in range(4) for c in itertools.combinations('abc', r_)]))
+    C['u6-l1-q4'] = [4, 16, 2].index(sum(1 for r_ in range(5) for c in itertools.combinations([1, 2, 3, 4], r_) if {1, 2} <= set(c)))
+    C['u6-l2-q1'] = [2, 9, 1].index(5 + 4 - 7)
+    U_ = set(range(10)); Aset = {0, 1, 2, 3}; Bset = {2, 3, 4, 5}
+    comp = lambda S: U_ - S
+    lhs = comp(Aset | Bset)
+    C['u6-l2-q2'] = only_true([lambda: lhs == comp(Aset) & comp(Bset), lambda: lhs == comp(Aset) | comp(Bset), lambda: lhs == Aset & Bset])
+    d_ = Aset - Bset
+    C['u6-l2-q3'] = only_true([lambda: d_ == Aset & comp(Bset), lambda: d_ == Aset | comp(Bset), lambda: d_ == Bset - Aset])
+    def inter_min(nU, na, nb):
+        A0 = set(range(na))
+        return min(len(A0 & set(range(st_, st_ + nb))) for st_ in range(0, nU - nb + 1))
+    C['u6-l2-q4'] = [2, 0, 10].index(inter_min(20, 12, 10))
+    C['u6-l3-q1'] = 0 if any(v * v == 1 and v != 1 for v in range(-5, 6)) else 1
+    grid = [F(n_, 8) for n_ in range(-40, 41)]
+    def ok_a(av):
+        return all(v < av for v in grid if abs(v) <= 1)
+    cands = [lambda av: av > 1, lambda av: av >= 1, lambda av: av > -1]
+    C['u6-l3-q4'] = only_true([lambda c=c: all(ok_a(av) == c(av) for av in grid) for c in cands])
+    Ux = set(range(-5, 6)); P_ = {1}; Q_ = {v for v in Ux if v * v == 1}
+    C['u6-l4-q2'] = only_true([lambda: P_ <= Q_ and not Q_ <= P_, lambda: Q_ <= P_ and not P_ <= Q_, lambda: P_ == Q_])
+    # 대우: P⊂Q 이면 Q^C⊂P^C (여러 집합으로 확인)
+    import random as _r
+    rg = _r.Random(5)
+    ok_c = True
+    for _ in range(200):
+        Pp = {v for v in Ux if rg.random() < 0.4}; Qq = Pp | {v for v in Ux if rg.random() < 0.3}
+        ok_c &= (Ux - Qq) <= (Ux - Pp)
+    C['u6-l4-q1'] = yes_no(ok_c)
+    def nec(av):  # q => p : x>2 이면 x>a
+        return all(v > av for v in grid if v > 2)
+    cands = [lambda av: av <= 2, lambda av: av >= 2, lambda av: av == 2]
+    C['u6-l4-q4'] = only_true([lambda c=c: all(nec(av) == c(av) for av in grid) for c in cands])
+    NEG = {'n^2 짝수': 'n^2 홀수', 'n 짝수': 'n 홀수'}
+    orig = ('n^2 짝수', 'n 짝수')
+    forms = [('n 홀수', 'n^2 홀수'), ('n 짝수', 'n^2 짝수'), ('n^2 홀수', 'n 홀수')]
+    C['u6-l5-q1'] = only_true([lambda f=f: f == (NEG[orig[1]], NEG[orig[0]]) for f in forms])
+    rats = [sp.Rational(n_, 2) for n_ in range(-6, 7)]
+    zeros = [(av, bv) for av in rats for bv in rats if sp.simplify(av + bv * sp.sqrt(2)) == 0]
+    C['u6-l5-q3'] = 0 if zeros == [(0, 0)] else '없음'
+    pos = sp.Symbol('pos', positive=True)
+    def min_on(fx, lo=None):
+        crit = [c for c in sp.solve(sp.diff(fx, pos), pos) if c.is_positive and (lo is None or c >= lo)]
+        cand = [fx.subs(pos, c) for c in crit] + ([fx.subs(pos, lo)] if lo is not None else [])
+        return min(cand)
+    C['u6-l6-q1'] = [4, 2, 5].index(min_on(pos + 4 / pos))
+    C['u6-l6-q2'] = [sp.Rational(41, 5), 8, 5].index(min_on(pos + 16 / pos, 5))
+    rt = sp.Symbol('rt', positive=True)  # b = rt * a
+    f6 = sp.expand((1 + rt) * (1 + 4 / rt))
+    m6 = min(f6.subs(rt, c) for c in sp.solve(sp.diff(f6, rt), rt) if c.is_positive)
+    C['u6-l6-q3'] = only_true([lambda: m6 == 9, lambda: m6 == 8])
+    a1, b1, x1, y1 = sp.symbols('a1 b1 x1 y1', real=True)
+    gap = sp.expand((a1**2 + b1**2) * (x1**2 + y1**2) - (a1 * x1 + b1 * y1)**2)
+    C['u6-l6-q4'] = 0 if gap == sp.expand((a1 * y1 - b1 * x1)**2) else '없음'
+
+    # ── u7
+    C['u7-l1-q3'] = 0 if (lambda f_: f_(1) == f_(-1))(lambda v: v * v) else '없음'
+    bij = sum(1 for q in itertools.permutations([1, 2, 3]))
+    C['u7-l1-q4'] = [6, 27, 1].index(bij)
+    fx_, gx_ = x + 1, 2 * x
+    fg = sp.expand(fx_.subs(x, gx_))
+    C['u7-l2-q2'] = [sp.expand(o - fg) == 0 for o in (2 * x + 1, 2 * x + 2, 2 * x**2 + 2 * x)].index(True)
+    tv = sp.Symbol('tv')
+    ft = sp.expand((4 * x + 5).subs(x, (tv - 1) / 2))
+    C['u7-l2-q3'] = [9, 17, 13].index(ft.subs(tv, 3))
+    fl_ = lambda v: 2 * v + 1; gl_ = lambda v: v - 3
+    finv = lambda v: (v - 1) / sp.Integer(2); ginv = lambda v: v + 3
+    vals_ = [sp.Integer(v) for v in range(-5, 6)]
+    fgv = lambda v: fl_(gl_(v))
+    C['u7-l3-q3'] = only_true([lambda: all(fgv(ginv(finv(v))) == v for v in vals_), lambda: all(fgv(finv(ginv(v))) == v for v in vals_), lambda: all(fgv(fgv(v)) == v for v in vals_)])
+    fq = (x**2 + 2) / 3
+    pts_ = [s_ for s_ in sp.solve(sp.Eq(fq, x), x) if s_ >= 0]
+    yv = sp.Symbol('yv', nonnegative=True)
+    inv_ = [e for e in sp.solve(sp.Eq(fq.subs(x, yv), x), yv)]
+    allpts = set()
+    for e in inv_:
+        for s_ in sp.solve(sp.Eq(fq, e), x):
+            if s_.is_real and s_ >= 0 and e.subs(x, s_).is_real and e.subs(x, s_) >= 0:
+                allpts.add(sp.nsimplify(s_))
+    C['u7-l3-q4'] = 0 if allpts == set(pts_) and len(pts_) == 2 else '없음'
+    r_ = sp.simplify((2 * x + 1) / (x - 1) - 2)
+    C['u7-l4-q1'] = 0 if sp.simplify(r_ - 3 / (x - 1)) == 0 else '없음'
+    C['u7-l4-q2'] = 0 if sp.cancel((2 * x + 4) / (x + 2)) == 2 else '없음'
+    kk2, pp2, qq2 = sp.symbols('kk2 pp2 qq2', positive=True)
+    xv2 = sp.Symbol('xv2', positive=True)  # x - p > 0인 쪽
+    prod_ = sp.simplify(xv2 * (kk2 / xv2))
+    C['u7-l4-q4'] = 0 if prod_ == kk2 else '없음'
+    S = sp.solve_univariate_inequality(-xr + 2 >= 0, xr, relational=False)
+    C['u7-l5-q1'] = [sp.Interval(-sp.oo, 2), sp.Interval(2, sp.oo), sp.Interval(-2, sp.oo)].index(S)
+    # ── u8
+    pos2 = sp.Symbol('pos2', positive=True)
+    tf = pos2 + 1 / pos2
+    tmin = min(tf.subs(pos2, c) for c in sp.solve(sp.diff(tf, pos2), pos2))
+    C['u8-l1-q1'] = 0 if tmin == 2 else '없음'
+    C['u8-l1-q2'] = [1, 2, 0].index(len([s_ for s_ in sp.solve(sp.Eq(pos2 + 1 / pos2, 2), pos2)]))
+    C['u8-l2-q1'] = [2, 4, 0].index(len(set(sp.real_roots(sp.Poly(x**2 - 4, x)))))
+    def cnt3(kv):
+        sols = set()
+        for sgn in (1, -1):  # x>=0: x^2-4x=k, x<0: x^2+4x=k
+            for r_ in sp.solve(x**2 - 4 * sgn * x - kv, x):
+                if r_.is_real and ((sgn == 1 and r_ >= 0) or (sgn == -1 and r_ < 0)):
+                    sols.add(r_)
+        return len(sols)
+    C['u8-l2-q3'] = only_true([lambda: cnt3(0) == 3, lambda: cnt3(-4) == 3, lambda: cnt3(4) == 3])
+    return C

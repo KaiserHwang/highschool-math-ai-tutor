@@ -1,10 +1,11 @@
 // 오늘의 개념 확인(#/cr): 배운 개념을 1주 → 3주 → 2개월 간격으로 짧게 다시 확인한다.
 // 개념마다 2문항(처음 보는 숫자의 비슷한 문제 + 확인 문제 또는 예측 문제). 첫 답만 채점하고 바로 풀이를 보여 준다.
-import { LESSON_BY_ID, CHECK_BY_ID } from '../content/lessons/index.js';
+import { LESSON_BY_ID, CHECK_BY_ID, CQ_BY_ID } from '../content/lessons/index.js';
 import { UNIT_BY_ID, unitLabel } from '../content/units.js';
 import { makeVariant, newSeed } from '../content/generators.js';
 import { update, today, logActivity } from '../store.js';
-import { isCorrect, normalizeAnswer, conceptsDue, conceptQueue, conceptMemory, conceptItems, conceptResult, CONCEPT_GAPS } from '../model.js';
+import { isCorrect, normalizeAnswer, conceptsDue, conceptQueue, conceptMemory, conceptItems, conceptResult, CONCEPT_GAPS, gradeCQ, recordCQ } from '../model.js';
+import { cqHTML, cqClick } from './cq.js';
 import { tex, esc, CIRCLED, gradeMark, optionsClass, toast, fmtDate } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 import { trapFor } from './lesson.js';
@@ -18,6 +19,7 @@ const STAGE_TEXT = ['1주 뒤', '3주 뒤', '2개월 뒤'];
 function itemOf(L, ref) {
   if (ref.kind === 'variant') return { ...makeVariant(ref.key, ref.seed), tag: '처음 보는 숫자' };
   if (ref.kind === 'check') return { ...CHECK_BY_ID[ref.id], tag: '확인 문제' };
+  if (ref.kind === 'cq') return { ...CQ_BY_ID[ref.id], type: 'cq', tag: '개념 질문' };
   return { type: 'mc', q: L.predict.q, options: L.predict.options, answer: L.predict.answer, solution: L.predict.explain, tag: '개념 질문' };
 }
 
@@ -35,6 +37,7 @@ function buildSession(list) {
 function itemHTML(sl, k) {
   const { item } = sl.items[k];
   const a = sl.answers[k];
+  if (item.type === 'cq') return cqHTML(item, { num: k + 1, done: a ? a.response : null, attrs: `data-cr-item="${k}"`, cls: 'cr-item' });
   const done = a !== undefined;
   const body = item.type === 'mc'
     ? `<div class="options${optionsClass(item.options)}" role="radiogroup" aria-label="보기">${item.options.map((o, j) => `<button type="button" class="opt${done && j === item.answer ? ' is-ans' : ''}${done && j === a.response && !a.ok ? ' is-wrong' : ''}" role="radio" aria-checked="${done && j === a.response}" data-cr-opt="${j}" ${done ? 'disabled' : ''}><span class="opt-n">${CIRCLED[j]}</span><span class="opt-t">${tex(o)}</span></button>`).join('')}</div>${done ? '' : '<div class="row"><button type="button" class="btn btn-primary" data-act="cr-check">채점하기</button></div>'}`
@@ -88,7 +91,7 @@ export function renderConcepts(view) {
       <header class="page-head">
         <p class="crumbs"><a href="#/">오늘</a></p>
         <h1 class="page-title">오늘의 개념 확인</h1>
-        <p class="lead">배운 개념을 ${CONCEPT_GAPS.map((g) => (g < 30 ? `${g / 7}주` : '2개월')).join(' → ')} 간격으로 다시 꺼내 봅니다. 개념마다 두 문항이고, 첫 답으로 채점합니다. 두 문항을 모두 맞혀야 통과입니다.</p>
+        <p class="lead">배운 개념을 ${CONCEPT_GAPS.map((g) => (g < 30 ? `${g / 7}주` : '2개월')).join(' → ')} 간격으로 다시 꺼내 봅니다. 개념마다 두 문항이고, 첫 답으로 채점합니다. 개념 질문은 답과 이유가 모두 맞아야 정답이고, 두 문항을 모두 맞혀야 통과입니다.</p>
       </header>
       ${session ? session.lessons.map(lessonHTML).join('') : emptyHTML()}
       ${finished ? `<section class="paper cr-done"><p><strong>오늘 세트 끝.</strong> ${session.lessons.filter((sl) => sl.outcome.ok).length}/${session.lessons.length}개 통과.</p><p class="row">${more ? `<button type="button" class="btn btn-primary" data-act="cr-more">이어서 ${Math.min(more, CONCEPT_SET)}개 더 (남은 ${more}개)</button>` : ''}<a class="btn btn-quiet" href="#/">오늘 화면으로</a></p></section>` : ''}
@@ -102,10 +105,10 @@ export function renderConcepts(view) {
     if (sl.answers[k] !== undefined) return;
     const { item } = sl.items[k];
     if (response === '' || response == null) { toast(item.type === 'mc' ? '보기를 하나 고르세요.' : '답을 입력하세요.'); return; }
-    if (item.type !== 'mc' && normalizeAnswer(response) === null) { toast('정수나 분수(예: -3, 10/3)로 입력하세요.'); return; }
-    const ok = isCorrect(item, response);
+    if (item.type === 'short' && normalizeAnswer(response) === null) { toast('정수나 분수(예: -3, 10/3)로 입력하세요.'); return; }
+    const ok = item.type === 'cq' ? gradeCQ(item, response.a, response.r).ok : isCorrect(item, response);
     sl.answers[k] = { response, ok };
-    update(() => logActivity({ checks: 1 }));
+    update((s) => { if (item.type === 'cq') recordCQ(s, sl.id, item.id, response.a, response.r); logActivity({ checks: 1 }); });
     if (Object.keys(sl.answers).length === sl.items.length) {
       const allOk = sl.items.every((_, j) => sl.answers[j].ok);
       let res;
@@ -119,6 +122,7 @@ export function renderConcepts(view) {
 
   const picked = new Map(); // 객관식에서 고른 보기(채점 전)
   view.onclick = (e) => {
+    if (cqClick(e.target, { find: (id) => CQ_BY_ID[id] && { ...CQ_BY_ID[id], type: 'cq' }, onGrade: (li, q, a, r) => answer(li, { a, r }) })) return;
     const opt = e.target.closest('[data-cr-opt]');
     if (opt && !opt.disabled) {
       const li = opt.closest('[data-cr-item]');
