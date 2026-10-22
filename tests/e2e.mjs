@@ -299,6 +299,54 @@ async function run(viewport, tag) {
   await page.waitForSelector('.lesson svg ellipse.mp-set');
   await shot('lesson-map');
 
+  // ── 오늘의 개념 확인(개념 간격 복습)
+  {
+    const { GENERATORS } = await import('../assets/js/content/generators.js');
+    const hasGen = (l) => Object.values(GENERATORS).some((g) => g.like.some((pid) => l.related.includes(pid)));
+    const A = LESSONS.find((l) => !hasGen(l) && l.checks.length >= 2 && l.id !== 'u2-l1'); // 확인 문제 두 개로만 묻는 개념
+    const B = LESSONS.find((l) => hasGen(l) && l.unit !== A.unit && l.id !== 'u2-l1'); // 처음 보는 숫자 문제가 섞이는 개념
+    await page.goto(BASE + '#/settings');
+    await page.waitForSelector('.page');
+    await page.evaluate(([a, b]) => {
+      const k = 'mathpulse:v2'; const s = JSON.parse(localStorage.getItem(k));
+      const d = new Date(Date.now() - 10 * 864e5); const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      for (const id of [a, b]) s.lessons[id] = { done: day, checks: {}, recheck: null, rechecked: null, note: '' };
+      localStorage.setItem(k, JSON.stringify(s));
+    }, [A.id, B.id]);
+    await page.goto(BASE + '#/');
+    await page.reload();
+    await page.waitForSelector('.concept-today');
+    ok((await page.locator('.concept-today .ct-list li').count()) === 2 && (await page.textContent('.tabbar [data-badge="concepts"], .rail [data-badge="concepts"]')).trim() === '2', `[${tag}] 배운 지 1주가 지난 개념이 오늘 화면 맨 위 "오늘의 개념 확인"과 메뉴 배지에 뜬다`);
+    await page.click('.concept-today a[href="#/cr"]');
+    await page.waitForSelector('.cr-lesson');
+    const secA = page.locator('.cr-lesson', { has: page.locator(`a[href="#/l/${A.id}"]`) });
+    const secB = page.locator('.cr-lesson', { has: page.locator(`a[href="#/l/${B.id}"]`) });
+    ok((await secA.locator('.cr-item').count()) === 2 && (await secB.locator('.cr-item .cr-tag:has-text("처음 보는 숫자")').count()) === 1, `[${tag}] 개념마다 두 문항, 비슷한 문제 생성기가 있으면 처음 보는 숫자 문제가 섞인다`);
+    // A는 모두 맞히기: 문항 순서는 확인 문제 1, 2(복습 0회차)
+    const answerItem = async (sec, k, c, right) => {
+      const li = sec.locator(`[data-cr-item="${k}"]`);
+      if (c.type === 'mc') { await li.locator(`[data-cr-opt="${right ? c.answer : (c.answer + 1) % c.options.length}"]`).click(); await li.locator('[data-act="cr-check"]').click(); }
+      else { await li.locator('.short-in').fill(right ? c.answer : '98765'); await li.locator('button[type="submit"]').click(); }
+    };
+    await answerItem(secA, 0, A.checks[0], true);
+    await answerItem(page.locator('.cr-lesson', { has: page.locator(`a[href="#/l/${A.id}"]`) }), 1, A.checks[1], true);
+    await page.locator('.cr-out.ok').first().waitFor();
+    // B는 첫 문항(처음 보는 숫자)을 틀리게: 정답을 모르므로 범위 밖 값을 넣는다
+    const b0 = secB.locator('[data-cr-item="0"]');
+    if (await b0.locator('.short-in').count()) { await b0.locator('.short-in').fill('98765'); await b0.locator('button[type="submit"]').click(); }
+    else { await b0.locator('[data-cr-opt="0"]').click(); await b0.locator('[data-act="cr-check"]').click(); }
+    const b1c = B.checks[0]; // 복습 0회차: 생성기 + 확인 문제 1
+    await answerItem(secB, 1, b1c, true);
+    await page.locator('.cr-done').waitFor();
+    const recs = await page.evaluate(([a, b]) => { const s = JSON.parse(localStorage.getItem('mathpulse:v2')); return [s.lessons[a], s.lessons[b]]; }, [A.id, B.id]);
+    const firstWrong = (await b0.getAttribute('class')).includes('is-wrong');
+    ok(recs[0].spaced && recs[0].spaced.stage === 1 && (!firstWrong || (recs[1].spaced.stage === 0 && recs[1].recheck)), `[${tag}] 두 문항을 모두 맞힌 개념은 3주 뒤로, 하나라도 틀린 개념은 1주 단계로 돌아가고 다음 날 재확인이 잡힌다`);
+    await shot('concepts');
+    await page.goto(BASE + '#/');
+    await page.waitForSelector('.home');
+    ok((await page.locator('.concept-today').count()) === 0, `[${tag}] 오늘 확인을 마치면 오늘 화면에서 개념 확인 카드가 사라진다`);
+  }
+
   // 모든 소단원이 오류 없이 그려지는지(넓은 화면에서만)
   if (viewport.width >= 1100) {
     let bad = [];

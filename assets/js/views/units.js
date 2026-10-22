@@ -31,8 +31,8 @@ export function renderUnits(view) {
   view.innerHTML = `
   <section class="page">
     <header class="page-head">
-      <h1 class="page-title">단원</h1>
-      <p class="lead">2022 개정 교육과정 공통수학1·2(고1)의 일곱 단원과 선행 학습자를 위한 융합 단원입니다. 지금 트랙은 <a href="#/settings">${TRACKS[track].label}</a>입니다.</p>
+      <h1 class="page-title">개념 학습</h1>
+      <p class="lead">2022 개정 교육과정 공통수학1·2(고1)의 일곱 단원과 선행 학습자를 위한 융합 단원입니다. 소단원마다 예측 → 탐구 → 정리 → 예제 → 확인 → 심화 → 설명 순서로 공부하고, 배운 개념은 1주·3주·2개월 뒤 "오늘의 개념 확인"에서 다시 꺼내 봅니다. 지금 트랙은 <a href="#/settings">${TRACKS[track].label}</a>입니다.</p>
       <p class="row"><a class="btn btn-quiet" href="#/quiz?view=intro">배운 범위 혼합 평가</a></p>
     </header>
     ${COURSES.map(block).join('')}

@@ -1,6 +1,6 @@
 import { getState, today, addDays } from '../store.js';
 import { UNITS, UNIT_BY_ID, SKILLS, TRACKS, unitLabel, NEXT_SUBJECTS_NOTE } from '../content/units.js';
-import { latestDiagnosis, currentSkills, unitMastery, periodStats, wrongList, REASONS, streak, totals, activeTrack, lessonTotals } from '../model.js';
+import { latestDiagnosis, currentSkills, unitMastery, periodStats, wrongList, REASONS, streak, totals, activeTrack, lessonTotals, conceptMemory } from '../model.js';
 import { radar } from '../lib/radar.js';
 import { esc, fmtMinutes, fmtDate } from '../lib/ui.js';
 import { AI_SERVICES, reportPrompt, sendToAI } from '../lib/ai.js';
@@ -45,14 +45,15 @@ export function renderReport(view) {
       <p class="hint-text">${esc(NEXT_SUBJECTS_NOTE)} 이 리포트의 숙련도는 그 기초 단계의 학습 기록이며, 수능 준비도 전체를 나타내지 않습니다.</p>
     </header>
     <dl class="stats">
+      <div><dt>오래 기억한 개념</dt><dd>${conceptMemory().kept}<small>/${conceptMemory().learned}</small></dd></div>
+      <div><dt>혼자 확인한 개념</dt><dd>${lessonTotals().verified}<small>/${lessonTotals().total}</small></dd></div>
+      <div><dt>개념 확인 문제</dt><dd>${w7.checks}<small>번 풀이</small></dd></div>
       <div><dt>최근 7일 해결</dt><dd>${w7.solved}<small>문제</small></dd></div>
       <div><dt>공부한 날</dt><dd>${w7.activeDays}<small>/7일</small></dd></div>
       <div><dt>첫 시도 정답률</dt><dd>${w7.problems ? Math.round(w7.firstRight * 100) : '–'}<small>%</small></dd></div>
       <div><dt>힌트·풀이 사용률</dt><dd>${w7.problems ? Math.round(w7.hintUse * 100) : '–'}<small>%</small></dd></div>
       <div><dt>공부 시간</dt><dd class="dd-text">${fmtMinutes(w7.seconds)}</dd></div>
       <div><dt>연속 학습</dt><dd>${streak()}<small>일</small></dd></div>
-      <div><dt>개념 확인 문제</dt><dd>${w7.checks}<small>번 풀이</small></dd></div>
-      <div><dt>혼자 확인한 개념</dt><dd>${lessonTotals().verified}<small>/${lessonTotals().total}</small></dd></div>
     </dl>
     <div class="result-grid">
       <section class="paper chart-paper">
@@ -112,7 +113,7 @@ function buildSummary({ diag, now, w7, tt, wr }) {
   lines.push(`누적: 문제 은행 ${tt.total}문제 중 ${tt.solved}문제 해결(그중 한 번에 해결 ${tt.clean})`);
   const prac = Object.values(getState().practice || {}).reduce((s, v) => s + v.solved, 0);
   if (prac) lines.push(`숫자를 바꾼 유형 연습: ${prac}문제 해결`);
-  { const lt = lessonTotals(); lines.push(`개념 학습: 소단원 ${lt.total}개 중 확인 문제를 모두 혼자 맞힌 것 ${lt.verified}개, 이해했다고 표시한 것 ${lt.done}개, 다시 확인할 것 ${lt.recheck}개 (최근 7일 확인 문제 ${w7.checks}번 풀이)`); }
+  { const lt = lessonTotals(); lines.push(`개념 학습: 소단원 ${lt.total}개 중 확인 문제를 모두 혼자 맞힌 것 ${lt.verified}개, 이해했다고 표시한 것 ${lt.done}개, 다시 확인할 것 ${lt.recheck}개 (최근 7일 확인 문제 ${w7.checks}번 풀이)`); const cm = conceptMemory(); lines.push(`개념 기억: 배운 개념 ${cm.learned}개 중 1주·3주·2개월 간격 확인을 모두 통과한 것 ${cm.kept}개, 오늘 확인할 것 ${cm.due}개`); }
   lines.push('단원별 숙련도(현재/처음, 해결 문제 수): ' + UNITS.map((u) => { const m = unitMastery(u.id); return `${unitLabel(u)} ${m.pct}%/${m.firstPct}% (${m.solved}/${m.total})`; }).join(', '));
   if (wr.length) {
     const byReason = REASONS.map((r) => `${r} ${wr.filter((w) => w.reason === r).length}`).join(', ');

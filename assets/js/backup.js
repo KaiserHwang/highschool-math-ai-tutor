@@ -196,19 +196,24 @@ export function checkState(raw, { strict }) {
       || !isBool(c.sawSolution) || !(c.lastAt === null || c.lastAt === undefined || isIso(c.lastAt))) return null;
     return { tries: c.tries, solved: c.solved, firstCorrect: c.firstCorrect, sawSolution: c.sawSolution, lastAt: c.lastAt ?? null };
   };
+  // 개념 간격 복습 기록
+  const okSpaced = (sp) => isObj(sp) && isInt(sp.stage, 0, 3) && isDay(sp.due) && (sp.keptAt === null || sp.keptAt === undefined || isDay(sp.keptAt))
+    && Array.isArray(sp.history) && sp.history.length <= 50 && sp.history.every((h) => isObj(h) && isDay(h.date) && isBool(h.ok));
   for (const [lid, v] of Object.entries(isObj(raw.lessons) ? raw.lessons : {})) {
     const w = `lessons.${lid.slice(0, 20)}`;
     const recs = isObj(v) && (v.checks === undefined || isObj(v.checks)) ? Object.entries(v.checks || {}).map(([cid, c]) => [cid, checkRec(c)]) : null;
     if (!isObj(v) || !(v.done === null || v.done === undefined || isDay(v.done)) || !recs || recs.some(([, c]) => !c)
       || !(v.recheck === null || v.recheck === undefined || (isObj(v.recheck) && isDay(v.recheck.due) && isDay(v.recheck.since)))
       || !(v.rechecked === null || v.rechecked === undefined || isDay(v.rechecked))
-      || !(v.note === undefined || (typeof v.note === 'string' && v.note.length <= 4000))) { bad(w, '형식 오류'); continue; }
+      || !(v.note === undefined || (typeof v.note === 'string' && v.note.length <= 4000))
+      || !(v.spaced === null || v.spaced === undefined || okSpaced(v.spaced))) { bad(w, '형식 오류'); continue; }
     if (!LESSON_BY_ID[lid]) { dropped++; continue; }
     const checks = {};
     for (const [cid, c] of recs) {
       if (CHECK_BY_ID[cid] && cid.startsWith(lid + '-')) checks[cid] = c; else dropped++;
     }
     out.lessons[lid] = { done: v.done ?? null, checks, recheck: v.recheck ? { due: v.recheck.due, since: v.recheck.since } : null, rechecked: v.rechecked ?? null, note: v.note ?? '' };
+    if (v.spaced) out.lessons[lid].spaced = { stage: v.spaced.stage, due: v.spaced.due, keptAt: v.spaced.keptAt ?? null, history: v.spaced.history.map((h) => ({ date: h.date, ok: h.ok })) };
   }
 
   // 설정

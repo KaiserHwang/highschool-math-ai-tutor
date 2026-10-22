@@ -218,7 +218,7 @@ export function renderLesson(view, { args: [lessonId] }) {
   function paintProgress() {
     const pr = lessonProgress(L);
     const parts = [`혼자 맞힘 ${pr.independent}`, pr.helped ? `도움받아 맞힘 ${pr.helped}` : '', `남음 ${pr.total - pr.right}`].filter(Boolean).join(' · ');
-    $('[data-progress]').innerHTML = `확인 문제 ${parts}${pr.deepTotal ? ` · 심화 ${pr.deepRight}/${pr.deepTotal}` : ''}${pr.verified ? ' · <span class="done-tag">혼자 확인 완료</span>' : ''}${pr.done ? ' · 이해 표시함' : ''}${pr.recheck ? ' · <span class="recheck-tag">다시 확인할 개념</span>' : ''}`;
+    $('[data-progress]').innerHTML = `확인 문제 ${parts}${pr.deepTotal ? ` · 심화 ${pr.deepRight}/${pr.deepTotal}` : ''}${pr.verified ? ' · <span class="done-tag">혼자 확인 완료</span>' : ''}${pr.done ? ' · 이해 표시함' : ''}${pr.recheck ? ' · <span class="recheck-tag">다시 확인할 개념</span>' : ''}${pr.kept ? ' · <span class="done-tag">오래 기억함</span>' : pr.spaced && !pr.recheck ? ` · 다음 개념 확인 ${fmtDate(pr.spaced.due)}` : ''}`;
     const self = pr.done
       ? `<p class="l-done-msg"><span class="done-tag">이해했어요</span> 표시를 했습니다. ${pr.verified ? '확인 문제도 모두 혼자 맞혔어요.' : '이 표시는 스스로 판단한 것이고, 확인 문제를 혼자 맞히면 "혼자 확인"으로 따로 표시됩니다.'}</p><p class="row">${related.length ? `<a class="btn btn-primary" href="#/p/${related[0].id}">관련 문제 풀기</a>` : ''}${next && next.unit === L.unit ? `<a class="btn${related.length ? ' btn-quiet' : ' btn-primary'}" href="#/l/${next.id}">다음 개념</a>` : ''}<button type="button" class="btn btn-quiet" data-act="undone">표시 취소</button></p>`
       : `<p class="l-done-msg">예제와 확인 문제까지 마쳤다면 표시해 두세요. 확인 문제를 아직 다 풀지 않았어도 표시할 수 있지만, 그때는 "이해 표시"로만 기록됩니다.</p><p class="row"><button type="button" class="btn btn-primary" data-act="done">이해했어요</button></p>`;
@@ -234,7 +234,7 @@ export function renderLesson(view, { args: [lessonId] }) {
       s.lessons[L.id] = r;
     });
     paintProgress();
-    if (v) toast('이해했어요 표시를 했습니다.');
+    if (v) toast('이해했어요 표시를 했습니다. 1주 뒤 "오늘의 개념 확인"에서 짧게 다시 확인해요.');
   }
 
   function grade(li, response) {

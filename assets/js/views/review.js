@@ -1,5 +1,5 @@
 import { UNIT_BY_ID, UNITS, unitLabel } from '../content/units.js';
-import { wrongList, REASONS, REVIEW_GAPS, lessonRechecks, recheckTarget } from '../model.js';
+import { wrongList, REASONS, REVIEW_GAPS, lessonRechecks, recheckTarget, conceptsDue } from '../model.js';
 import { tex, esc, fmtDate } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 import { generatorFor, newSeed } from '../content/generators.js';
@@ -60,9 +60,10 @@ function draw(view) {
   view.innerHTML = `
   <section class="page">
     <header class="page-head">
-      <h1 class="page-title">오답 복습</h1>
+      <h1 class="page-title">복습</h1>
       <p class="lead">틀렸거나 풀이를 보고 푼 문제가 모입니다. 힌트 없이 맞힐 때마다 복습 간격이 ${REVIEW_GAPS.join('일, ')}일로 늘어나고, 네 번 통과하면 졸업합니다.</p>
     </header>
+    ${conceptsDue().length ? `<section class="wn-sec"><h2 class="h3">오늘의 개념 확인 ${conceptsDue().length}</h2><p class="hint-text">배운 지 1주·3주·2개월이 된 개념을 두 문항씩 다시 확인합니다.</p><p class="row"><a class="btn btn-primary" href="#/cr">개념 확인 시작</a></p></section>` : ''}
     ${recheckSec}
     ${active.length || done.length ? `
     <div class="reason-bar" role="group" aria-label="원인별 보기">

@@ -549,7 +549,7 @@ img, svg { display: block; }
 
 /* ── 리포트 ───────────────────────────── */
 .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: var(--r); overflow: hidden; margin: 0 0 24px; }
-@media (min-width: 720px) { .stats { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 720px) { .stats { grid-template-columns: repeat(3, 1fr); } }
 .stats div { background: var(--paper); padding: 14px 16px; }
 .stats dt { font-size: 12px; color: var(--pencil); }
 .stats dd { margin: 2px 0 0; font: 700 26px/1.2 var(--serif); font-variant-numeric: tabular-nums; }
@@ -950,3 +950,20 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .say-keys { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .say-keys label { display: flex; gap: 8px; align-items: baseline; cursor: pointer; }
 @media print { .xp-ctrls, .xp-goals, .dv-btn, .say textarea, .say .row { display: none !important; } .dv-step[hidden], .dv-line[hidden], .think[hidden], .say-model[hidden] { display: block !important; } }
+
+/* ── 개념 특화: 오늘의 개념 확인 ── */
+.concept-today { border-top: 3px solid var(--blue-pen); }
+.ct-list { list-style: none; margin: 4px 0 12px; padding: 0; display: grid; gap: 6px; }
+.ct-list li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; padding: 6px 0; border-bottom: 1px dashed var(--rule); }
+.ct-t { font-weight: 600; }
+.plan-sub .next-problem { border-top-width: 1px; }
+.plan-sub .next-problem .q-text { font-size: 17px; }
+.mem-row { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 4px 0; }
+.mem-row b { font: 600 20px var(--serif); margin-right: 3px; }
+.cr-lesson { margin-bottom: 18px; }
+.cr-tag { display: inline-block; font-size: 12px; padding: 1px 7px; border-radius: 10px; border: 1px solid var(--rule); color: var(--ink-2); margin-right: 4px; vertical-align: 2px; }
+.cr-out { margin: 8px 0 0; padding: 10px 12px; border-radius: 8px; }
+.cr-out.ok { background: color-mix(in srgb, var(--blue-pen) 9%, transparent); }
+.cr-out.miss { background: color-mix(in srgb, var(--red-pen) 9%, transparent); }
+.cr-up { margin: 6px 0 12px; padding-left: 18px; }
+.cr-done { border-top: 3px solid var(--ink); }

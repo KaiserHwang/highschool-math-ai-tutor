@@ -387,15 +387,19 @@ export function lessonProgress(lesson) {
   const verified = independent === total; // 모든 확인 문제를 혼자 맞힘
   const t = today();
   const recheck = rec.recheck || null;
+  const spaced = spacedOf(lesson, rec);
+  const kept = !!(spaced && spaced.keptAt);
   return {
     done: rec.done, total, right, independent, helped, missed, verified, deepTotal: dcs.length, deepRight, deepIndependent,
     recheck, recheckDue: !!recheck && recheck.due <= t, rechecked: rec.rechecked || null,
+    spaced, kept, spacedDue: !!spaced && !kept && !recheck && spaced.due <= t,
     // 단원 목차와 홈에 보이는 한 줄 상태
-    state: recheck ? 'recheck' : verified ? 'verified' : rec.done ? 'self' : right ? 'partial' : 'new',
+    state: recheck ? 'recheck' : kept ? 'kept' : verified ? 'verified' : rec.done ? 'self' : right ? 'partial' : 'new',
   };
 }
 
 export const LESSON_STATE = {
+  kept: '오래 기억함',
   verified: '혼자 확인',
   self: '이해 표시',
   recheck: '다시 확인할 개념',
@@ -453,6 +457,91 @@ export function recheckTarget(lesson) {
 
 export function lessonRechecks() {
   return LESSONS.map((l) => ({ l, pr: lessonProgress(l) })).filter((x) => x.pr.recheck);
+}
+
+// ── 개념 간격 복습 ─────────────────────────────────
+// 배운 개념(이해 표시를 했거나 기본 확인 문제를 모두 맞힘)은 1주 → 3주 → 2개월 뒤에 짧게 다시 확인한다.
+// 세 번 통과하면 "오래 기억함". 틀리면 1주 단계로 돌아가고, 다음 날 처음 보는 문제로 재확인을 예약한다.
+// 기록: lessons[id].spaced = { stage, due, history:[{date, ok}], keptAt }. 기록이 없으면 배운 날로부터 계산한다.
+export const CONCEPT_GAPS = [7, 21, 60];
+
+/** 개념을 배운 날: 이해 표시 날짜, 없으면 기본 확인 문제를 모두 맞힌 마지막 날. 아직 배우지 않았으면 null */
+export function learnedOn(lesson, rec) {
+  if (!rec) return null;
+  if (rec.done) return rec.done;
+  const base = lesson.checks.map((c) => rec.checks[c.id]);
+  if (!base.length || base.some((r) => !r || !r.solved)) return null;
+  const days = base.map((r) => (r.lastAt ? localDay(r.lastAt) : null)).filter(Boolean).sort();
+  return days.length ? days[days.length - 1] : today();
+}
+
+/** 이 개념의 간격 복습 상태(저장된 것이 없으면 배운 날 기준으로 계산). 아직 배우지 않았으면 null */
+export function spacedOf(lesson, rec = getState().lessons[lesson.id]) {
+  if (!rec) return null;
+  if (rec.spaced) return rec.spaced;
+  const d = learnedOn(lesson, rec);
+  return d ? { stage: 0, due: addDays(d, CONCEPT_GAPS[0]), history: [], keptAt: null } : null;
+}
+
+/**
+ * 개념 복습 결과를 반영한다. 오답노트와 같은 규칙: 예정일 전 성공은 연습, 하루 한 번만 반영.
+ * @returns {{ counted: boolean, why?: 'early'|'today'|'kept'|'new', stage?: number, kept?: boolean }}
+ */
+export function conceptResult(st, lessonId, ok) {
+  const L = LESSONS.find((l) => l.id === lessonId);
+  const r = (st.lessons[lessonId] ||= blankLessonRec());
+  const sp = spacedOf(L, r);
+  if (!sp) return { counted: false, why: 'new' };
+  const t = today();
+  if (sp.keptAt && ok) return { counted: false, why: 'kept' };
+  if (ok && sp.due > t) return { counted: false, why: 'early' };
+  if (sp.history.some((h) => h.date === t)) return { counted: false, why: 'today' };
+  const next = { stage: sp.stage, due: sp.due, keptAt: sp.keptAt || null, history: [...sp.history, { date: t, ok }].slice(-30) };
+  if (ok) {
+    next.stage = sp.stage + 1;
+    if (next.stage >= CONCEPT_GAPS.length) { next.stage = CONCEPT_GAPS.length; next.keptAt = t; next.due = addDays(t, CONCEPT_GAPS[CONCEPT_GAPS.length - 1]); }
+    else next.due = addDays(t, CONCEPT_GAPS[next.stage]);
+  } else {
+    next.stage = 0;
+    next.keptAt = null;
+    next.due = addDays(t, CONCEPT_GAPS[0]);
+    scheduleRecheck(st, lessonId); // 다음 날 처음 보는 문제로 다시 확인
+  }
+  r.spaced = next;
+  return { counted: true, stage: next.stage, kept: !!next.keptAt };
+}
+
+/** 개념 복습 목록: 배웠고, 오래 기억함이 아니고, 재확인 중이 아닌 개념 */
+export function conceptQueue() {
+  const st = getState();
+  return LESSONS.map((l) => ({ l, rec: st.lessons[l.id], sp: spacedOf(l) }))
+    .filter((x) => x.sp && !x.sp.keptAt && !x.rec.recheck)
+    .sort((a, b) => a.sp.due.localeCompare(b.sp.due) || LESSONS.indexOf(a.l) - LESSONS.indexOf(b.l));
+}
+export const conceptsDue = () => conceptQueue().filter((x) => x.sp.due <= today());
+
+/** 개념 기억 현황: 배운 개념, 기억 관리 중, 오래 기억함 */
+export function conceptMemory() {
+  const st = getState();
+  const sps = LESSONS.map((l) => spacedOf(l, st.lessons[l.id])).filter(Boolean);
+  return { learned: sps.length, kept: sps.filter((s) => s.keptAt).length, due: conceptsDue().length, total: LESSONS.length };
+}
+
+/**
+ * 개념 복습에 낼 문항 2개. 처음 보는 숫자의 비슷한 문제를 먼저 쓰고, 복습할 때마다 다른 확인 문제로 돌린다.
+ * @returns {Array<{kind:'variant', key:string}|{kind:'check', id:string}|{kind:'predict'}>}
+ */
+export function conceptItems(lesson, round = 0) {
+  const gens = Object.entries(GENERATORS).filter(([, g]) => g.like.some((pid) => lesson.related.includes(pid))).map(([k]) => k);
+  const checks = lesson.checks.map((c) => c.id);
+  const items = [];
+  if (gens.length) items.push({ kind: 'variant', key: gens[round % gens.length] });
+  const c1 = checks[round % checks.length];
+  if (!items.length) items.push({ kind: 'check', id: c1 });
+  const c2 = checks[(round + (gens.length ? 0 : 1)) % checks.length];
+  if (!items.some((it) => it.id === c2)) items.push({ kind: 'check', id: c2 });
+  else if (lesson.predict) items.push({ kind: 'predict' });
+  return items;
 }
 
 export function unitLessonStats(unitId) {

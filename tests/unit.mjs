@@ -134,6 +134,47 @@ if (process.argv[2] === '--review-child') {
     const pd2 = model.lessonProgress(L);
     log(`심화 확인 문제는 따로 센다(심화 ${pd2.deepRight}/${pd2.deepTotal}, 혼자 ${pd2.deepIndependent})`, pd2.deepTotal === L.deep.checks.length && pd2.deepRight === 1 && pd2.deepIndependent === 1 && pd2.total === L.checks.length);
   }
+  // 개념 간격 복습: 배운 날 + 1주 → 3주 → 2개월, 세 번 통과하면 오래 기억함
+  {
+    const { LESSON_BY_ID } = await import('../assets/js/content/lessons/index.js');
+    const L = LESSON_BY_ID['u2-l2'];
+    store.resetAll();
+    setClock(2026, 9, 1, 20, 0); // 10월 1일
+    log('배우지 않은 개념은 간격 복습 대상이 아니다', model.spacedOf(L) === null && model.conceptsDue().length === 0);
+    store.update((s) => { for (const c of L.checks) model.recordCheck(s, L.id, c.id, true); });
+    const sp0 = model.spacedOf(L);
+    log(`기본 확인 문제를 모두 맞히면 1주 뒤 확인이 잡힌다(${sp0 && sp0.due})`, sp0 && sp0.stage === 0 && sp0.due === '2026-10-08');
+    setClock(2026, 9, 5, 9, 0);
+    let r;
+    store.update((s) => { r = model.conceptResult(s, L.id, true); });
+    log('예정일 전 성공은 연습으로만 본다', !r.counted && r.why === 'early' && model.spacedOf(L).stage === 0);
+    setClock(2026, 9, 8, 9, 0);
+    log('예정일이 되면 오늘의 개념 확인에 뜬다', model.conceptsDue().some((x) => x.l.id === L.id) && model.lessonProgress(L).spacedDue);
+    store.update((s) => { r = model.conceptResult(s, L.id, true); });
+    log('통과하면 3주 뒤로 미뤄진다', r.counted && model.spacedOf(L).stage === 1 && model.spacedOf(L).due === '2026-10-29');
+    store.update((s) => { r = model.conceptResult(s, L.id, false); });
+    log('같은 날 두 번째 결과는 반영하지 않는다', !r.counted && r.why === 'today');
+    setClock(2026, 9, 29, 9, 0);
+    store.update((s) => { r = model.conceptResult(s, L.id, false); });
+    const pf = model.lessonProgress(L);
+    log('틀리면 1주 단계로 돌아가고 다음 날 재확인이 예약된다', r.counted && model.spacedOf(L).stage === 0 && model.spacedOf(L).due === '2026-11-05' && pf.recheck && pf.recheck.due === '2026-10-30' && pf.state === 'recheck');
+    setClock(2026, 10, 5, 9, 0);
+    log('재확인이 남아 있으면 개념 확인 목록에는 올리지 않는다', !model.conceptsDue().some((x) => x.l.id === L.id));
+    store.update((s) => { model.recheckResult(s, L.id, true); });
+    log('재확인을 통과하면 다시 개념 확인 목록에 오른다', model.conceptsDue().some((x) => x.l.id === L.id));
+    const steps = [['2026-11-05', 1], ['2026-11-26', 2], ['2027-01-25', 3]];
+    let okAll = true;
+    for (const [d, stage] of steps) {
+      const [y, m, dd] = d.split('-').map(Number);
+      setClock(y, m - 1, dd, 9, 0);
+      store.update((s) => { r = model.conceptResult(s, L.id, true); });
+      okAll = okAll && r.counted && model.spacedOf(L).stage === stage;
+    }
+    const pk = model.lessonProgress(L);
+    log('1주 → 3주 → 2개월을 모두 통과하면 오래 기억함이 된다', okAll && pk.kept && pk.state === 'kept' && !model.conceptQueue().some((x) => x.l.id === L.id) && model.conceptMemory().kept === 1);
+    const items = [0, 1, 2].map((k) => model.conceptItems(L, k));
+    log('개념 확인 문항은 두 개이고 복습할 때마다 다른 확인 문제로 돌아간다', items.every((it) => it.length === 2) && new Set(items.map((it) => JSON.stringify(it))).size > 1);
+  }
   process.stdout.write(JSON.stringify(out));
   process.exit(0);
 }
@@ -167,7 +208,8 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
       'u2-l3-c1': { tries: 1, solved: true, firstCorrect: true, sawSolution: false, lastAt: '2026-10-20T03:00:00.000Z' },
       'u2-l3-c2': { tries: 2, solved: true, firstCorrect: false, sawSolution: true, lastAt: '2026-10-20T03:05:00.000Z' },
       'u2-l3-d1': { tries: 1, solved: false, firstCorrect: false, sawSolution: false, lastAt: '2026-10-20T03:06:00.000Z' },
-    }, recheck: { due: '2026-10-21', since: '2026-10-20' }, rechecked: null, note: '두 근의 합과 곱으로 식을 다시 쓴다' };
+    }, recheck: { due: '2026-10-21', since: '2026-10-20' }, rechecked: null, note: '두 근의 합과 곱으로 식을 다시 쓴다',
+      spaced: { stage: 1, due: '2026-11-10', keptAt: null, history: [{ date: '2026-10-20', ok: true }] } };
   });
   store.logActivity({ solved: 1, attempted: 2, seconds: 150 });
   store.update(() => {});
@@ -194,6 +236,7 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
     ['javascript: AI 주소', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, settings: { ai: { claude: 'javascript:alert(1)' } } } })],
     ['오답 원인이 목록 밖', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: { 'u1-01': { stage: 0, due: '2026-10-22', reason: '<img>', resolved: false } }, activity: {} } })],
     ['개념 학습 기록 형식 오류', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: 'yesterday', checks: {} } } } })],
+    ['개념 간격 복습 기록 형식 오류', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: null, checks: {}, spaced: { stage: 9, due: 'soon', history: 'x' } } } } })],
     ['확인 문제 결과가 불리언이 아님', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: null, checks: { 'u2-l3-c1': 'yes' } } } } })],
     ['다른 앱의 파일', JSON.stringify({ app: 'Other', data: { attempts: {}, wrong: {}, activity: {} } })],
     ['JSON이 아님', '{ 이건 JSON이 아님'],

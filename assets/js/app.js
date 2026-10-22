@@ -1,5 +1,5 @@
 import { subscribe, getState, isMemoryOnly } from './store.js';
-import { dueReviews } from './model.js';
+import { dueReviews, conceptsDue, lessonRechecks } from './model.js';
 import { toast } from './lib/ui.js';
 import { renderHome } from './views/home.js';
 import { renderDiagnosis } from './views/diagnosis.js';
@@ -8,6 +8,7 @@ import { renderProblem } from './views/problem.js';
 import { renderLesson } from './views/lesson.js';
 import { renderQuiz } from './views/quiz.js';
 import { renderReview } from './views/review.js';
+import { renderConcepts } from './views/concepts.js';
 import { renderReport } from './views/report.js';
 import { renderSettings } from './views/settings.js';
 
@@ -23,6 +24,7 @@ const routes = [
   [/^\/p\/(u\d-\d\d)$/, () => renderProblem, 'units'],
   [/^\/v\/(g-[a-z0-9-]+)$/, () => renderProblem, 'units'],
   [/^\/review$/, () => renderReview, 'review'],
+  [/^\/cr$/, () => renderConcepts, 'home'],
   [/^\/quiz$/, () => renderQuiz, 'units'],
   [/^\/report$/, () => renderReport, 'report'],
   [/^\/settings$/, () => renderSettings, 'settings'],
@@ -69,11 +71,16 @@ function setActive(nav) {
 }
 
 function updateBadges() {
-  const n = dueReviews().length;
-  document.querySelectorAll('[data-badge="review"]').forEach((b) => {
-    b.textContent = n ? String(n) : '';
-    b.hidden = !n;
-  });
+  const counts = {
+    review: dueReviews().length + lessonRechecks().filter((x) => x.pr.recheckDue).length,
+    concepts: conceptsDue().length,
+  };
+  for (const [k, n] of Object.entries(counts)) {
+    document.querySelectorAll(`[data-badge="${k}"]`).forEach((b) => {
+      b.textContent = n ? String(n) : '';
+      b.hidden = !n;
+    });
+  }
 }
 
 function applyTheme() {

@@ -1,9 +1,10 @@
 import { getState, today, addDays } from '../store.js';
 import { UNITS, TRACKS, UNIT_BY_ID, LEVELS, COURSE_SHORT, unitLabel } from '../content/units.js';
 import { generatorsOfUnit, newSeed } from '../content/generators.js';
-import { latestDiagnosis, recommendNext, dueReviews, unitMastery, streak, activeTrack, totals, weakestUnit, lessonTotals, lessonRechecks } from '../model.js';
-import { lessonForProblem } from '../content/lessons/index.js';
-import { tex, esc } from '../lib/ui.js';
+import { latestDiagnosis, recommendNext, dueReviews, unitMastery, streak, activeTrack, totals, weakestUnit, lessonTotals, lessonRechecks, conceptsDue, conceptQueue, conceptMemory, learnedOn } from '../model.js';
+import { lessonForProblem, LESSONS, lessonsOfUnit } from '../content/lessons/index.js';
+import { CONCEPT_SET } from './concepts.js';
+import { tex, esc, fmtDate } from '../lib/ui.js';
 import { DIAGNOSIS } from '../content/diagnosis.js';
 import { figure } from '../lib/plot.js';
 
@@ -42,18 +43,42 @@ export function renderHome(view) {
   const steps = [];
   const nextLesson = next ? lessonForProblem(next.id) : null;
   const lessonFirst = nextLesson && !st.lessons[nextLesson.id]?.done && !Object.values(st.lessons[nextLesson.id]?.checks || {}).some((c) => c.solved);
+
+  // ① 오늘의 개념 확인(간격 복습)이 맨 위
+  const cDue = conceptsDue();
+  const mem = conceptMemory();
+  const upNext = conceptQueue()[0];
+  if (cDue.length) {
+    const n = Math.min(cDue.length, CONCEPT_SET);
+    steps.push(`<li class="plan-step plan-main">
+      <article class="paper concept-today" aria-labelledby="ct-h">
+        <header class="paper-head"><h2 id="ct-h" class="paper-title">오늘의 개념 확인</h2><span class="meta">${n}개 · 약 ${n * 2}분${cDue.length > n ? ` · 남은 ${cDue.length - n}개는 이어서` : ''}</span></header>
+        <ul class="ct-list">${cDue.slice(0, n).map(({ l, sp }) => `<li><span class="ct-t">${esc(l.title)}</span><span class="hint-text">${['1주', '3주', '2개월'][sp.stage] || ''} 간격 확인</span></li>`).join('')}</ul>
+        <p class="row"><a class="btn btn-primary" href="#/cr">개념 확인 시작</a><span class="hint-text">배운 개념을 잊기 전에 두 문항씩 다시 꺼내 봅니다.</span></p>
+      </article></li>`);
+  } else if (mem.learned) {
+    steps.push(`<li class="plan-step"><div class="plan-body"><h2 class="h3">오늘 확인할 개념은 없어요</h2><p class="hint-text">배운 개념 ${mem.learned}개${mem.kept ? ` · 오래 기억함 ${mem.kept}개` : ''}${upNext ? ` · 다음 확인 ${fmtDate(upNext.sp.due)} (${esc(upNext.l.title)})` : ''}</p></div></li>`);
+  }
+
+  // ② 다음에 배울 개념
+  const unlearned = (l) => !learnedOn(l, st.lessons[l.id]);
+  const learnNext = (nextLesson && unlearned(nextLesson) ? nextLesson : null)
+    || lessonsOfUnit(weak.id).find(unlearned) || LESSONS.find(unlearned) || null;
   const rechecksDue = lessonRechecks().filter((x) => x.pr.recheckDue);
   if (rechecksDue.length) {
     steps.push(`<li class="plan-step"><div class="plan-body"><h2 class="h3">다시 확인할 개념 ${rechecksDue.length}개</h2><p class="hint-text">${rechecksDue.slice(0, 3).map((x) => esc(x.l.title)).join(', ')}${rechecksDue.length > 3 ? ' 등' : ''} · 처음 보는 문제로 확인합니다.</p></div><a class="btn" href="#/review">확인하기</a></li>`);
+  }
+  if (learnNext) {
+    steps.push(`<li class="plan-step"><div class="plan-body"><h2 class="h3">다음에 배울 개념: ${esc(learnNext.title)}</h2><p class="hint-text">${esc(unitLabel(UNIT_BY_ID[learnNext.unit]))} · ${tex(learnNext.summary || '')}</p></div><a class="btn${cDue.length ? '' : ' btn-primary'}" href="#/l/${learnNext.id}">개념 배우기</a></li>`);
   }
   if (due.length) {
     steps.push(`<li class="plan-step"><div class="plan-body"><h2 class="h3">틀렸던 문제 ${due.length}개 복습</h2><p class="hint-text">힌트 없이 맞히면 다음 복습까지 간격이 늘어납니다.</p></div><a class="btn" href="#/review">복습하기</a></li>`);
   }
   steps.push(next
-    ? `<li class="plan-step plan-main">
+    ? `<li class="plan-step plan-main plan-sub">
         <article class="paper next-problem" aria-labelledby="next-h">
           <header class="paper-head">
-            <h2 id="next-h" class="paper-title">다음 문제</h2>
+            <h2 id="next-h" class="paper-title">개념 적용 문제</h2>
             <span class="meta">${esc(unitLabel(UNIT_BY_ID[next.unit]))} · ${esc(next.topic)} · <span class="lv lv-${next.level}">${LEVELS[next.level].label}</span></span>
           </header>
           <div class="q-text">${tex(next.q)}</div>${figure(next.fig)}
@@ -76,7 +101,7 @@ export function renderHome(view) {
     <header class="home-head">
       <div>
         <p class="meta">${now.getMonth() + 1}월 ${now.getDate()}일 ${DAYS[now.getDay()]}요일${streak() ? ` · ${streak()}일째 연속 공부` : ''}</p>
-        <h1 class="page-title">${st.profile.name ? `${esc(st.profile.name)}, ` : ''}오늘도 한 문제씩</h1>
+        <h1 class="page-title">${st.profile.name ? `${esc(st.profile.name)}, ` : ''}오늘도 개념 하나씩</h1>
         <p class="scope-note">학습 범위: 고1 공통수학1·2 (2022 개정 교육과정)</p>
       </div>
       ${goalRing(todayAct.solved, goal)}
@@ -85,7 +110,7 @@ export function renderHome(view) {
       <section class="first-run">
         <h2 class="h2">먼저 지금 실력을 확인해 볼까요</h2>
         <p>고1 공통수학1·2의 일곱 단원에서 단원마다 2~4문제씩, 모두 ${DIAGNOSIS.length}문제를 풉니다. 약 35분 걸리고, 결과에 따라 학습 트랙과 순서를 추천해 드려요.</p>
-        <p class="row"><a class="btn btn-primary" href="#/diagnosis">수준 진단 시작</a><a class="btn btn-quiet" href="#/units">진단 없이 단원부터 보기</a></p>
+        <p class="row"><a class="btn btn-primary" href="#/diagnosis">수준 진단 시작</a><a class="btn btn-quiet" href="#/units">진단 없이 개념 학습부터</a></p>
       </section>`}
     <div class="home-grid">
       <div class="home-main">
@@ -101,6 +126,11 @@ export function renderHome(view) {
           <h2 class="h3">단원별 숙련도</h2>
           <ul class="unit-minis">${units}</ul>
           <p class="hint-text">개념 ${lessonTotals().total}개 중 혼자 확인 ${lessonTotals().verified} · 문제 은행 ${tt.total}문제 중 ${tt.solved}문제 해결</p>
+        </section>
+        <section class="side-block">
+          <h2 class="h3">개념 기억</h2>
+          <p class="mem-row"><span><b>${mem.learned}</b> 배운 개념</span><span><b>${mem.learned - mem.kept}</b> 기억 관리 중</span><span><b>${mem.kept}</b> 오래 기억함</span></p>
+          <p class="hint-text">배운 개념은 1주 → 3주 → 2개월 뒤 다시 확인하고, 세 번 모두 통과하면 "오래 기억함"이 됩니다.</p>
         </section>
         <section class="side-block"><h2 class="h3">혼합 평가</h2><p class="hint-text">공부한 단원에서 처음 보는 문제 8개를 단원 이름 없이 섞어 풉니다. 힌트와 정답은 끝나고 공개됩니다.</p><p class="row"><a class="btn btn-quiet" href="#/quiz?view=intro">혼합 평가 보기</a></p></section>
         ${diag ? `<section class="side-block"><h2 class="h3">수준 진단</h2><p class="hint-text">최근 진단 ${diag.overall}점 · ${TRACKS[diag.track].label} 트랙 추천</p><p class="row"><a class="btn btn-quiet" href="#/diagnosis?view=result">결과 보기</a><a class="btn btn-quiet" href="#/diagnosis">다시 진단</a></p></section>` : ''}
