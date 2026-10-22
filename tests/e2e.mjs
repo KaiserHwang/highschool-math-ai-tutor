@@ -225,7 +225,7 @@ async function run(viewport, tag) {
   await page.click('.lesson-toc .lt-row >> nth=0');
   await page.waitForSelector('.lesson .box .katex');
   ok(page.url().endsWith('#/l/u2-l1'), `[${tag}] 목차에서 첫 소단원을 연다`);
-  const ex0 = page.locator('[data-ex="0"]');
+  const ex0 = page.locator('[data-ex="e0"]');
   const nSteps = LESSON_BY_ID['u2-l1'].examples[0].steps.length;
   await ex0.locator('[data-act="ex-next"]').click();
   ok(await ex0.locator('.ex-step:not([hidden])').count() === 1, `[${tag}] 예제 풀이를 한 단계씩 연다`);
@@ -248,6 +248,43 @@ async function run(viewport, tag) {
   ok(lessonRec && lessonRec.done && c1 && c1.solved && c1.firstCorrect === false && c1.sawSolution && c1.tries === 2, `[${tag}] 이해 표시와 확인 문제 기록(첫 시도 오답, 풀이 봄, 시도 2회)을 저장한다`);
   ok(lessonRec.recheck && (await page.locator('.recheck-box').count()) === 1, `[${tag}] 틀리고 풀이를 본 개념은 다시 확인하도록 예약된다`);
   ok(/혼자 맞힘 0/.test(await page.textContent('[data-progress]')), `[${tag}] 도움받아 맞힌 확인 문제는 "혼자 맞힘"으로 세지 않는다`);
+
+  // 보강: 먼저 예측하기, 탐구 그래프, 유도 따라가기, 오답 설명, 심화 확인, 직접 설명하기
+  const PL = LESSON_BY_ID['u2-l1'];
+  const wrongPd = PL.predict.answer === 0 ? 1 : 0;
+  await page.click(`[data-pd-opt="${wrongPd}"]`);
+  await page.locator('.pd-fb .fb-note').waitFor();
+  ok(await page.locator(`[data-pd-opt="${PL.predict.answer}"].is-ans`).count() === 1 && (await page.locator('[data-pd-opt]:not([disabled])').count()) === 0, `[${tag}] 예측을 고르면 정답과 설명이 나오고 다시 고를 수 없다`);
+  const goal0 = page.locator('[data-xp="0"] [data-goal="0"]');
+  ok(!(await goal0.getAttribute('class') || '').includes('done'), `[${tag}] 탐구 과제는 처음에는 완료로 표시되지 않는다`);
+  const figBefore = await page.innerHTML('[data-xp="0"] [data-xp-fig]');
+  await page.locator('[data-xp="0"] input[data-k="n"]').fill('2');
+  await page.waitForFunction(() => document.querySelector('[data-xp="0"] [data-goal="0"]').classList.contains('done'));
+  ok((await page.innerHTML('[data-xp="0"] [data-xp-fig]')) !== figBefore && (await page.textContent('[data-xp="0"] output[data-out="n"]')) === '2', `[${tag}] 슬라이더를 움직이면 그래프와 값이 바뀌고 과제가 완료로 표시된다`);
+  await page.click('[data-dv] [data-act="dv-show"] >> nth=0');
+  ok(!(await page.locator('[data-dv-step="0"] .dv-line').isHidden()) && !(await page.locator('[data-dv-step="1"]').isHidden()), `[${tag}] 유도 단계를 확인하면 다음 단계가 열린다`);
+  const ckb = page.locator('[data-check="u2-l1-c2"]');
+  await ckb.locator('.short-in').fill('-3');
+  await ckb.locator('button[type="submit"]').click();
+  await ckb.locator('.trap-why').waitFor();
+  ok(/i\^2/.test(await ckb.locator('.trap-why').innerHTML()) || (await ckb.locator('.trap-why .katex').count()) > 0, `[${tag}] 예상되는 오답에는 그 답이 나온 이유를 짚어 준다`);
+  const dk = page.locator('[data-check="u2-l1-d2"]');
+  await dk.locator('.short-in').fill('2');
+  await dk.locator('button[type="submit"]').click();
+  await dk.locator('.trap-why').waitFor();
+  await dk.locator('.short-in').fill('-2');
+  await dk.locator('button[type="submit"]').click();
+  await dk.locator('.fb-right').waitFor();
+  const deepRec = await page.evaluate(() => JSON.parse(localStorage.getItem('mathpulse:v2')).lessons['u2-l1'].checks['u2-l1-d2']);
+  ok(deepRec && deepRec.solved && deepRec.firstCorrect === false && /혼자 맞힘 0/.test(await page.textContent('[data-progress]')), `[${tag}] 심화 확인 문제는 기록되지만 "혼자 확인" 판정에는 들어가지 않는다`);
+  await page.fill('[data-note]', '실수부분과 허수부분을 각각 비교한다');
+  await page.click('[data-act="say-model"]');
+  ok(await page.locator('.say-model .say-keys li').count() === PL.explain.keys.length, `[${tag}] 직접 설명하기에서 모범 설명과 점검 항목을 볼 수 있다`);
+  await page.goto(BASE + '#/u/u2');
+  await page.waitForSelector('.lesson-toc');
+  await page.goto(BASE + '#/l/u2-l1');
+  await page.waitForSelector('[data-note]');
+  ok((await page.inputValue('[data-note]')) === '실수부분과 허수부분을 각각 비교한다', `[${tag}] 직접 쓴 설명이 저장되어 다시 보인다`);
   await shot('lesson');
   await page.goto(BASE + '#/u/u2');
   await page.waitForSelector('.lesson-toc');
@@ -268,10 +305,12 @@ async function run(viewport, tag) {
     for (const L of LESSONS) {
       await page.goto(BASE + `#/l/${L.id}`);
       await page.waitForSelector(`.lesson-head h1:has-text("${L.title}")`);
-      const n = await page.evaluate(() => ({ katexErr: document.querySelectorAll('.lesson .katex-error').length, checks: document.querySelectorAll('.ck').length, ex: document.querySelectorAll('.ex').length }));
-      if (n.katexErr || n.checks !== L.checks.length || n.ex !== L.examples.length) bad.push(L.id);
+      const n = await page.evaluate(() => ({ katexErr: document.querySelectorAll('.lesson .katex-error').length, checks: document.querySelectorAll('.ck').length, ex: document.querySelectorAll('.ex').length, xp: document.querySelectorAll('.xp [data-xp-fig] figure').length, pd: document.querySelectorAll('[data-pd]').length }));
+      const nCk = L.checks.length + (L.deep ? L.deep.checks.length : 0);
+      const nEx = L.examples.length + (L.deep ? L.deep.ideas.filter((d) => d.example).length : 0);
+      if (n.katexErr || n.checks !== nCk || n.ex !== nEx || n.xp !== (L.explore || []).length || n.pd !== (L.predict ? 1 : 0)) bad.push(L.id);
     }
-    ok(bad.length === 0, `[${tag}] 소단원 ${LESSONS.length}개가 모두 수식 오류 없이 그려진다${bad.length ? ': ' + bad.join(', ') : ''}`);
+    ok(bad.length === 0, `[${tag}] 소단원 ${LESSONS.length}개가 예측·탐구·심화까지 모두 수식 오류 없이 그려진다${bad.length ? ': ' + bad.join(', ') : ''}`);
   }
   await page.goto(BASE + '#/');
   await page.waitForSelector('.next-problem');

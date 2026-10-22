@@ -96,6 +96,122 @@ for (const L of LESSONS) {
   for (const pid of L.related) { if (!PROBLEM_BY_ID[pid]) fail(`${w}.related: 없는 문제 ${pid}`); covered.add(pid); }
 }
 for (const p of PROBLEMS) if (!covered.has(p.id)) fail(`${p.id}: 연결된 개념 소단원이 없음`);
+// ── 소단원 보강(예측·탐구·유도·오답 설명·심화·설명 과제) ──
+import { figure } from '../assets/js/lib/plot.js';
+const { allChecks: ALLC, PLUS_IDS } = await import('../assets/js/content/lessons/index.js');
+const { LESSON_BY_ID: LB } = await import('../assets/js/content/lessons/index.js');
+for (const id of PLUS_IDS) if (!LB[id]) fail(`보강 데이터의 소단원 id ${id}가 없음`);
+function checkFormat(cw, c) {
+  check(`${cw}.q`, c.q);
+  check(`${cw}.solution`, c.solution);
+  if (c.fig && !(c.fig.alt && c.fig.alt.length > 10)) fail(`${cw}: 그림 설명 없음`);
+  if (c.type === 'mc') {
+    if (!Array.isArray(c.options) || c.options.length < 4 || !Number.isInteger(c.answer) || c.answer < 0 || c.answer >= c.options.length) fail(`${cw}: 객관식 보기·정답 형식`);
+    (c.options || []).forEach((o, k) => check(`${cw}.options[${k}]`, o));
+  } else if (c.type === 'short') {
+    if (normalizeAnswer(c.answer) === null || normalizeAnswer(c.answer) !== c.answer) fail(`${cw}: 단답 정답 "${c.answer}" 형식`);
+  } else fail(`${cw}: type`);
+  // 오답 설명: 단답은 정답과 다른 답에만, 객관식은 보기 수와 같고 정답 자리는 비워 둔다
+  if (c.traps) {
+    if (c.type === 'short') {
+      for (const [k, msg] of Object.entries(c.traps)) {
+        if (normalizeAnswer(k) === null || normalizeAnswer(k) !== k) fail(`${cw}.traps: "${k}"는 정수·기약분수 형식이 아님`);
+        if (normalizeAnswer(k) === c.answer) fail(`${cw}.traps: 정답에 오답 설명이 붙음`);
+        check(`${cw}.traps[${k}]`, msg);
+      }
+    } else {
+      if (!Array.isArray(c.traps) || c.traps.length !== c.options.length) fail(`${cw}.traps: 보기 수와 다름`);
+      else c.traps.forEach((m, k) => { if (k === c.answer ? m != null : m != null && typeof m !== 'string') fail(`${cw}.traps[${k}] 형식`); if (m) check(`${cw}.traps[${k}]`, m); });
+    }
+  }
+}
+let nExplore = 0, nGoals = 0, nDeep = 0, nTraps = 0;
+for (const L of LESSONS) {
+  const w = L.id;
+  for (const id of L.pre || []) if (!LB[id] || id === w) fail(`${w}.pre: ${id}`);
+  if (L.predict) {
+    const pd = L.predict;
+    check(`${w}.predict.q`, pd.q); check(`${w}.predict.explain`, pd.explain);
+    if (!Array.isArray(pd.options) || pd.options.length < 2 || !Number.isInteger(pd.answer) || pd.answer >= pd.options.length) fail(`${w}.predict 형식`);
+    pd.options.forEach((o, k) => check(`${w}.predict.options[${k}]`, o));
+  }
+  for (const [xi, x] of (L.explore || []).entries()) {
+    nExplore++;
+    const xw = `${w}.explore[${xi}]`;
+    check(`${xw}.title`, x.title || ''); check(`${xw}.intro`, x.intro || ''); check(`${xw}.note`, x.note || '');
+    // 슬라이더의 모든 값(조합이 2만 개 이하이면 전부 조합, 넘으면 하나씩)에서 그림·값이 오류 없이 나오는지
+    const grids = x.params.map((q) => {
+      if (!(q.min < q.max) || q.value < q.min || q.value > q.max) fail(`${xw}.${q.k}: 범위`);
+      const n = Math.round((q.max - q.min) / q.step);
+      if (Math.abs(q.min + n * q.step - q.max) > 1e-9 || n > 400) fail(`${xw}.${q.k}: step이 범위를 나누지 않음`);
+      if (Math.abs(Math.round((q.value - q.min) / q.step) * q.step + q.min - q.value) > 1e-9) fail(`${xw}.${q.k}: 초깃값이 step 위에 있지 않음`);
+      check(`${xw}.${q.k}.label`, q.label);
+      return Array.from({ length: n + 1 }, (_, i) => Math.round((q.min + i * q.step) * 1e9) / 1e9);
+    });
+    const base = Object.fromEntries(x.params.map((q) => [q.k, q.value]));
+    let combos = [base];
+    if (grids.reduce((n, g) => n * g.length, 1) <= 20000) {
+      combos = [{}];
+      x.params.forEach((q, i) => { combos = combos.flatMap((c) => grids[i].map((v) => ({ ...c, [q.k]: v }))); });
+    } else x.params.forEach((q, i) => grids[i].forEach((v) => combos.push({ ...base, [q.k]: v })));
+    const reached = new Set();
+    let bad = 0;
+    for (const p of combos) {
+      try {
+        const fig = x.fig(p);
+        if (!fig.alt) throw new Error('alt 없음');
+        const svg = figure(fig);
+        if (/NaN|Infinity/.test(svg)) throw new Error('그림에 NaN');
+        for (const [k, v] of x.read ? x.read(p) : []) { if (/NaN|undefined/.test(v)) throw new Error(`값 ${k}=${v}`); if (bad < 1) { check(`${xw}.read`, k); check(`${xw}.read`, v); } }
+        (x.goals || []).forEach((g, gi) => { if (g.test(p)) reached.add(gi); });
+      } catch (e) { if (bad++ < 2) fail(`${xw} ${JSON.stringify(p)}: ${e.message}`); }
+    }
+    (x.goals || []).forEach((g, gi) => {
+      nGoals++;
+      check(`${xw}.goals[${gi}]`, g.text);
+      if (!reached.has(gi)) fail(`${xw}.goals[${gi}]: 슬라이더로 도달할 수 없는 과제`);
+      if (g.test(base) && !g.free) fail(`${xw}.goals[${gi}]: 처음 상태에서 이미 달성됨(초깃값을 바꾸세요)`);
+    });
+  }
+  if (L.derive) { check(`${w}.derive.title`, L.derive.title || ''); L.derive.steps.forEach((st, k) => { check(`${w}.derive[${k}].ask`, st.ask); check(`${w}.derive[${k}].line`, st.line); }); }
+  for (const c of L.checks) { if (c.traps) nTraps++; checkFormat(`${w}.${c.id}`, c); }
+  if (L.deep) {
+    check(`${w}.deep.intro`, L.deep.intro || '');
+    L.deep.ideas.forEach((d, i) => {
+      check(`${w}.deep.ideas[${i}].title`, d.title); check(`${w}.deep.ideas[${i}].body`, d.body, LESSON_TAGS); balanced(`${w}.deep.ideas[${i}].body`, d.body);
+      if (d.example) {
+        const ex = d.example;
+        check(`${w}.deep.ex[${i}].q`, ex.q);
+        (ex.think || []).forEach((s, k) => check(`${w}.deep.ex[${i}].think[${k}]`, s));
+        if (!(ex.steps && ex.steps.length)) fail(`${w}.deep.ex[${i}]: 풀이 단계 없음`);
+        ex.steps.forEach((s, k) => check(`${w}.deep.ex[${i}].steps[${k}]`, s));
+        if (ex.fig && !(ex.fig.alt && ex.fig.alt.length > 10)) fail(`${w}.deep.ex[${i}]: 그림 설명 없음`);
+      }
+    });
+    L.deep.checks.forEach((c, i) => {
+      nDeep++;
+      if (c.id !== `${w}-d${i + 1}`) fail(`${w}.deep.checks[${i}]: id는 ${w}-d${i + 1}`);
+      if (c.traps) nTraps++;
+      checkFormat(`${w}.${c.id}`, c);
+    });
+  }
+  if (L.explain) {
+    check(`${w}.explain.prompt`, L.explain.prompt); check(`${w}.explain.model`, L.explain.model, LESSON_TAGS);
+    if (!(L.explain.keys && L.explain.keys.length >= 2)) fail(`${w}.explain: 핵심 요소가 2개 미만`);
+    L.explain.keys.forEach((k, i) => check(`${w}.explain.keys[${i}]`, k));
+  }
+}
+const ids = LESSONS.flatMap((l) => ALLC(l).map((c) => c.id));
+if (new Set(ids).size !== ids.length) fail('확인 문제 id 중복');
+// 모든 소단원이 보강을 갖추었는지(문서에 "모든 소단원"이라고 쓰므로 빠지면 실패)
+for (const l of LESSONS) {
+  const miss = ['predict', 'explore', 'derive', 'deep', 'explain'].filter((k) => !l[k]);
+  if (miss.length) fail(`${l.id}: 보강 항목 없음(${miss.join(', ')})`);
+  const noTrap = l.checks.filter((c) => !c.traps).map((c) => c.id);
+  if (noTrap.length) fail(`${l.id}: 오답 설명이 없는 확인 문제 ${noTrap.join(', ')}`);
+}
+console.log(`보강: 소단원 ${PLUS_IDS.length}개, 탐구 그래프 ${nExplore}개(찾아보기 ${nGoals}개), 심화 확인 ${nDeep}개, 오답 설명이 있는 문제 ${nTraps}개`);
+
 // 학습 사다리(#7): 소단원마다 관련 문제 2개 이상, 공통수학 단원은 기본 문제부터 시작
 for (const L of LESSONS) {
   const rel = L.related.map((pid) => PROBLEM_BY_ID[pid]).filter(Boolean);
@@ -111,7 +227,12 @@ for (const L of LESSONS) {
   const pool = [
     ...PROBLEMS.map((p) => ({ id: p.id, kind: '은행', q: p.q })),
     ...DIAGNOSIS.map((p) => ({ id: p.id, kind: '진단', q: p.q })),
-    ...LESSONS.flatMap((l) => [...l.examples.map((e, i) => ({ id: `${l.id}-e${i + 1}`, kind: '학습', q: e.q })), ...l.checks.map((c) => ({ id: c.id, kind: '학습', q: c.q }))]),
+    ...LESSONS.flatMap((l) => [
+      ...l.examples.map((e, i) => ({ id: `${l.id}-e${i + 1}`, kind: '학습', q: e.q })),
+      ...l.checks.map((c) => ({ id: c.id, kind: '학습', q: c.q })),
+      ...(l.deep ? l.deep.ideas.filter((d) => d.example).map((d, i) => ({ id: `${l.id}-de${i + 1}`, kind: '학습', q: d.example.q })) : []),
+      ...(l.deep ? l.deep.checks.map((c) => ({ id: c.id, kind: '학습', q: c.q })) : []),
+    ]),
   ].map((it) => ({ ...it, t: toks(it.q) }));
   for (let i = 0; i < pool.length; i++) for (let j = i + 1; j < pool.length; j++) {
     const A = pool[i], B = pool[j];

@@ -15,7 +15,7 @@
 //     { t:'poly', pts:[[x,y],..], fill, style }
 //     { t:'shade', f, g, from, to }                            두 그래프 사이(g 생략 시 x축)
 //     { t:'text', p:[x,y], s, pos }
-//     { t:'xint', from, to, open:[bool,bool] }                 x축 위의 구간 강조
+//     { t:'xint', from, to, open:[bool,bool] }                 x축 위의 구간 강조(null이면 끝점 없음)
 // venn:  { sets:['A','B'] 또는 ['A','B','C'], shade:['a','ab','u',...], u:'U' }
 // grid:  { w, h, blocked:[[[x1,y1],[x2,y2]],..], pts:{A:[0,0],B:[w,h],P:[..]} }
 // box:   { labels:{a:'a',b:'b',c:'c'} }                        직육면체 겨냥도
@@ -195,6 +195,7 @@ function plane(fig) {
     } else if (it.t === 'xint') {
       g += `<line class="pl-xint" x1="${FMT(X(it.from))}" y1="${FMT(Y(0))}" x2="${FMT(X(it.to))}" y2="${FMT(Y(0))}"/>`;
       (it.open || [false, false]).forEach((o, i) => {
+        if (o === null) return; // 그림 밖으로 이어지는 끝(무한대)은 점을 찍지 않는다
         top += `<circle class="pl-pt red${o ? ' open' : ''}" cx="${FMT(X(i ? it.to : it.from))}" cy="${FMT(Y(0))}" r="3.6"/>`;
       });
     }

@@ -125,6 +125,14 @@ if (process.argv[2] === '--review-child') {
     log('다음 날 힌트 없이 맞히면 재확인 표시가 사라진다', rr.counted && !model.lessonProgress(L).recheck && store.getState().lessons['u1-l1'].rechecked === '2026-10-22');
     store.update((s) => { store.logActivity({ checks: 2 }); });
     log('확인 문제 풀이는 학습 기록에 따로 남는다', store.getState().activity['2026-10-22'].checks === 2 && model.periodStats(7).checks === 2);
+    // 심화 확인 문제: 기록은 남지만 재확인 예약과 "혼자 확인" 판정에는 들어가지 않는다
+    store.update((s) => { model.recordCheck(s, 'u1-l1', 'u1-l1-d1', false, { deep: true }); });
+    store.update((s) => { model.markCheckSolution(s, 'u1-l1', 'u1-l1-d1', { deep: true }); });
+    const pd = model.lessonProgress(L);
+    log('심화 확인 문제를 틀리고 풀이를 봐도 재확인이 예약되지 않는다', !pd.recheck && store.getState().lessons['u1-l1'].checks['u1-l1-d1'].sawSolution);
+    store.update((s) => { model.recordCheck(s, 'u1-l1', 'u1-l1-d2', true, { deep: true }); });
+    const pd2 = model.lessonProgress(L);
+    log(`심화 확인 문제는 따로 센다(심화 ${pd2.deepRight}/${pd2.deepTotal}, 혼자 ${pd2.deepIndependent})`, pd2.deepTotal === L.deep.checks.length && pd2.deepRight === 1 && pd2.deepIndependent === 1 && pd2.total === L.checks.length);
   }
   process.stdout.write(JSON.stringify(out));
   process.exit(0);
@@ -158,7 +166,8 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
     s.lessons['u2-l3'] = { done: '2026-10-20', checks: {
       'u2-l3-c1': { tries: 1, solved: true, firstCorrect: true, sawSolution: false, lastAt: '2026-10-20T03:00:00.000Z' },
       'u2-l3-c2': { tries: 2, solved: true, firstCorrect: false, sawSolution: true, lastAt: '2026-10-20T03:05:00.000Z' },
-    }, recheck: { due: '2026-10-21', since: '2026-10-20' }, rechecked: null };
+      'u2-l3-d1': { tries: 1, solved: false, firstCorrect: false, sawSolution: false, lastAt: '2026-10-20T03:06:00.000Z' },
+    }, recheck: { due: '2026-10-21', since: '2026-10-20' }, rechecked: null, note: '두 근의 합과 곱으로 식을 다시 쓴다' };
   });
   store.logActivity({ solved: 1, attempted: 2, seconds: 150 });
   store.update(() => {});

@@ -599,12 +599,22 @@ def main():
     computed = {}
     for fn in (u1, u2, u3, u4, u5, u6, u7, u8):
         computed.update(fn())
+    sys.path.insert(0, str(ROOT / 'tests'))
+    from verify_plus import expected_plus
+    plus = expected_plus()
+    assert not set(plus) & set(computed), f'중복 계산: {set(plus) & set(computed)}'
+    computed.update(plus)
     fails = 0
     seen = 0
     manual = {'u6-l5-c1', 'u6-l5-c2'}  # 논리 형식(대우, 증명 방법)을 묻는 문항: 계산 대신 정의로 판정
     for L in LESSONS:
         items = [(f"{L['id']}-e{i + 1}", e['answer'], 'short') for i, e in enumerate(L['examples']) if 'answer' in e]
         items += [(c['id'], c['answer'], c['type']) for c in L['checks']]
+        if L.get('predict'):
+            items.append((f"{L['id']}-p", L['predict']['answer'], 'mc'))
+        if L.get('deep'):
+            items += [(f"{L['id']}-de{i + 1}", d['example']['answer'], 'short') for i, d in enumerate(L['deep']['ideas']) if d.get('example') and 'answer' in d['example']]
+            items += [(c['id'], c['answer'], c['type']) for c in L['deep']['checks']]
         for iid, ans, typ in items:
             seen += 1
             if iid not in computed:
@@ -625,7 +635,11 @@ def main():
             if not ok:
                 fails += 1
             print(f"{mark} {iid}: 데이터 {ans} / 계산 {shown}{' (정의로 판정)' if iid in manual else ''}")
-    extra = set(computed) - {f"{L['id']}-e{i + 1}" for L in LESSONS for i, e in enumerate(L['examples']) if 'answer' in e} - {c['id'] for L in LESSONS for c in L['checks']}
+    known = {f"{L['id']}-e{i + 1}" for L in LESSONS for i, e in enumerate(L['examples']) if 'answer' in e} | {c['id'] for L in LESSONS for c in L['checks']}
+    known |= {f"{L['id']}-p" for L in LESSONS if L.get('predict')}
+    known |= {f"{L['id']}-de{i + 1}" for L in LESSONS if L.get('deep') for i, d in enumerate(L['deep']['ideas']) if d.get('example') and 'answer' in d['example']}
+    known |= {c['id'] for L in LESSONS if L.get('deep') for c in L['deep']['checks']}
+    extra = set(computed) - known
     for e in sorted(extra):
         print(f'✗ {e}: 데이터에 없는 항목을 계산함')
         fails += 1

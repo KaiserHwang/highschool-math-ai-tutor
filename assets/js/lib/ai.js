@@ -46,6 +46,22 @@ export function lessonPrompt({ lesson, question }) {
   ].join('\n');
 }
 
+/** 학생이 직접 쓴 개념 설명을 AI에게 점검받는다. 채점 기준(핵심 요소)을 함께 보내 빠진 조건만 짚게 한다. */
+export function explainPrompt({ lesson, text }) {
+  const unit = UNIT_BY_ID[lesson.unit];
+  const ex = lesson.explain;
+  return [
+    `너는 고등학교 1학년 학생의 수학 과외 선생님이야. 2022 개정 교육과정 공통수학1·2 범위 안에서 답해 줘. 수식은 LaTeX로 써 줘.`,
+    `내가 "${unitLabel(unit)} · ${lesson.title}" 개념을 내 말로 설명해 봤어. 아래 기준으로 점검해 줘.`,
+    '1. 맞게 설명한 부분을 먼저 짧게 말해 줘.',
+    '2. 빠졌거나 틀린 조건이 있으면 하나씩 짚어 줘. 정답 설명을 통째로 써 주지 말고, 무엇을 더 생각해 보면 되는지 질문으로 알려 줘.',
+    '3. 마지막에 내 설명을 한 문장 더 정확하게 고칠 수 있는 힌트를 줘.',
+    '', `[과제] ${plain(ex.prompt)}`,
+    '', '[좋은 설명에 들어가야 할 요소]', ...ex.keys.map((k) => `- ${plain(k)}`),
+    '', '[내 설명]', text && text.trim() ? text.trim() : '(아직 쓰지 않음)',
+  ].join('\n');
+}
+
 export function reportPrompt(summary) {
   return `너는 고등학교 1학년 수학 학습 코치야. 아래는 우리 아이가 수학 앱에서 공부한 기록이야. 2022 개정 공통수학1·2 기준으로 강점과 약점을 짚고, 다음 1주일 학습 계획을 요일별로 짜 줘. 계획은 하루 40분 안쪽으로 현실적으로.\n\n${summary}`;
 }

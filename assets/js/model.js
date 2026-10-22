@@ -366,7 +366,7 @@ export function totals() {
 // ── 개념 학습 ─────────────────────────────────────
 // 확인 문제 기록: { tries, solved, firstCorrect(true|false|null=예전 기록), sawSolution, lastAt }
 // "이해했어요"는 학생의 자기 표시이고, "혼자 확인"은 모든 확인 문제를 첫 시도에 풀이 없이 맞힌 경우다(#9).
-export const blankLessonRec = () => ({ done: null, checks: {}, recheck: null, rechecked: null });
+export const blankLessonRec = () => ({ done: null, checks: {}, recheck: null, rechecked: null, note: '' });
 
 export function lessonProgress(lesson) {
   const rec = getState().lessons[lesson.id] || blankLessonRec();
@@ -380,11 +380,15 @@ export function lessonProgress(lesson) {
   }
   const total = lesson.checks.length;
   const right = independent + helped;
+  // 심화 확인 문제는 따로 센다(혼자 확인 판정에는 넣지 않는다)
+  const dcs = (lesson.deep && lesson.deep.checks) || [];
+  const deepRight = dcs.filter((c) => rec.checks[c.id]?.solved).length;
+  const deepIndependent = dcs.filter((c) => { const r = rec.checks[c.id]; return r && r.solved && r.firstCorrect === true && !r.sawSolution; }).length;
   const verified = independent === total; // 모든 확인 문제를 혼자 맞힘
   const t = today();
   const recheck = rec.recheck || null;
   return {
-    done: rec.done, total, right, independent, helped, missed, verified,
+    done: rec.done, total, right, independent, helped, missed, verified, deepTotal: dcs.length, deepRight, deepIndependent,
     recheck, recheckDue: !!recheck && recheck.due <= t, rechecked: rec.rechecked || null,
     // 단원 목차와 홈에 보이는 한 줄 상태
     state: recheck ? 'recheck' : verified ? 'verified' : rec.done ? 'self' : right ? 'partial' : 'new',
@@ -406,23 +410,23 @@ export function scheduleRecheck(st, lessonId) {
 }
 
 /** 확인 문제 한 번 제출: 첫 시도 정오, 시도 횟수, 마지막 시각을 남기고 처음에 틀리면 재확인을 예약한다. */
-export function recordCheck(st, lessonId, checkId, ok) {
+export function recordCheck(st, lessonId, checkId, ok, { deep = false } = {}) {
   const r = (st.lessons[lessonId] ||= blankLessonRec());
   const cr = (r.checks[checkId] ||= { tries: 0, solved: false, firstCorrect: null, sawSolution: false, lastAt: null });
   if (cr.tries === 0) cr.firstCorrect = ok;
   cr.tries += 1;
   cr.lastAt = new Date().toISOString();
   if (ok) cr.solved = true;
-  if (!ok) scheduleRecheck(st, lessonId);
+  if (!ok && !deep) scheduleRecheck(st, lessonId); // 심화 문제를 틀린 것은 기본 개념의 재확인 사유가 아니다
   return cr;
 }
 
 /** 확인 문제의 풀이를 열었다: 기록에 남기고 재확인을 예약한다. */
-export function markCheckSolution(st, lessonId, checkId) {
+export function markCheckSolution(st, lessonId, checkId, { deep = false } = {}) {
   const r = (st.lessons[lessonId] ||= blankLessonRec());
   const cr = (r.checks[checkId] ||= { tries: 0, solved: false, firstCorrect: null, sawSolution: false, lastAt: null });
   cr.sawSolution = true;
-  scheduleRecheck(st, lessonId);
+  if (!deep) scheduleRecheck(st, lessonId);
 }
 
 /** 재확인 결과. 예정일 전 성공은 연습으로만 본다(#11과 같은 규칙). */
