@@ -5,7 +5,7 @@ const t = String.raw;
 
 export default {
   'u8-l1': {
-    pre: ['u2-l7', 'u2-l6'],
+    pre: ['u2-l7', 'u2-l6', 'u6-l6'],
     predict: {
       q: t`$t=x^2+x$로 치환하면 $t$가 가질 수 있는 값의 범위는?`,
       options: [t`$t\ge-\dfrac14$`, '모든 실수', t`$t\ge0$`, t`$t\le\dfrac14$`],

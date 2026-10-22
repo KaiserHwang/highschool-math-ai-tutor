@@ -326,6 +326,49 @@ async function run(viewport, tag) {
     await page.waitForSelector('.mis-bars li');
     ok((await page.textContent('.mis-bars')).includes(MISCONCEPTIONS[q.mis[wr]].name), `[${tag}] 리포트에 자주 보인 오개념이 나온다`);
   }
+  // ── 개념 지도와 선수 개념 역추적
+  {
+    await page.goto(BASE + '#/units');
+    await page.click('a[href="#/map"]');
+    await page.waitForSelector('.mmap .mn');
+    const nEdges = LESSONS.reduce((a, l) => a + (l.pre || []).length, 0);
+    ok((await page.locator('.mmap .mn').count()) === LESSONS.length && (await page.locator('.mmap .me').count()) === nEdges && (await page.locator('[data-nav="units"][aria-current="page"]').count()) > 0,
+      `[${tag}] 개념 지도에 소단원 ${LESSONS.length}개와 선수 관계 ${nEdges}개가 그려진다`);
+    await page.click('.mn[data-id="u2-l3"]');
+    await page.waitForSelector('.map-panel .mp-head');
+    const ancN = new Set();
+    const walk = (id) => { for (const p of LESSON_BY_ID[id].pre || []) if (!ancN.has(p)) { ancN.add(p); walk(p); } };
+    walk('u2-l3');
+    ok((await page.locator('.mn.is-sel').count()) === 1 && (await page.locator('.mn.is-anc').count()) === ancN.size && (await page.locator('.map-panel h2').textContent()).includes(LESSON_BY_ID['u2-l3'].title) && (await page.evaluate(() => location.hash)) === '#/map/u2-l3',
+      `[${tag}] 개념을 누르면 앞 개념이 강조되고 자세한 정보가 나온다`);
+    await shot('map');
+    await page.click('.map-panel a[href="#/t/u2-l3"]');
+    await page.waitForSelector('[data-tr-cur]');
+    const CQS = Object.fromEntries(LESSONS.flatMap((l) => l.cq).map((q) => [q.id, q]));
+    const answerCur = async (right) => {
+      const cur = page.locator('[data-tr-cur]');
+      const q = CQS[await cur.getAttribute('data-cq')];
+      await cur.locator(`[data-cq-a="${q.answer}"]`).click();
+      await cur.locator(`[data-cq-r="${right ? q.reason : q.mis.findIndex((m) => m)}"]`).click();
+      await cur.locator('[data-act="cq-check"]').click();
+      return q.id;
+    };
+    const first = await answerCur(false);
+    await page.waitForSelector('[data-tr-cur]');
+    const second = await page.locator('[data-tr-cur]').getAttribute('data-cq');
+    ok(first.startsWith('u2-l2-') && second.startsWith('u2-l1-'), `[${tag}] 역추적: 바로 앞 개념을 틀리면 그보다 앞 개념을 묻는다`);
+    await answerCur(true);
+    await page.waitForSelector('.tr-sum.miss');
+    ok((await page.locator('.tr-step.is-root a').textContent()).includes(LESSON_BY_ID['u2-l2'].title) && (await page.locator('.tr-step.is-goal').count()) === 1,
+      `[${tag}] 역추적 결과에 약한 앞 개념과 다시 볼 순서가 나온다`);
+    await shot('trace');
+    await page.goto(BASE + '#/map');
+    await page.waitForSelector('.mp-roots');
+    ok((await page.textContent('.mp-roots')).includes(LESSON_BY_ID['u2-l2'].title) && (await page.locator('.mn[data-id="u2-l2"].is-weak').count()) === 1, `[${tag}] 역추적에서 틀린 개념이 지도에 "다시 볼 것"으로 표시되고 먼저 다질 개념에 오른다`);
+    await page.goto(BASE + '#/t/u1-l1');
+    await page.waitForSelector('.tr-sum.ok');
+    ok((await page.locator('[data-tr-cur]').count()) === 0, `[${tag}] 앞 소단원이 없는 개념은 바로 개념으로 안내한다`);
+  }
   await page.goto(BASE + '#/l/u7-l2');
   await page.waitForSelector('.lesson svg ellipse.mp-set');
   await shot('lesson-map');

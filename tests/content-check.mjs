@@ -129,6 +129,9 @@ let nExplore = 0, nGoals = 0, nDeep = 0, nTraps = 0;
 for (const L of LESSONS) {
   const w = L.id;
   for (const id of L.pre || []) if (!LB[id] || id === w) fail(`${w}.pre: ${id}`);
+  // 선수 관계는 교육과정 순서상 앞 소단원만 가리킨다(순환 없음). 개념 지도와 선수 개념 역추적이 이 그래프를 쓴다.
+  for (const id of L.pre || []) if (LB[id] && LESSONS.indexOf(LB[id]) >= LESSONS.indexOf(L)) fail(`${w}.pre: ${id}는 뒤 소단원`);
+  if (new Set(L.pre || []).size !== (L.pre || []).length) fail(`${w}.pre 중복`);
   if (L.predict) {
     const pd = L.predict;
     check(`${w}.predict.q`, pd.q); check(`${w}.predict.explain`, pd.explain);

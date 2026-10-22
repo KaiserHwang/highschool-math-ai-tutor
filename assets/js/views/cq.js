@@ -24,9 +24,9 @@ export function cqFeedback(q, a, r) {
 /**
  * 문항 HTML. done이 있으면 채점된 상태로 그린다.
  * @param {object} q 개념 질문
- * @param {{ num:string|number, done?:{a:number,r:number}|null, retry?:boolean, attrs?:string, tag?:string, cls?:string }} o
+ * @param {{ num:string|number, done?:{a:number,r:number}|null, retry?:boolean, attrs?:string, tag?:string, cls?:string, missAfter?:string }} o  missAfter: 틀렸을 때 버튼 줄에 덧붙일 HTML
  */
-export function cqHTML(q, { num, done = null, retry = false, attrs = '', tag = '개념 질문', cls = '' }) {
+export function cqHTML(q, { num, done = null, retry = false, attrs = '', tag = '개념 질문', cls = '', missAfter = '' }) {
   const g = done ? gradeCQ(q, done.a, done.r) : null;
   const opt = (k, text, kind, picked, right) => `<button type="button" class="opt${kind === 'r' ? ' opt-reason' : ''}${done && right ? ' is-ans' : ''}${done && picked && !right ? ' is-wrong' : ''}" role="radio" aria-checked="${!!picked}" data-cq-${kind}="${k}" ${done ? 'disabled' : ''}><span class="opt-n">${CIRCLED[k]}</span><span class="opt-t">${tex(text)}</span></button>`;
   return `<li class="ck cq${cls ? ' ' + cls : ''}${g ? (g.ok ? ' is-right' : ' is-wrong') : ''}" data-cq="${esc(q.id)}" data-num="${esc(num)}" ${attrs}>
@@ -36,7 +36,7 @@ export function cqHTML(q, { num, done = null, retry = false, attrs = '', tag = '
     <p class="cq-step">② 그렇게 고른 이유</p>
     <div class="cq-reasons" role="radiogroup" aria-label="이유">${q.reasons.map((o, k) => opt(k, o, 'r', done && done.r === k, k === q.reason)).join('')}</div>
     ${done ? '' : '<div class="row"><button type="button" class="btn btn-primary" data-act="cq-check">채점하기</button></div>'}
-    <div class="fb" aria-live="polite">${done ? cqFeedback(q, done.a, done.r) + (retry ? '<p class="row"><button type="button" class="btn btn-quiet" data-act="cq-retry">다시 풀기</button></p>' : '') : ''}</div>
+    <div class="fb" aria-live="polite">${done ? cqFeedback(q, done.a, done.r) + (retry || (missAfter && !g.ok) ? `<p class="row">${retry ? '<button type="button" class="btn btn-quiet" data-act="cq-retry">다시 풀기</button>' : ''}${missAfter && !g.ok ? missAfter : ''}</p>` : '') : ''}</div>
   </li>`;
 }
 

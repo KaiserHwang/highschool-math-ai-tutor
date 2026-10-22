@@ -9,6 +9,8 @@ import { renderLesson } from './views/lesson.js';
 import { renderQuiz } from './views/quiz.js';
 import { renderReview } from './views/review.js';
 import { renderConcepts } from './views/concepts.js';
+import { renderMap } from './views/map.js';
+import { renderTrace } from './views/trace.js';
 import { renderReport } from './views/report.js';
 import { renderSettings } from './views/settings.js';
 
@@ -25,6 +27,8 @@ const routes = [
   [/^\/v\/(g-[a-z0-9-]+)$/, () => renderProblem, 'units'],
   [/^\/review$/, () => renderReview, 'review'],
   [/^\/cr$/, () => renderConcepts, 'home'],
+  [/^\/map(?:\/(u\d-l\d+))?$/, () => renderMap, 'units'],
+  [/^\/t\/(u\d-l\d+)$/, () => renderTrace, 'units'],
   [/^\/quiz$/, () => renderQuiz, 'units'],
   [/^\/report$/, () => renderReport, 'report'],
   [/^\/settings$/, () => renderSettings, 'settings'],

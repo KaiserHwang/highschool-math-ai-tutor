@@ -318,6 +318,56 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
     '오늘의 개념 확인에는 개념 질문이 돌아가며 나온다');
 }
 
+// ── 개념 지도와 선수 개념 역추적 ─────────────────────
+{
+  const store = await import('../assets/js/store.js');
+  const model = await import('../assets/js/model.js');
+  const { LESSONS, LESSON_BY_ID } = await import('../assets/js/content/lessons/index.js');
+  const anc = model.ancestorsOf('u2-l7');
+  const depthOf = Object.fromEntries(anc.map((a) => [a.l.id, a.depth]));
+  ok(depthOf['u1-l5'] === 1 && depthOf['u2-l3'] === 1 && depthOf['u2-l2'] === 2 && depthOf['u1-l4'] === 2 && depthOf['u2-l1'] === 3 && depthOf['u1-l1'] === 2 && anc.length === new Set(anc.map((a) => a.l.id)).size,
+    '앞 개념을 가까운 단계부터 중복 없이 모은다(여러 길로 닿으면 가장 가까운 단계)');
+  ok(model.dependentsOf('u2-l2').map((l) => l.id).join() === 'u2-l3,u2-l4,u2-l5,u2-l11,u5-l5' && model.descendantsOf('u6-l6').map((l) => l.id).join() === 'u8-l1', '이 개념을 쓰는 뒤 개념과, 그 위에 쌓이는 개념을 모두 찾는다');
+  ok(LESSONS.every((l) => (l.pre || []).every((p) => LESSONS.indexOf(LESSON_BY_ID[p]) < LESSONS.indexOf(l))), '선수 관계는 모두 앞 소단원을 가리킨다(순환 없음)');
+
+  // 역추적: u2-l3 → 바로 앞 u2-l2를 틀리면 그 앞 u2-l1로 내려가고, 맞히면 거기서 멈춘다
+  store.update((s) => { s.lessons = {}; s.lessons['u2-l2'] = { ...model.blankLessonRec(), done: '2026-10-01' }; });
+  let sess = model.traceStart('u2-l3');
+  const n1 = model.traceNext(sess);
+  ok(n1.lid === 'u2-l2' && n1.depth === 1 && LESSON_BY_ID['u2-l2'].cq.some((q) => q.id === n1.qid), '역추적은 바로 앞 개념의 개념 질문부터 묻는다');
+  const q1 = LESSON_BY_ID['u2-l2'].cq.find((q) => q.id === n1.qid);
+  let res;
+  store.update((s) => { res = model.traceRecord(s, 'u2-l2', q1.id, q1.answer, q1.mis.findIndex((m) => m)); });
+  ok(!res.ok && res.mis && res.scheduled && store.getState().lessons['u2-l2'].recheck, '배운 개념을 역추적에서 틀리면 다음 날 재확인을 예약한다');
+  sess = model.traceAnswer(sess, n1, res.ok, res.mis);
+  const n2 = model.traceNext(sess);
+  ok(n2 && n2.lid === 'u2-l1' && n2.depth === 2 && n2.from === 'u2-l2', '틀린 앞 개념이 있으면 그보다 더 앞 개념으로 내려간다');
+  const q2 = LESSON_BY_ID['u2-l1'].cq.find((q) => q.id === n2.qid);
+  store.update((s) => { res = model.traceRecord(s, 'u2-l1', q2.id, q2.answer + 1 >= q2.options.length ? 0 : q2.answer + 1, q2.reason); });
+  ok(!res.ok && !res.scheduled && !store.getState().lessons['u2-l1'].recheck, '아직 배우지 않은 개념은 틀려도 재확인을 예약하지 않는다(먼저 공부하라고 안내)');
+  sess = model.traceAnswer(sess, n2, res.ok, res.mis);
+  const n3 = model.traceNext(sess);
+  ok(n3 && n3.lid === 'u1-l1' && n3.depth === 3, '계속 틀리면 계속 더 앞으로 내려간다');
+  sess = model.traceAnswer(sess, n3, true, null);
+  const sum = model.traceSummary(sess);
+  ok(sum.done && sum.weak.map((a) => a.lid).join() === 'u2-l1,u2-l2' && sum.roots.map((a) => a.lid).join() === 'u2-l1' && sum.passed.length === 1,
+    `결과: 약한 앞 개념을 교육과정 순서로, 그중 더 앞이 괜찮은 "뿌리"를 찾는다 (뿌리 ${sum.roots.map((a) => a.lid)})`);
+  let big = model.traceStart('u8-l1'), k = 0;
+  for (let it; (it = model.traceNext(big)); k++) big = model.traceAnswer(big, it, false, null);
+  ok(k === model.TRACE_MAX && model.traceSummary(big).left.length > 0, `역추적은 최대 ${model.TRACE_MAX}문항에서 멈추고, 확인하지 못한 앞 개념을 알려 준다`);
+  ok(!model.traceNext(model.traceStart('u1-l1')), '앞 개념이 없는 개념은 물을 것이 없다');
+
+  // 약한 개념 신호와 먼저 다질 개념
+  const w22 = model.weakSignals(LESSON_BY_ID['u2-l2']);
+  ok(w22.some((x) => x.kind === 'recheck') && w22.some((x) => x.kind === 'cq' && x.n === 1 && x.tags.length === 1), '다시 확인할 개념이고 개념 질문의 마지막 풀이가 틀렸으면 약한 개념이다');
+  const rw = model.rootWeaknesses(5);
+  ok(rw[0].l.id === 'u2-l1' && rw[1].l.id === 'u2-l2' && rw[0].above > rw[1].above, '먼저 다질 개념은 그 위에 쌓이는 개념이 많은 순서다');
+  store.update((s) => { model.recordCQ(s, 'u2-l1', q2.id, q2.answer, q2.reason); });
+  ok(!model.weakSignals(LESSON_BY_ID['u2-l1']).length, '틀렸던 개념 질문을 다시 맞히면 약한 개념에서 빠진다');
+  const q2b = model.traceQuestion(LESSON_BY_ID['u2-l1']);
+  ok(q2b.id !== q2.id, '역추적은 오늘 맞힌 문항 대신 다른 개념 질문을 고른다');
+}
+
 // ── #3 서비스 워커 캐시 정리 ───────────────────────
 {
   const code = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');

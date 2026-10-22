@@ -408,7 +408,7 @@ export default {
   },
 
   'u6-l6': {
-    pre: ['u6-l5'],
+    pre: ['u6-l5', 'u1-l1'],
     predict: {
       q: t`양수 $a,\ b$에 대하여 $\dfrac{a+b}2\ge\sqrt{ab}$에서 등호가 성립하는 경우는?`,
       options: [t`$a=b$일 때`, t`$a=2b$일 때`, t`$ab=1$일 때`, '등호는 성립하지 않는다'],

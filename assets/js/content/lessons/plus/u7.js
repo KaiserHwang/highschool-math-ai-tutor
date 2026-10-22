@@ -5,6 +5,7 @@ const t = String.raw;
 
 export default {
   'u7-l1': {
+    pre: ['u6-l1'],
     predict: {
       q: t`$X=\{1,\ 2\}$에서 $Y=\{1,\ 2,\ 3\}$으로의 일대일함수는 몇 개일까요?`,
       options: ['6', '9', '3', '8'],
@@ -163,7 +164,7 @@ export default {
   },
 
   'u7-l3': {
-    pre: ['u7-l2'],
+    pre: ['u7-l2', 'u5-l7'],
     predict: {
       q: t`$y=f(x)$의 그래프와 역함수 $y=f^{-1}(x)$의 그래프는 어떤 직선에 대하여 대칭일까요?`,
       options: [t`$y=x$`, t`$x$축`, t`$y$축`, t`$y=-x$`],
@@ -245,7 +246,7 @@ export default {
   },
 
   'u7-l4': {
-    pre: ['u5-l6'],
+    pre: ['u7-l1', 'u5-l6', 'u1-l2'],
     predict: {
       q: t`$y=\dfrac1x$의 그래프는 $x$축과 만날까요?`,
       options: ['만나지 않는다', '한 번 만난다', '두 번 만난다', t`$x=0$에서 만난다`],
@@ -325,7 +326,7 @@ export default {
   },
 
   'u7-l5': {
-    pre: ['u7-l3'],
+    pre: ['u7-l3', 'u5-l6'],
     predict: {
       q: t`함수 $y=\sqrt x$의 정의역은?`,
       options: [t`$x\ge0$`, '모든 실수', t`$x>0$`, t`$x\le0$`],

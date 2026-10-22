@@ -15,6 +15,7 @@ function rootsTex(b, c) {
 
 export default {
   'u2-l1': {
+    pre: ['u1-l1'],
     predict: {
       q: t`$i^2=-1$입니다. 그러면 $i^{2026}$은 무엇일까요?`,
       options: [t`$1$`, t`$i$`, t`$-1$`, t`$-i$`],
@@ -630,7 +631,7 @@ export default {
   },
 
   'u2-l8': {
-    pre: ['u2-l3'],
+    pre: ['u2-l3', 'u1-l5'],
     predict: {
       q: t`$x+y=4,\ xy=5$를 만족하는 실수 $x,\ y$가 있을까요?`,
       options: [t`있다 ($x=1,\ y=5$처럼)`, t`있다 ($x=2,\ y=2.5$처럼)`, '없다', '무수히 많다'],
@@ -879,7 +880,7 @@ export default {
   },
 
   'u2-l11': {
-    pre: ['u2-l4', 'u2-l2'],
+    pre: ['u2-l4', 'u2-l2', 'u2-l9'],
     predict: {
       q: t`이차부등식 $x^2-2x+5>0$의 해는?`,
       options: ['모든 실수', '해가 없다', t`$x>1$`, t`$x\ne1$인 모든 실수`],

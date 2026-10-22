@@ -39,15 +39,15 @@ export function renderCoverage() {
   L.push('');
   L.push('학습용(예제·확인 문제)과 문제 은행, 진단 사이에 사실상 같은 문항이 없는지는 `tests/content-check.mjs`가 검사합니다. 혼합 평가는 아직 풀지 않은 은행 문제와 숫자를 바꾼 문제로만 냅니다.');
   L.push('');
-  L.push('| 소단원 | 예제 | 확인 | 개념 질문 | 탐구 과제 | 심화 예제·확인 | 관련 문제(난이도) | 숫자 변형 | 진단 |');
-  L.push('|---|---:|---:|---:|---:|---:|---|---|---|');
+  L.push('| 소단원 | 먼저 알아야 할 것 | 예제 | 확인 | 개념 질문 | 탐구 과제 | 심화 예제·확인 | 관련 문제(난이도) | 숫자 변형 | 진단 |');
+  L.push('|---|---|---:|---:|---:|---:|---:|---|---|---|');
   for (const l of LESSONS) {
     const rel = l.related.map((pid) => PROBLEM_BY_ID[pid]).sort((a, b) => LV.indexOf(a.level) - LV.indexOf(b.level));
     const gens = Object.entries(GENERATORS).filter(([, g]) => g.like.some((pid) => l.related.includes(pid))).map(([k]) => k);
     const dq = DIAGNOSIS.filter((q) => q.lesson === l.id).map((q) => q.id);
     const goals = (l.explore || []).reduce((a, x) => a + (x.goals || []).length, 0);
     const deepCell = l.deep ? `${l.deep.ideas.filter((d) => d.example).length}·${l.deep.checks.length}` : '–';
-    L.push(`| ${l.id} ${l.title} | ${l.examples.length} | ${l.checks.length} | ${l.cq.length} | ${goals || '–'} | ${deepCell} | ${rel.map((p) => `${p.id}(${short[p.level]})`).join(' ')} | ${gens.join(' ') || '–'} | ${dq.join(' ') || '–'} |`);
+    L.push(`| ${l.id} ${l.title} | ${(l.pre || []).join(' ') || '–'} | ${l.examples.length} | ${l.checks.length} | ${l.cq.length} | ${goals || '–'} | ${deepCell} | ${rel.map((p) => `${p.id}(${short[p.level]})`).join(' ')} | ${gens.join(' ') || '–'} | ${dq.join(' ') || '–'} |`);
   }
   L.push('');
   return L.join('\n');

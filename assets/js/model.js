@@ -655,3 +655,130 @@ export function misconceptionStats(days = 60) {
   }
   return Object.values(acc).sort((a, b) => b.n - a.n);
 }
+
+// ── 개념 지도와 선수 개념 역추적 ─────────────────────
+// 선수 관계(lesson.pre)는 교육과정 순서상 앞 소단원만 가리킨다(content-check가 확인).
+const LESSON_INDEX = Object.fromEntries(LESSONS.map((l, i) => [l.id, i]));
+const LBI = Object.fromEntries(LESSONS.map((l) => [l.id, l]));
+
+/** 앞 개념을 가까운 것부터: [{ l, depth }] (depth 1 = 바로 앞) */
+export function ancestorsOf(lessonId, maxDepth = 9) {
+  const out = [], seen = new Set([lessonId]);
+  let frontier = [lessonId];
+  for (let d = 1; d <= maxDepth && frontier.length; d++) {
+    const next = [];
+    for (const id of frontier) for (const p of LBI[id]?.pre || []) {
+      if (seen.has(p)) continue;
+      seen.add(p); next.push(p); out.push({ l: LBI[p], depth: d });
+    }
+    frontier = next;
+  }
+  return out;
+}
+
+/** 이 개념을 바로 앞 개념으로 쓰는 소단원 */
+export const dependentsOf = (lessonId) => LESSONS.filter((l) => (l.pre || []).includes(lessonId));
+
+/** 이 개념 위에 쌓이는 소단원 전부(직간접) */
+export function descendantsOf(lessonId) {
+  const out = new Set();
+  const walk = (id) => { for (const d of dependentsOf(id)) if (!out.has(d.id)) { out.add(d.id); walk(d.id); } };
+  walk(lessonId);
+  return [...out].map((id) => LBI[id]);
+}
+
+/**
+ * 약한 개념 신호. 다시 확인할 개념이거나, 최근 60일 개념 질문의 마지막 풀이가 틀린 경우.
+ * @returns {Array<{kind:'recheck'}|{kind:'cq', n:number, tags:string[]}>}
+ */
+export function weakSignals(lesson) {
+  const rec = getState().lessons[lesson.id];
+  if (!rec) return [];
+  const out = [];
+  if (rec.recheck) out.push({ kind: 'recheck' });
+  const from = addDays(today(), -59);
+  const wrong = (lesson.cq || []).map((q) => {
+    const log = rec.cq?.[q.id]?.log || [];
+    const h = log[log.length - 1];
+    return h && h.d >= from ? gradeCQ(q, h.a, h.r) : null;
+  }).filter((g) => g && !g.ok);
+  if (wrong.length) out.push({ kind: 'cq', n: wrong.length, tags: [...new Set(wrong.map((g) => g.mis).filter(Boolean))] });
+  return out;
+}
+
+/** 먼저 다지면 좋은 개념: 약한 개념을 그 위에 쌓이는 개념이 많은 순으로 */
+export function rootWeaknesses(n = 3) {
+  return LESSONS.map((l) => ({ l, sig: weakSignals(l), above: descendantsOf(l.id).length }))
+    .filter((x) => x.sig.length)
+    .sort((a, b) => b.above - a.above || LESSON_INDEX[a.l.id] - LESSON_INDEX[b.l.id])
+    .slice(0, n);
+}
+
+/** 역추적에서 물을 개념 질문: 풀어 본 적 없는 것 → 오래전에 푼 것 순(오늘 맞힌 것은 뒤로) */
+export function traceQuestion(lesson) {
+  const rec = getState().lessons[lesson.id];
+  const lastOf = (q) => { const log = rec?.cq?.[q.id]?.log || []; return log[log.length - 1] || null; };
+  const t = today();
+  const key = (q) => { const h = lastOf(q); if (!h) return '0'; if (h.d === t && gradeCQ(q, h.a, h.r).ok) return '9'; return '1' + h.d; };
+  return [...(lesson.cq || [])].sort((a, b) => key(a).localeCompare(key(b)))[0] || null;
+}
+
+export const TRACE_MAX = 6;
+
+/**
+ * 선수 개념 역추적. 바로 앞 개념부터 하나씩 개념 질문으로 확인하고,
+ * 틀린 개념이 있으면 그보다 더 앞 개념으로 먼저 내려간다(최대 TRACE_MAX문항).
+ * 세션은 { root, queue:[{lid, depth, from}], asked:[{lid, depth, from, qid, ok, mis}] }.
+ */
+export function traceStart(lessonId) {
+  return { root: lessonId, queue: (LBI[lessonId]?.pre || []).map((id) => ({ lid: id, depth: 1, from: lessonId })), asked: [] };
+}
+
+/** 다음 문항 { lid, depth, from, qid } 또는 끝났으면 null */
+export function traceNext(sess) {
+  if (sess.asked.length >= TRACE_MAX) return null;
+  const it = sess.queue.find((x) => !sess.asked.some((a) => a.lid === x.lid));
+  if (!it) return null;
+  const q = traceQuestion(LBI[it.lid]);
+  return q ? { ...it, qid: q.id } : null;
+}
+
+/** 답을 반영한 새 세션. 틀리면 그 개념의 앞 개념을 대기열 맨 앞에 넣는다. */
+export function traceAnswer(sess, item, ok, mis = null) {
+  const asked = [...sess.asked, { ...item, ok, mis }];
+  const done = new Set(asked.map((a) => a.lid));
+  let queue = sess.queue.filter((x) => !done.has(x.lid));
+  if (!ok) {
+    const deeper = (LBI[item.lid]?.pre || []).filter((p) => !done.has(p) && !queue.some((x) => x.lid === p))
+      .map((p) => ({ lid: p, depth: item.depth + 1, from: item.lid }));
+    queue = [...deeper, ...queue];
+  }
+  return { ...sess, asked, queue };
+}
+
+/**
+ * 역추적 결과. weak: 틀린 앞 개념(교육과정 순서), roots: 그중 더 앞 개념은 괜찮거나 없는 "뿌리",
+ * left: 문항 수 제한으로 확인하지 못한 앞 개념.
+ */
+export function traceSummary(sess) {
+  const weak = sess.asked.filter((a) => !a.ok).sort((a, b) => LESSON_INDEX[a.lid] - LESSON_INDEX[b.lid]);
+  const weakIds = new Set(weak.map((a) => a.lid));
+  const roots = weak.filter((a) => !(LBI[a.lid].pre || []).some((p) => weakIds.has(p)));
+  const left = sess.queue.filter((x) => !sess.asked.some((a) => a.lid === x.lid));
+  return { weak, roots, passed: sess.asked.filter((a) => a.ok), left, done: !traceNext(sess) };
+}
+
+/**
+ * 역추적 한 문항 기록: 개념 질문 기록에 남기고, 배운 적 있는 개념을 틀리면 다음 날 재확인을 예약한다.
+ * @returns {{ ok:boolean, mis:string|null, scheduled:boolean }}
+ */
+export function traceRecord(st, lessonId, qid, a, r) {
+  const L = LBI[lessonId];
+  const q = (L.cq || []).find((x) => x.id === qid);
+  const g = gradeCQ(q, a, r);
+  const before = lessonProgress(L).state; // 기록 전 상태로 배운 적 있는지 판단
+  recordCQ(st, lessonId, qid, a, r);
+  let scheduled = false;
+  if (!g.ok && before !== 'new') { const had = !!st.lessons[lessonId].recheck; scheduleRecheck(st, lessonId); scheduled = !had; }
+  return { ok: g.ok, mis: g.mis, scheduled };
+}

@@ -57,7 +57,7 @@ function outcomeHTML(sl, L) {
   if (!o) return '';
   if (o.ok && o.res.counted) return `<p class="cr-out ok">${o.res.kept ? '<strong>오래 기억함</strong> 세 번의 간격 복습을 모두 통과했어요. 이 개념은 이제 목록에서 빠집니다.' : `<strong>통과</strong> 다음 확인은 ${STAGE_TEXT[o.res.stage]}입니다.`}</p>`;
   if (o.ok) return '<p class="cr-out ok"><strong>통과</strong> 오늘은 이미 기록되어 연습으로 남겼어요.</p>';
-  return `<p class="cr-out miss"><strong>다시 볼 개념</strong> 핵심 정리와 예제를 한 번 더 보고, 내일 처음 보는 문제로 다시 확인합니다. 간격 복습은 1주 단계부터 다시 시작해요.</p><p class="row"><a class="btn btn-quiet" href="#/l/${L.id}">개념 다시 보기</a></p>`;
+  return `<p class="cr-out miss"><strong>다시 볼 개념</strong> 핵심 정리와 예제를 한 번 더 보고, 내일 처음 보는 문제로 다시 확인합니다. 간격 복습은 1주 단계부터 다시 시작해요.</p><p class="row"><a class="btn btn-quiet" href="#/l/${L.id}">개념 다시 보기</a>${(L.pre || []).length ? `<a class="btn btn-quiet" href="#/t/${L.id}">앞 개념 거꾸로 확인</a>` : ''}</p>`;
 }
 
 function lessonHTML(sl, i) {

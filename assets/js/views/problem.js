@@ -107,7 +107,7 @@ export function renderProblem(view, { args: [ref], params }) {
 
         <section class="coach" aria-labelledby="coach-h">
           <h2 id="coach-h" class="h3">막히면 한 단계씩</h2>
-          ${lesson ? `<p class="concept-link"><a href="#/l/${lesson.id}"><span class="cl-tag">개념</span>${esc(lesson.title)}</a><span class="hint-text">힌트를 열기 전에 개념을 다시 볼 수 있어요</span></p>` : ''}
+          ${lesson ? `<p class="concept-link"><a href="#/l/${lesson.id}"><span class="cl-tag">개념</span>${esc(lesson.title)}</a><span class="hint-text">힌트를 열기 전에 개념을 다시 볼 수 있어요</span>${(lesson.pre || []).length ? `<a class="cl-trace" href="#/t/${lesson.id}">앞 개념까지 거꾸로 확인</a>` : ''}</p>` : ''}
           <ol class="steps">
             <li class="step" data-step="1">
               <button type="button" class="step-btn" data-hint="1"><span class="step-n">1</span><span>조건을 식으로 번역하기</span></button>

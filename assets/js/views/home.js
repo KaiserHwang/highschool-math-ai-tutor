@@ -1,7 +1,7 @@
 import { getState, today, addDays } from '../store.js';
 import { UNITS, TRACKS, UNIT_BY_ID, LEVELS, COURSE_SHORT, unitLabel } from '../content/units.js';
 import { generatorsOfUnit, newSeed } from '../content/generators.js';
-import { latestDiagnosis, recommendNext, dueReviews, unitMastery, streak, activeTrack, totals, weakestUnit, lessonTotals, lessonRechecks, conceptsDue, conceptQueue, conceptMemory, learnedOn } from '../model.js';
+import { latestDiagnosis, recommendNext, dueReviews, unitMastery, streak, activeTrack, totals, weakestUnit, lessonTotals, lessonRechecks, conceptsDue, conceptQueue, conceptMemory, learnedOn, rootWeaknesses } from '../model.js';
 import { lessonForProblem, LESSONS, lessonsOfUnit } from '../content/lessons/index.js';
 import { CONCEPT_SET } from './concepts.js';
 import { tex, esc, fmtDate } from '../lib/ui.js';
@@ -47,6 +47,7 @@ export function renderHome(view) {
   // ① 오늘의 개념 확인(간격 복습)이 맨 위
   const cDue = conceptsDue();
   const mem = conceptMemory();
+  const roots = rootWeaknesses(3);
   const upNext = conceptQueue()[0];
   if (cDue.length) {
     const n = Math.min(cDue.length, CONCEPT_SET);
@@ -131,6 +132,8 @@ export function renderHome(view) {
           <h2 class="h3">개념 기억</h2>
           <p class="mem-row"><span><b>${mem.learned}</b> 배운 개념</span><span><b>${mem.learned - mem.kept}</b> 기억 관리 중</span><span><b>${mem.kept}</b> 오래 기억함</span></p>
           <p class="hint-text">배운 개념은 1주 → 3주 → 2개월 뒤 다시 확인하고, 세 번 모두 통과하면 "오래 기억함"이 됩니다.</p>
+          ${roots.length ? `<p class="hint-text">먼저 다지면 좋은 개념: ${roots.map(({ l }) => `<a href="#/map/${l.id}">${esc(l.title)}</a>`).join(', ')}</p>` : ''}
+          <p class="row"><a class="btn btn-quiet" href="#/map">개념 지도 보기</a></p>
         </section>
         <section class="side-block"><h2 class="h3">혼합 평가</h2><p class="hint-text">공부한 단원에서 처음 보는 문제 8개를 단원 이름 없이 섞어 풉니다. 힌트와 정답은 끝나고 공개됩니다.</p><p class="row"><a class="btn btn-quiet" href="#/quiz?view=intro">혼합 평가 보기</a></p></section>
         ${diag ? `<section class="side-block"><h2 class="h3">수준 진단</h2><p class="hint-text">최근 진단 ${diag.overall}점 · ${TRACKS[diag.track].label} 트랙 추천</p><p class="row"><a class="btn btn-quiet" href="#/diagnosis?view=result">결과 보기</a><a class="btn btn-quiet" href="#/diagnosis">다시 진단</a></p></section>` : ''}
