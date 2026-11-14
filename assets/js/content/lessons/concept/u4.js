@@ -38,7 +38,7 @@ export default {
       id: 'u4-l2-q1', q: t`$2\times2$ 행렬과 $2\times3$ 행렬을 더할 수 있을까요?`,
       options: ['더할 수 없다', '없는 자리를 0으로 채워 더할 수 있다'], answer: 0,
       reasons: ['덧셈은 같은 자리의 성분끼리 하므로 꼴이 같아야 한다', '없는 자리는 0으로 채우면 된다', '행의 개수만 같으면 더할 수 있다', t`더한 결과는 $4\times5$ 행렬이 된다`],
-      reason: 0, mis: [null, 'transfer', 'cond', 'def'],
+      reason: 0, mis: [null, 'def', 'cond', 'def'],
       note: t`행렬의 덧셈은 꼴이 같은 행렬끼리만 정의합니다. 자리를 임의로 채우는 것은 정의에 없는 계산입니다.`,
     },
     {
@@ -52,7 +52,7 @@ export default {
       id: 'u4-l2-q3', q: t`꼴이 같은 두 행렬 $A,\ B$에 대하여 $A+B=B+A$가 성립하는 이유는?`,
       options: ['성분끼리 수의 덧셈을 하고, 수의 덧셈은 순서를 바꿔도 같으므로', '정사각행렬이기 때문에', '항상 성립하지는 않는다'], answer: 0,
       reasons: ['같은 자리의 두 수를 더하는 것이고 수의 덧셈은 교환법칙이 성립한다', '곱셈처럼 순서에 따라 결과가 달라진다', '정사각행렬일 때만 성립한다', '단위행렬과 더할 때만 성립한다'],
-      reason: 0, mis: [null, 'transfer', 'cond', 'overgen'],
+      reason: 0, mis: [null, 'formula', 'cond', 'overgen'],
       note: t`덧셈은 성분별 계산이라 수의 성질이 그대로 옵니다. 순서가 중요한 것은 행렬의 <strong>곱셈</strong>입니다.`,
     },
     {
@@ -69,14 +69,14 @@ export default {
       id: 'u4-l3-q1', q: t`$2\times3$ 행렬 $A$와 $2\times3$ 행렬 $B$에 대하여 $AB$는?`,
       options: ['정의되지 않는다', t`$2\times3$ 행렬`, t`$2\times2$ 행렬`], answer: 0,
       reasons: [t`$A$의 열의 개수($3$)와 $B$의 행의 개수($2$)가 달라 짝이 맞지 않는다`, '꼴이 같으면 곱할 수 있다', '행의 개수끼리 맞으면 곱할 수 있다', '덧셈처럼 같은 자리 성분끼리 곱한다'],
-      reason: 0, mis: [null, 'transfer', 'def', 'transfer'],
+      reason: 0, mis: [null, 'cond', 'def', 'def'],
       note: t`$(m\times n)(n\times p)$처럼 안쪽 두 수가 같아야 곱할 수 있고 결과는 $m\times p$입니다. 같은 꼴끼리 곱할 수 있는 것은 정사각행렬일 때뿐입니다.`,
     },
     {
       id: 'u4-l3-q2', q: t`곱 $AB$의 $(1,\ 2)$ 성분은 어떻게 구할까요?`,
       options: [t`$A$의 1행과 $B$의 2열의 성분을 차례로 곱해 더한다`, t`$A$의 1열과 $B$의 2행을 곱해 더한다`, t`$A$와 $B$의 $(1,\ 2)$ 성분끼리 곱한다`], answer: 0,
       reasons: [t`$(i,\ j)$ 성분은 앞 행렬의 $i$행과 뒤 행렬의 $j$열로 만든다`, '곱셈도 같은 자리의 성분끼리 한다', '앞 행렬은 열로, 뒤 행렬은 행으로 읽는다', t`$(1,\ 2)$ 성분은 두 행렬의 1행끼리 곱한다`],
-      reason: 0, mis: [null, 'transfer', 'def', 'def'],
+      reason: 0, mis: [null, 'def', 'def', 'def'],
       note: t`"앞은 가로(행), 뒤는 세로(열)"입니다. 예: $\begin{pmatrix}1&2\\3&4\end{pmatrix}\begin{pmatrix}5&6\\7&8\end{pmatrix}$의 $(1,\ 2)$ 성분은 $1\cdot6+2\cdot8=22$.`,
     },
     {
@@ -90,7 +90,7 @@ export default {
       id: 'u4-l3-q4', q: '가게별 판매량 행렬(행: 가게, 열: 상품)에 상품별 가격을 세로로 쓴 행렬을 곱하면 가게별 판매 금액이 나오는 이유는?',
       options: ['행렬 곱셈의 "곱해서 더하기"가 수량×가격의 합과 같기 때문', '같은 자리 성분끼리 곱하기 때문', '어떤 두 표든 곱하면 의미 있는 값이 되기 때문'], answer: 0,
       reasons: ['한 가게의 수량(행)과 가격(열)을 차례로 곱해 더한 것이 그 가게의 판매 금액이다', '같은 자리의 수량과 가격을 곱하면 금액이 된다', '표를 곱하면 항상 쓸모 있는 결과가 나온다', '행렬의 덧셈과 같은 원리이다'],
-      reason: 0, mis: [null, 'transfer', 'overgen', 'def'],
+      reason: 0, mis: [null, 'def', 'overgen', 'def'],
       note: t`$\begin{pmatrix}3&2\\1&4\end{pmatrix}\begin{pmatrix}500\\800\end{pmatrix}$의 첫 성분 $3\cdot500+2\cdot800$이 첫 가게의 판매 금액입니다. 행과 열이 무엇을 뜻하는지 맞아야 의미가 생깁니다.`,
     },
   ],

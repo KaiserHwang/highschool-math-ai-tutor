@@ -111,7 +111,7 @@ export default {
       note: t`$P=\{1\}\subset Q=\{-1,\ 1\}$. 작은 집합 쪽($p$)이 충분조건, 큰 집합 쪽($q$)이 필요조건입니다.`,
     },
     {
-      id: 'u6-l4-q3', q: t`두 조건의 진리집합 사이에 $P\subset Q$가 성립할 때, 충분조건인 것은?`,
+      id: 'u6-l4-q3', q: t`두 조건 $p,\ q$의 진리집합 $P,\ Q$ 사이에 $P\subset Q$이고 $P\ne Q$일 때, 다른 조건이기 위한 충분조건인 것은?`,
       options: [t`$p$ (작은 집합 쪽)`, t`$q$ (큰 집합 쪽)`, '알 수 없다'], answer: 0,
       reasons: [t`$P\subset Q$이면 $p\Rightarrow q$이고, 이때 $p$를 $q$이기 위한 충분조건이라 한다`, '충분하려면 원소가 더 많아야 한다', '필요조건이 작은 집합 쪽이다', '포함 관계와 필요·충분조건은 관계가 없다'],
       reason: 0, mis: [null, 'converse', 'converse', 'def'],
