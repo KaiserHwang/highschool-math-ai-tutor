@@ -1,0 +1,7 @@
+# 줄바꿈은 모든 운영체제에서 LF로 통일한다.
+# sw.js의 버전 해시와 docs/COVERAGE.md 비교가 파일 내용(바이트)에 의존하므로,
+# Windows에서 CRLF로 바뀌면 tests/content-check.mjs가 실패한다.
+* text=auto eol=lf
+
+*.png binary
+*.woff2 binary
