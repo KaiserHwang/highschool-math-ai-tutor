@@ -96,6 +96,18 @@ docs/COVERAGE.md            단원·소단원별 학습·평가 범위 표(자�
 
 ## 개발
 
+Node 22 이상과 Python 3(+ `pip install sympy`)가 필요합니다. Windows, macOS, Linux에서 같은 명령을 씁니다.
+
+```bash
+npm run serve      # http://localhost:8080 에서 실행
+npm run gen        # 파일을 고친 뒤: docs/COVERAGE.md 와 sw.js 갱신
+npm run test:js    # 회귀 검사 + 생성기 검사 + 콘텐츠 검사
+npm run verify     # 정답 독립 검증(문제 은행, 개념 학습)
+npm test           # 위 검사 전체
+```
+
+작업 규칙은 [CLAUDE.md](CLAUDE.md)에 정리되어 있습니다. 검사를 하나씩 실행하려면 아래 명령을 씁니다(Windows에서는 `python3` 대신 `python`).
+
 ```bash
 python3 -m http.server 8080        # http://localhost:8080 에서 실행
 pip install sympy && python3 tests/verify_answers.py   # 정답 검증
