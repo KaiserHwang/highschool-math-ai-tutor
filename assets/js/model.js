@@ -766,6 +766,8 @@ export function rootWeaknesses(n = 3) {
  * 소단원 화면 밖(재확인, 역추적)에서 물을 개념 질문: 풀어 본 적 없는 것 → 오래전에 푼 것 순(오늘 맞힌 것은 뒤로).
  * 풀어 본 적 없는 것 중에서는 소단원 화면에 나오지 않는 문항(3번부터)을 먼저 쓴다.
  * 소단원 화면의 두 문항은 그 화면에서 처음 만나야 "혼자 확인" 판정(첫 시도)이 공정하다.
+ * 그래서 아직 배우지 않은 소단원(역추적에서 앞 개념으로 만난 경우)에서는 소단원 화면의 두 문항을 아예 쓰지 않는다:
+ * 배우기도 전에 틀린 것이 첫 시도로 굳어 "혼자 확인"을 막지 않게 한다. 이때는 나머지 문항을 돌려 쓴다.
  */
 export function freshCQ(lesson) {
   const rec = getState().lessons[lesson.id];
@@ -773,7 +775,9 @@ export function freshCQ(lesson) {
   const t = today();
   const key = (q) => { const h = lastOf(q); if (!h) return '0'; if (h.d === t && gradeCQ(q, h.a, h.r).ok) return '9'; return '1' + h.d; };
   const cqs = lesson.cq || [];
-  const order = [...cqs.slice(LESSON_CQ_COUNT), ...cqs.slice(0, LESSON_CQ_COUNT)];
+  const rest = cqs.slice(LESSON_CQ_COUNT);
+  const unlearned = rest.length > 0 && lessonProgress(lesson).state === 'new';
+  const order = unlearned ? rest : [...rest, ...cqs.slice(0, LESSON_CQ_COUNT)];
   return order.sort((a, b) => key(a).localeCompare(key(b)))[0] || null; // 정렬은 안정적이라 같은 순위면 위의 순서를 따른다
 }
 

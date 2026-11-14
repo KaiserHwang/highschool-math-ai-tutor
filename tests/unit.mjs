@@ -187,6 +187,20 @@ if (process.argv[2] === '--review-child') {
     store.update((s) => { for (let k = 0; k < 13; k++) model.recordCQ(s, N.id, na.id, na.answer, na.reason); });
     const ne = store.getState().lessons[N.id].cq[na.id];
     log('예전 기록(first 없음)은 다음 풀이 때 첫 시도 결과를 굳혀, 기록이 12번을 넘어도 "혼자 확인"으로 바뀌지 않는다', before === false && ne.first === false && ne.log.length === 12 && !model.lessonProgress(N).verified && model.lessonProgress(N).cqRight === 1);
+    // 아직 배우지 않은 소단원은 3·4번을 다 본 뒤에도 소단원 화면의 두 문항을 내지 않는다(배우기 전의 오답이 첫 시도로 굳지 않게)
+    const U = LESSON_BY_ID['u3-l4'];
+    const reserved = model.lessonCQs(U).map((q) => q.id);
+    const picked = [];
+    for (let k = 0; k < 4; k++) {
+      const fq = model.freshCQ(U);
+      picked.push(fq.id);
+      store.update((s) => { model.recordCQ(s, U.id, fq.id, fq.answer, wrongR(fq)); });
+      setClock(2026, 9, 24 + k, 8, 0);
+    }
+    const ucq = store.getState().lessons[U.id].cq;
+    log('배우지 않은 소단원을 역추적에서 여러 번 틀려도 소단원 화면의 두 문항은 건드리지 않는다', model.lessonProgress(U).state === 'new' && picked.every((id) => !reserved.includes(id)) && new Set(picked).size === 2 && reserved.every((id) => !ucq[id]));
+    store.update((s) => { for (const c of U.checks) model.recordCheck(s, U.id, c.id, true); });
+    log('배운 뒤에는 남은 문항(소단원 화면의 두 문항 포함)에서 아직 보지 않은 것을 먼저 고른다', reserved.includes(model.freshCQ(U).id));
     let bad;
     store.update((s) => { model.scheduleRecheck(s, M.id); bad = model.recheckAnswer(s, M.id, 'u3-l1-q1', 0, 0); });
     log('다른 소단원의 문항 id로는 재확인할 수 없다', bad.g === null && !bad.res.counted && !!model.lessonProgress(M).recheck);
