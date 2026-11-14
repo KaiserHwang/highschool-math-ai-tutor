@@ -11,6 +11,7 @@ import { renderReview } from './views/review.js';
 import { renderConcepts } from './views/concepts.js';
 import { renderMap } from './views/map.js';
 import { renderTrace } from './views/trace.js';
+import { renderRecheck } from './views/recheck.js';
 import { renderReport } from './views/report.js';
 import { renderSettings } from './views/settings.js';
 
@@ -29,6 +30,7 @@ const routes = [
   [/^\/cr$/, () => renderConcepts, 'home'],
   [/^\/map(?:\/(u\d-l\d+))?$/, () => renderMap, 'units'],
   [/^\/t\/(u\d-l\d+)$/, () => renderTrace, 'units'],
+  [/^\/rc\/(u\d-l\d+)$/, () => renderRecheck, 'review'],
   [/^\/quiz$/, () => renderQuiz, 'units'],
   [/^\/report$/, () => renderReport, 'report'],
   [/^\/settings$/, () => renderSettings, 'settings'],
