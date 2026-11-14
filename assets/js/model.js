@@ -654,9 +654,11 @@ export function recordCQ(st, lessonId, qid, a, r) {
   const rec = (st.lessons[lessonId] ||= blankLessonRec());
   const cq = (rec.cq ||= {});
   const e = (cq[qid] ||= { log: [] });
-  if (!e.log.length && typeof e.first !== 'boolean') {
+  if (typeof e.first !== 'boolean') {
+    // 첫 시도 결과를 한 번만 정한다. first가 없는 예전 기록은 남아 있는 가장 오래된 풀이로 지금 굳힌다.
+    // 굳히지 않으면 기록이 12번을 넘어 그 풀이가 밀려났을 때, 나중의 정답이 첫 시도처럼 보인다.
     const q = (LBI[lessonId]?.cq || []).find((x) => x.id === qid);
-    if (q) e.first = gradeCQ(q, a, r).ok;
+    if (q) e.first = e.log.length ? gradeCQ(q, e.log[0].a, e.log[0].r).ok : gradeCQ(q, a, r).ok;
   }
   e.log = [...e.log, { d: today(), a, r }].slice(-12);
 }

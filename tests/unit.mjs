@@ -176,6 +176,17 @@ if (process.argv[2] === '--review-child') {
     store.update((s) => { ra = model.recheckAnswer(s, M.id, f3.id, f3.answer, f3.reason); });
     p = model.lessonProgress(M);
     log('예정일에 답과 이유를 모두 맞히면 재확인 표시가 사라진다(처음에 틀렸으므로 "혼자 확인"은 아님)', ra.g.ok && ra.res.counted && !p.recheck && !p.verified && store.getState().lessons[M.id].rechecked === '2026-10-23');
+    // first가 없는 예전 기록: 처음에 틀린 풀이가 12번 넘는 기록에 밀려나도 첫 시도 결과는 바뀌지 않는다
+    const N = LESSON_BY_ID['u3-l3'];
+    const [na, nb] = model.lessonCQs(N);
+    store.update((s) => {
+      for (const c of N.checks) model.recordCheck(s, N.id, c.id, true);
+      s.lessons[N.id].cq = { [na.id]: { log: [{ d: '2026-10-01', a: na.answer, r: wrongR(na) }] }, [nb.id]: { log: [{ d: '2026-10-01', a: nb.answer, r: nb.reason }] } };
+    });
+    const before = model.lessonProgress(N).verified;
+    store.update((s) => { for (let k = 0; k < 13; k++) model.recordCQ(s, N.id, na.id, na.answer, na.reason); });
+    const ne = store.getState().lessons[N.id].cq[na.id];
+    log('예전 기록(first 없음)은 다음 풀이 때 첫 시도 결과를 굳혀, 기록이 12번을 넘어도 "혼자 확인"으로 바뀌지 않는다', before === false && ne.first === false && ne.log.length === 12 && !model.lessonProgress(N).verified && model.lessonProgress(N).cqRight === 1);
     let bad;
     store.update((s) => { model.scheduleRecheck(s, M.id); bad = model.recheckAnswer(s, M.id, 'u3-l1-q1', 0, 0); });
     log('다른 소단원의 문항 id로는 재확인할 수 없다', bad.g === null && !bad.res.counted && !!model.lessonProgress(M).recheck);
