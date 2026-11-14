@@ -1,11 +1,12 @@
 // 오늘의 개념 확인(#/cr): 배운 개념을 1주 → 3주 → 2개월 간격으로 짧게 다시 확인한다.
-// 개념마다 2문항(처음 보는 숫자의 비슷한 문제 + 확인 문제 또는 예측 문제). 첫 답만 채점하고 바로 풀이를 보여 준다.
+// 오래 기억한 개념은 6개월마다 한 번 유지 확인으로 다시 나온다(#19).
+// 개념마다 2문항(처음 보는 숫자의 비슷한 문제 + 개념 질문, 생성기가 없으면 개념 질문 2개). 첫 답만 채점하고 바로 풀이를 보여 준다.
 import { LESSON_BY_ID, CHECK_BY_ID, CQ_BY_ID } from '../content/lessons/index.js';
 import { UNIT_BY_ID, unitLabel } from '../content/units.js';
 import { makeVariant, newSeed } from '../content/generators.js';
 import { update, today, logActivity } from '../store.js';
 import { isCorrect, normalizeAnswer, conceptsDue, conceptQueue, conceptMemory, conceptItems, conceptResult, CONCEPT_GAPS, gradeCQ, recordCQ } from '../model.js';
-import { cqHTML, cqClick } from './cq.js';
+import { cqHTML, cqClick, newCQSeed } from './cq.js';
 import { tex, esc, CIRCLED, gradeMark, optionsClass, toast, fmtDate } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 import { trapFor } from './lesson.js';
@@ -29,15 +30,16 @@ function buildSession(list) {
     lessons: list.map(({ l, sp }) => {
       const round = (sp.history || []).length + sp.stage;
       const items = conceptItems(l, round).map((ref) => ({ ref: ref.kind === 'variant' ? { ...ref, seed: newSeed() } : ref }));
-      return { id: l.id, items: items.map((x) => ({ ...x, item: itemOf(l, x.ref) })), answers: {}, outcome: null };
+      // 개념 질문은 낼 때마다 보기 순서를 새로 섞는다(세션 안에서는 같은 순서로 다시 그린다)
+      return { id: l.id, items: items.map((x) => ({ ...x, item: itemOf(l, x.ref), seed: x.ref.kind === 'cq' ? newCQSeed() : 0 })), answers: {}, outcome: null };
     }),
   };
 }
 
 function itemHTML(sl, k) {
-  const { item } = sl.items[k];
+  const { item, seed } = sl.items[k];
   const a = sl.answers[k];
-  if (item.type === 'cq') return cqHTML(item, { num: k + 1, done: a ? a.response : null, attrs: `data-cr-item="${k}"`, cls: 'cr-item' });
+  if (item.type === 'cq') return cqHTML(item, { num: k + 1, done: a ? a.response : null, attrs: `data-cr-item="${k}"`, cls: 'cr-item', seed });
   const done = a !== undefined;
   const body = item.type === 'mc'
     ? `<div class="options${optionsClass(item.options)}" role="radiogroup" aria-label="보기">${item.options.map((o, j) => `<button type="button" class="opt${done && j === item.answer ? ' is-ans' : ''}${done && j === a.response && !a.ok ? ' is-wrong' : ''}" role="radio" aria-checked="${done && j === a.response}" data-cr-opt="${j}" ${done ? 'disabled' : ''}><span class="opt-n">${CIRCLED[j]}</span><span class="opt-t">${tex(o)}</span></button>`).join('')}</div>${done ? '' : '<div class="row"><button type="button" class="btn btn-primary" data-act="cr-check">채점하기</button></div>'}`
@@ -55,7 +57,7 @@ function itemHTML(sl, k) {
 function outcomeHTML(sl, L) {
   const o = sl.outcome;
   if (!o) return '';
-  if (o.ok && o.res.counted) return `<p class="cr-out ok">${o.res.kept ? '<strong>오래 기억함</strong> 세 번의 간격 복습을 모두 통과했어요. 이 개념은 이제 목록에서 빠집니다.' : `<strong>통과</strong> 다음 확인은 ${STAGE_TEXT[o.res.stage]}입니다.`}</p>`;
+  if (o.ok && o.res.counted) return `<p class="cr-out ok">${o.res.maintained ? '<strong>유지 확인 통과</strong> 여전히 잘 기억하고 있어요. 6개월 뒤에 한 번 더 확인합니다.' : o.res.kept ? '<strong>오래 기억함</strong> 세 번의 간격 복습을 모두 통과했어요. 이제 6개월에 한 번만 유지 확인을 합니다.' : `<strong>통과</strong> 다음 확인은 ${STAGE_TEXT[o.res.stage]}입니다.`}</p>`;
   if (o.ok) return '<p class="cr-out ok"><strong>통과</strong> 오늘은 이미 기록되어 연습으로 남겼어요.</p>';
   return `<p class="cr-out miss"><strong>다시 볼 개념</strong> 핵심 정리와 예제를 한 번 더 보고, 내일 다른 개념 질문으로 다시 확인합니다. 간격 복습은 1주 단계부터 다시 시작해요.</p><p class="row"><a class="btn btn-quiet" href="#/l/${L.id}">개념 다시 보기</a>${(L.pre || []).length ? `<a class="btn btn-quiet" href="#/t/${L.id}">앞 개념 거꾸로 확인</a>` : ''}</p>`;
 }
@@ -91,7 +93,7 @@ export function renderConcepts(view) {
       <header class="page-head">
         <p class="crumbs"><a href="#/">오늘</a></p>
         <h1 class="page-title">오늘의 개념 확인</h1>
-        <p class="lead">배운 개념을 ${CONCEPT_GAPS.map((g) => (g < 30 ? `${g / 7}주` : '2개월')).join(' → ')} 간격으로 다시 꺼내 봅니다. 개념마다 두 문항이고, 첫 답으로 채점합니다. 개념 질문은 답과 이유가 모두 맞아야 정답이고, 두 문항을 모두 맞혀야 통과입니다.</p>
+        <p class="lead">배운 개념을 ${CONCEPT_GAPS.map((g) => (g < 30 ? `${g / 7}주` : '2개월')).join(' → ')} 간격으로 다시 꺼내 보고, 오래 기억한 개념은 6개월마다 한 번 유지 확인을 합니다. 개념마다 두 문항이고, 첫 답으로 채점합니다. 개념 질문은 답과 이유가 모두 맞아야 정답이고, 두 문항을 모두 맞혀야 통과입니다.</p>
       </header>
       ${session ? session.lessons.map(lessonHTML).join('') : emptyHTML()}
       ${finished ? `<section class="paper cr-done"><p><strong>오늘 세트 끝.</strong> ${session.lessons.filter((sl) => sl.outcome.ok).length}/${session.lessons.length}개 통과.</p><p class="row">${more ? `<button type="button" class="btn btn-primary" data-act="cr-more">이어서 ${Math.min(more, CONCEPT_SET)}개 더 (남은 ${more}개)</button>` : ''}<a class="btn btn-quiet" href="#/">오늘 화면으로</a></p></section>` : ''}

@@ -6,7 +6,7 @@ import { UNIT_BY_ID, LEVELS, unitLabel } from '../content/units.js';
 import { PROBLEM_BY_ID } from '../content/problems.js';
 import { getState, update, today, logActivity } from '../store.js';
 import { isCorrect, normalizeAnswer, statusOf, lessonProgress, blankLessonRec, recordCheck, markCheckSolution, LESSON_STATE, lessonCQs, lessonCQAnswer, lastCQ } from '../model.js';
-import { cqHTML, cqClick } from './cq.js';
+import { cqHTML, cqClick, newCQSeed, seedOf } from './cq.js';
 import { tex, esc, CIRCLED, gradeMark, statusGlyph, optionsClass, toast, fmtDate } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 import { AI_SERVICES, lessonPrompt, explainPrompt, sendToAI } from '../lib/ai.js';
@@ -143,7 +143,7 @@ export function renderLesson(view, { args: [lessonId] }) {
       ${sec('why', '왜 그럴까', `<div class="c-body">${tex(L.why)}</div>${L.derive ? deriveHTML(L.derive) : ''}`)}
       ${sec('ex', '예제로 익히기', `<p class="hint-text">먼저 스스로 풀어 본 뒤, 풀이를 한 단계씩 열어 비교하세요.</p><ol class="ex-list">${L.examples.map((e, i) => exampleHTML(e, i)).join('')}</ol>`)}
       ${sec('ck', '확인 문제', `<p class="hint-text">바로 채점됩니다. 틀리면 그 답이 어떤 생각에서 나왔는지 짚어 줍니다. 숙련도에는 반영되지 않으니 편하게 풀어 보세요.</p><ol class="ck-list">${L.checks.map((c, i) => checkHTML(c, i, rec)).join('')}</ol>`)}
-      ${L.cq && L.cq.length ? sec('cq', '이유까지 답하기', `<p class="hint-text">답만 맞히는 것으로는 부족해요. 답과 함께 <strong>그렇게 고른 이유</strong>를 고르세요. 이유가 틀리면 어떤 오해인지 알려 줍니다. 확인 문제와 이 질문들을 모두 처음에 혼자 맞히면 "혼자 확인"이 되고, 틀리면 내일 다른 개념 질문으로 다시 확인합니다. 나머지 개념 질문은 재확인과 "오늘의 개념 확인"에 나옵니다.</p><ol class="ck-list">${lessonCQs(L).map((q, i) => { const d = lastCQ(L.id, q.id); return cqHTML(q, { num: i + 1, done: d, retry: !!d, missAfter: traceLink }); }).join('')}</ol>`) : ''}
+      ${L.cq && L.cq.length ? sec('cq', '이유까지 답하기', `<p class="hint-text">답만 맞히는 것으로는 부족해요. 답과 함께 <strong>그렇게 고른 이유</strong>를 고르세요. 이유가 틀리면 어떤 오해인지 알려 줍니다. 확인 문제와 이 질문들을 모두 처음에 혼자 맞히면 "혼자 확인"이 되고, 틀리면 내일 다른 개념 질문으로 다시 확인합니다. 나머지 개념 질문은 재확인과 "오늘의 개념 확인"에 나옵니다.</p><ol class="ck-list">${lessonCQs(L).map((q, i) => { const d = lastCQ(L.id, q.id); return cqHTML(q, { num: i + 1, done: d, retry: !!d, missAfter: traceLink, seed: newCQSeed() }); }).join('')}</ol>`) : ''}
       ${deep ? sec('deep', '한 걸음 더 <span class="deep-tag">심화</span>', `${deep.intro ? `<div class="c-body deep-intro">${tex(deep.intro)}</div>` : ''}
         ${deep.ideas.map((idea, i) => `<div class="idea"><h3 class="idea-t"><span class="idea-n">${i + 1}</span>${tex(idea.title)}</h3><div class="c-body">${tex(idea.body)}</div>${idea.example ? `<ol class="ex-list">${exampleHTML(idea.example, i, '심화 예제', `d${i}`)}</ol>` : ''}</div>`).join('')}
         ${deep.checks.length ? `<h3 class="idea-t deep-ck-h">심화 확인 문제</h3><p class="hint-text">"혼자 확인" 판정에는 들어가지 않습니다. 틀려도 재확인 목록에 올라가지 않으니 도전해 보세요.</p><ol class="ck-list">${deep.checks.map((c, i) => checkHTML(c, i, rec, '심화 ')).join('')}</ol>` : ''}`, 'l-deep') : ''}
@@ -275,10 +275,10 @@ export function renderLesson(view, { args: [lessonId] }) {
       find: cqFind,
       onGrade: (li, q, a, r) => {
         update((s) => { lessonCQAnswer(s, L.id, q.id, a, r); logActivity({ checks: 1 }); }); // 틀리면 다음 날 재확인을 예약한다
-        li.outerHTML = cqHTML(q, { num: li.dataset.num, done: { a, r }, retry: true, missAfter: traceLink });
+        li.outerHTML = cqHTML(q, { num: li.dataset.num, done: { a, r }, retry: true, missAfter: traceLink, seed: seedOf(li) }); // 채점 결과는 풀던 순서 그대로
         paintProgress();
       },
-      redraw: (li, q) => { li.outerHTML = cqHTML(q, { num: li.dataset.num }); },
+      redraw: (li, q) => { li.outerHTML = cqHTML(q, { num: li.dataset.num, seed: newCQSeed() }); }, // 다시 풀 때는 순서를 새로 섞는다
     })) return;
     const pdo = t.closest('[data-pd-opt]');
     if (pdo) {
