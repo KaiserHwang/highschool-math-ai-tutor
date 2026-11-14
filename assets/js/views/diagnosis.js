@@ -1,7 +1,7 @@
 import { DIAGNOSIS } from '../content/diagnosis.js';
 import { UNIT_BY_ID, UNITS, TRACKS, SKILLS, LEVELS, unitLabel } from '../content/units.js';
 import { getState, update } from '../store.js';
-import { gradeDiagnosis, latestDiagnosis, isCorrect, normalizeAnswer, diagUnitReadiness, recheckTarget } from '../model.js';
+import { gradeDiagnosis, latestDiagnosis, isCorrect, normalizeAnswer, diagUnitReadiness, practiceTarget } from '../model.js';
 import { LESSON_BY_ID } from '../content/lessons/index.js';
 import { newSeed } from '../content/generators.js';
 import { tex, esc, CIRCLED, fmtDate, gradeMark, toast, optionsClass } from '../lib/ui.js';
@@ -174,7 +174,7 @@ function renderResult(view, d) {
   const followRows = missed.map((q) => {
     const L = LESSON_BY_ID[q.lesson];
     if (!L) return '';
-    const tg = recheckTarget(L);
+    const tg = practiceTarget(L);
     const href = !tg ? '' : tg.kind === 'variant' ? `#/v/${tg.key}?s=${newSeed()}` : `#/p/${tg.pid}`;
     return `<li class="rc-row"><div><span class="rc-t">${DIAGNOSIS.indexOf(q) + 1}번 · ${esc(unitLabel(UNIT_BY_ID[q.unit]))}</span><span class="hint-text">먼저 볼 개념: ${esc(L.title)}</span></div>
       <span class="row"><a class="btn btn-quiet" href="#/l/${L.id}">개념 보기</a>${tg ? `<a class="btn btn-quiet" href="${href}">처음 보는 문제로 확인: ${esc(tg.topic)}</a>` : ''}</span></li>`;

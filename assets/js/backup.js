@@ -35,7 +35,7 @@ export function blankState() {
     activity: {}, // 'YYYY-MM-DD' → { solved, attempted, seconds }
     practice: {}, // 생성기 이름 → { tried, solved } (비슷한 문제 연습)
     quizzes: [], // 혼합 평가 기록(최신이 마지막) { date, items:[{ ref, unit, correct, sec }] }
-    lessons: {}, // 소단원 id → { done: 이해 표시 날짜|null, checks: { 확인 문제 id: 풀이 기록 }, recheck: { due, since }|null, rechecked: 날짜|null }
+    lessons: {}, // 소단원 id → { done: 이해 표시 날짜|null, checks: { 확인 문제 id: 풀이 기록 }, recheck: { due, since }|null, rechecked: 날짜|null, note, spaced?, cq: { 개념 질문 id: { log, first? } } }
     settings: { theme: 'auto', ai: { gemini: '', chatgpt: '', claude: '' }, preferredAi: 'claude' },
   };
 }
@@ -199,8 +199,9 @@ export function checkState(raw, { strict }) {
   // 개념 간격 복습 기록
   const okSpaced = (sp) => isObj(sp) && isInt(sp.stage, 0, 3) && isDay(sp.due) && (sp.keptAt === null || sp.keptAt === undefined || isDay(sp.keptAt))
     && Array.isArray(sp.history) && sp.history.length <= 50 && sp.history.every((h) => isObj(h) && isDay(h.date) && isBool(h.ok));
-  // 개념 질문 기록: { qid: { log:[{ d, a, r }] } }
+  // 개념 질문 기록: { qid: { log:[{ d, a, r }], first?: 첫 시도 정답 여부 } }. first가 없는 예전 기록도 받는다.
   const okCQ = (cq) => isObj(cq) && Object.values(cq).every((e) => isObj(e) && Array.isArray(e.log) && e.log.length <= 50
+    && (e.first === undefined || isBool(e.first))
     && e.log.every((h) => isObj(h) && isDay(h.d) && isInt(h.a, 0, 9) && isInt(h.r, 0, 9)));
   for (const [lid, v] of Object.entries(isObj(raw.lessons) ? raw.lessons : {})) {
     const w = `lessons.${lid.slice(0, 20)}`;
@@ -219,7 +220,7 @@ export function checkState(raw, { strict }) {
     out.lessons[lid] = { done: v.done ?? null, checks, recheck: v.recheck ? { due: v.recheck.due, since: v.recheck.since } : null, rechecked: v.rechecked ?? null, note: v.note ?? '' };
     out.lessons[lid].cq = {};
     for (const [qid, e] of Object.entries(v.cq || {})) {
-      if (CQ_BY_ID[qid] && qid.startsWith(lid + '-')) out.lessons[lid].cq[qid] = { log: e.log.map((h) => ({ d: h.d, a: h.a, r: h.r })) }; else dropped++;
+      if (CQ_BY_ID[qid] && qid.startsWith(lid + '-')) out.lessons[lid].cq[qid] = { log: e.log.map((h) => ({ d: h.d, a: h.a, r: h.r })), ...(isBool(e.first) ? { first: e.first } : {}) }; else dropped++;
     }
     if (v.spaced) out.lessons[lid].spaced = { stage: v.spaced.stage, due: v.spaced.due, keptAt: v.spaced.keptAt ?? null, history: v.spaced.history.map((h) => ({ date: h.date, ok: h.ok })) };
   }

@@ -67,7 +67,7 @@ export function renderHome(view) {
     || lessonsOfUnit(weak.id).find(unlearned) || LESSONS.find(unlearned) || null;
   const rechecksDue = lessonRechecks().filter((x) => x.pr.recheckDue);
   if (rechecksDue.length) {
-    steps.push(`<li class="plan-step"><div class="plan-body"><h2 class="h3">다시 확인할 개념 ${rechecksDue.length}개</h2><p class="hint-text">${rechecksDue.slice(0, 3).map((x) => esc(x.l.title)).join(', ')}${rechecksDue.length > 3 ? ' 등' : ''} · 처음 보는 문제로 확인합니다.</p></div><a class="btn" href="#/review">확인하기</a></li>`);
+    steps.push(`<li class="plan-step"><div class="plan-body"><h2 class="h3">다시 확인할 개념 ${rechecksDue.length}개</h2><p class="hint-text">${rechecksDue.slice(0, 3).map((x) => esc(x.l.title)).join(', ')}${rechecksDue.length > 3 ? ' 등' : ''} · 아직 보지 않은 개념 질문으로 확인합니다.</p></div><a class="btn" href="#/review">확인하기</a></li>`);
   }
   if (learnNext) {
     steps.push(`<li class="plan-step"><div class="plan-body"><h2 class="h3">다음에 배울 개념: ${esc(learnNext.title)}</h2><p class="hint-text">${esc(unitLabel(UNIT_BY_ID[learnNext.unit]))} · ${tex(learnNext.summary || '')}</p></div><a class="btn${cDue.length ? '' : ' btn-primary'}" href="#/l/${learnNext.id}">개념 배우기</a></li>`);

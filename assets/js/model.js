@@ -365,8 +365,20 @@ export function totals() {
 
 // ── 개념 학습 ─────────────────────────────────────
 // 확인 문제 기록: { tries, solved, firstCorrect(true|false|null=예전 기록), sawSolution, lastAt }
-// "이해했어요"는 학생의 자기 표시이고, "혼자 확인"은 모든 확인 문제를 첫 시도에 풀이 없이 맞힌 경우다(#9).
+// "이해했어요"는 학생의 자기 표시이고, "혼자 확인"은 모든 확인 문제를 첫 시도에 풀이 없이 맞히고(#9)
+// 소단원 화면의 개념 질문도 첫 시도에 답과 이유를 모두 맞힌 경우다(#17).
 export const blankLessonRec = () => ({ done: null, checks: {}, recheck: null, rechecked: null, note: '', cq: {} });
+
+/** 소단원 화면의 "이유까지 답하기"에 나오는 개념 질문(앞의 두 문항) */
+export const LESSON_CQ_COUNT = 2;
+export const lessonCQs = (lesson) => (lesson.cq || []).slice(0, LESSON_CQ_COUNT);
+
+/** 개념 질문의 첫 시도가 맞았는지(답과 이유 모두). 푼 적이 없으면 null. 예전 기록은 남아 있는 가장 오래된 풀이로 본다. */
+export function cqFirstOk(q, entry) {
+  if (!entry || !entry.log || !entry.log.length) return null;
+  if (typeof entry.first === 'boolean') return entry.first;
+  return gradeCQ(q, entry.log[0].a, entry.log[0].r).ok;
+}
 
 export function lessonProgress(lesson) {
   const rec = getState().lessons[lesson.id] || blankLessonRec();
@@ -384,13 +396,17 @@ export function lessonProgress(lesson) {
   const dcs = (lesson.deep && lesson.deep.checks) || [];
   const deepRight = dcs.filter((c) => rec.checks[c.id]?.solved).length;
   const deepIndependent = dcs.filter((c) => { const r = rec.checks[c.id]; return r && r.solved && r.firstCorrect === true && !r.sawSolution; }).length;
-  const verified = independent === total; // 모든 확인 문제를 혼자 맞힘
+  // 소단원 화면의 개념 질문: 첫 시도에 답과 이유를 모두 맞혔는지
+  const firsts = lessonCQs(lesson).map((q) => cqFirstOk(q, rec.cq?.[q.id]));
+  const cqTotal = firsts.length, cqTried = firsts.filter((f) => f !== null).length, cqRight = firsts.filter((f) => f === true).length;
+  const verified = independent === total && cqRight === cqTotal; // 확인 문제와 개념 질문을 모두 처음에 혼자 맞힘
   const t = today();
   const recheck = rec.recheck || null;
   const spaced = spacedOf(lesson, rec);
   const kept = !!(spaced && spaced.keptAt);
   return {
     done: rec.done, total, right, independent, helped, missed, verified, deepTotal: dcs.length, deepRight, deepIndependent,
+    cqTotal, cqTried, cqRight, cqMissed: cqTried - cqRight,
     recheck, recheckDue: !!recheck && recheck.due <= t, rechecked: rec.rechecked || null,
     spaced, kept, spacedDue: !!spaced && !kept && !recheck && spaced.due <= t,
     // 단원 목차와 홈에 보이는 한 줄 상태
@@ -407,7 +423,7 @@ export const LESSON_STATE = {
   new: '',
 };
 
-/** 확인 문제를 틀리거나 풀이를 보면, 다음 날 다른 문항으로 다시 확인하도록 예약한다. */
+/** 확인 문제나 개념 질문을 틀리거나 풀이를 보면, 다음 날 아직 보지 않은 개념 질문으로 다시 확인하도록 예약한다. */
 export function scheduleRecheck(st, lessonId) {
   const r = (st.lessons[lessonId] ||= blankLessonRec());
   if (!r.recheck) r.recheck = { due: addDays(today(), 1), since: today() };
@@ -443,8 +459,21 @@ export function recheckResult(st, lessonId, ok) {
   return { counted: true };
 }
 
-/** 재확인에 쓸 "다른 문항": 숫자를 바꾼 문제(처음 보는 문항)를 먼저, 없으면 아직 풀지 않은 관련 문제 */
-export function recheckTarget(lesson) {
+/**
+ * 재확인 한 문항(#15): 그 소단원의 개념 질문에 답한 것을 기록하고 재확인 결과에 반영한다.
+ * 문제 은행 문제가 아니라 개념 질문으로 확인하므로, 이미 푼 문제의 답을 그대로 내서 통과할 수 없다.
+ * @returns {{ g: ReturnType<typeof gradeCQ>, res: ReturnType<typeof recheckResult> }}
+ */
+export function recheckAnswer(st, lessonId, qid, a, r) {
+  const q = (LBI[lessonId]?.cq || []).find((x) => x.id === qid);
+  if (!q) return { g: null, res: { counted: false, why: 'none' } };
+  const g = gradeCQ(q, a, r);
+  recordCQ(st, lessonId, qid, a, r);
+  return { g, res: recheckResult(st, lessonId, g.ok) };
+}
+
+/** 진단에서 틀린 개념을 연습할 문항: 숫자를 바꾼 문제(처음 보는 문항)를 먼저, 없으면 아직 풀지 않은 관련 문제 */
+export function practiceTarget(lesson) {
   const gen = Object.entries(GENERATORS).find(([, g]) => g.like.some((pid) => lesson.related.includes(pid)));
   if (gen) return { kind: 'variant', key: gen[0], topic: gen[1].topic };
   const st = getState();
@@ -620,12 +649,29 @@ export function gradeCQ(q, a, r) {
   return { ok: ansOk && reasonOk, ansOk, reasonOk, kind: ansOk ? (reasonOk ? 'both' : 'luck') : (reasonOk ? 'apply' : 'none'), mis: reasonOk ? null : q.mis[r] || null };
 }
 
-/** 개념 질문 풀이 기록: lessons[id].cq[qid].log = [{ d, a, r }] (최근 12개) */
+/** 개념 질문 풀이 기록: lessons[id].cq[qid] = { log:[{ d, a, r }] (최근 12개), first: 첫 시도에 답과 이유를 모두 맞혔는지 } */
 export function recordCQ(st, lessonId, qid, a, r) {
   const rec = (st.lessons[lessonId] ||= blankLessonRec());
   const cq = (rec.cq ||= {});
   const e = (cq[qid] ||= { log: [] });
+  if (!e.log.length && typeof e.first !== 'boolean') {
+    const q = (LBI[lessonId]?.cq || []).find((x) => x.id === qid);
+    if (q) e.first = gradeCQ(q, a, r).ok;
+  }
   e.log = [...e.log, { d: today(), a, r }].slice(-12);
+}
+
+/**
+ * 소단원 화면의 개념 질문에 답했다(#17): 기록하고, 틀리면 확인 문제와 같이 다음 날 재확인을 예약한다.
+ * @returns {ReturnType<typeof gradeCQ>|null}
+ */
+export function lessonCQAnswer(st, lessonId, qid, a, r) {
+  const q = (LBI[lessonId]?.cq || []).find((x) => x.id === qid);
+  if (!q) return null;
+  const g = gradeCQ(q, a, r);
+  recordCQ(st, lessonId, qid, a, r);
+  if (!g.ok) scheduleRecheck(st, lessonId);
+  return g;
 }
 
 /** 개념 질문의 마지막 풀이(없으면 null) */
@@ -714,13 +760,19 @@ export function rootWeaknesses(n = 3) {
     .slice(0, n);
 }
 
-/** 역추적에서 물을 개념 질문: 풀어 본 적 없는 것 → 오래전에 푼 것 순(오늘 맞힌 것은 뒤로) */
-export function traceQuestion(lesson) {
+/**
+ * 소단원 화면 밖(재확인, 역추적)에서 물을 개념 질문: 풀어 본 적 없는 것 → 오래전에 푼 것 순(오늘 맞힌 것은 뒤로).
+ * 풀어 본 적 없는 것 중에서는 소단원 화면에 나오지 않는 문항(3번부터)을 먼저 쓴다.
+ * 소단원 화면의 두 문항은 그 화면에서 처음 만나야 "혼자 확인" 판정(첫 시도)이 공정하다.
+ */
+export function freshCQ(lesson) {
   const rec = getState().lessons[lesson.id];
   const lastOf = (q) => { const log = rec?.cq?.[q.id]?.log || []; return log[log.length - 1] || null; };
   const t = today();
   const key = (q) => { const h = lastOf(q); if (!h) return '0'; if (h.d === t && gradeCQ(q, h.a, h.r).ok) return '9'; return '1' + h.d; };
-  return [...(lesson.cq || [])].sort((a, b) => key(a).localeCompare(key(b)))[0] || null;
+  const cqs = lesson.cq || [];
+  const order = [...cqs.slice(LESSON_CQ_COUNT), ...cqs.slice(0, LESSON_CQ_COUNT)];
+  return order.sort((a, b) => key(a).localeCompare(key(b)))[0] || null; // 정렬은 안정적이라 같은 순위면 위의 순서를 따른다
 }
 
 export const TRACE_MAX = 6;
@@ -739,7 +791,7 @@ export function traceNext(sess) {
   if (sess.asked.length >= TRACE_MAX) return null;
   const it = sess.queue.find((x) => !sess.asked.some((a) => a.lid === x.lid));
   if (!it) return null;
-  const q = traceQuestion(LBI[it.lid]);
+  const q = freshCQ(LBI[it.lid]);
   return q ? { ...it, qid: q.id } : null;
 }
 

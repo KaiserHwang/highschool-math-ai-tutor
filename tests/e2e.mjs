@@ -326,6 +326,59 @@ async function run(viewport, tag) {
     await page.waitForSelector('.mis-bars li');
     ok((await page.textContent('.mis-bars')).includes(MISCONCEPTIONS[q.mis[wr]].name), `[${tag}] 리포트에 자주 보인 오개념이 나온다`);
   }
+  // ── 개념 재확인(#15): 문제 은행 문제가 아니라 아직 보지 않은 개념 질문으로 확인한다
+  {
+    const RL = LESSON_BY_ID['u2-l1'];
+    const dueToday = () => page.evaluate(() => {
+      const k = 'mathpulse:v2'; const s = JSON.parse(localStorage.getItem(k));
+      const d = new Date(); const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      s.lessons['u2-l1'].recheck = { due: day, since: day };
+      localStorage.setItem(k, JSON.stringify(s));
+    });
+    const answer = async (right) => {
+      const li = page.locator('.cq');
+      const qid = await li.getAttribute('data-cq');
+      const item = RL.cq.find((x) => x.id === qid);
+      await li.locator(`[data-cq-a="${item.answer}"]`).click();
+      await li.locator(`[data-cq-r="${right ? item.reason : item.mis.findIndex((m) => m)}"]`).click();
+      await li.locator('[data-act="cq-check"]').click();
+      await page.locator('.tr-sum').waitFor();
+      return qid;
+    };
+    await page.goto(BASE + '#/review');
+    await page.waitForSelector('.rc-row');
+    ok((await page.getAttribute('.rc-row a[href^="#/rc/"]', 'href')) === '#/rc/u2-l1' && (await page.locator('.rc-row a[href*="recheck="]').count()) === 0, `[${tag}] 복습 화면의 재확인은 문제 화면이 아니라 개념 재확인 화면으로 간다`);
+    await dueToday();
+    await page.goto(BASE + '#/rc/u2-l1');
+    await page.reload();
+    await page.waitForSelector('.cq [data-act="cq-check"]');
+    const firstQ = await answer(false);
+    ok(firstQ === RL.cq[2].id && (await page.locator('.tr-sum.miss').count()) === 1 && (await page.evaluate(() => !!JSON.parse(localStorage.getItem('mathpulse:v2')).lessons['u2-l1'].recheck)),
+      `[${tag}] 재확인은 소단원 화면에 없던 개념 질문으로 묻고, 이유를 틀리면 통과하지 못한다`);
+    await page.click('[data-act="rc-more"]');
+    await page.waitForSelector('.cq [data-act="cq-check"]');
+    const secondQ = await answer(true);
+    ok(secondQ !== firstQ && (await page.textContent('.tr-sum')).includes('연습') && (await page.evaluate(() => !!JSON.parse(localStorage.getItem('mathpulse:v2')).lessons['u2-l1'].recheck)),
+      `[${tag}] 틀린 날 다른 문항을 맞혀도 연습으로만 기록되고 재확인은 다음 날로 남는다`);
+    await dueToday();
+    await page.reload();
+    await page.waitForSelector('.cq [data-act="cq-check"]');
+    await answer(true);
+    ok((await page.textContent('.tr-sum')).includes('통과') && (await page.evaluate(() => { const r = JSON.parse(localStorage.getItem('mathpulse:v2')).lessons['u2-l1']; return r.recheck === null && !!r.rechecked; })),
+      `[${tag}] 예정일에 답과 이유를 모두 맞히면 재확인 표시가 사라진다`);
+    await page.reload();
+    await page.waitForSelector('.tr-sum.ok');
+    ok((await page.locator('.cq').count()) === 0, `[${tag}] 재확인할 것이 없는 개념은 문항을 내지 않는다`);
+    // URL 매개변수: 이 생성기가 본뜬 문제가 아니면 복습으로 인정하지 않고, 이상한 값에도 화면이 깨지지 않는다
+    for (const rv of ['__proto__', 'u7-01']) {
+      await page.goto(BASE + `#/v/g-sym?s=5&review=${rv}&from=${rv === '__proto__' ? rv : ''}`);
+      await page.waitForSelector('.q-text .katex');
+      ok((await page.textContent('.banner.variant')).includes('숙련도에는 반영되지') && (await page.locator('a[href*="__proto__"]').count()) === 0, `[${tag}] 비슷한 문제의 review=${rv}는 복습으로 받지 않는다`);
+    }
+    await page.goto(BASE + '#/p/u1-05?recheck=u2-l1');
+    await page.waitForSelector('.q-text .katex');
+    ok(!(await page.textContent('.study')).includes('개념 재확인 중'), `[${tag}] 문제 화면은 더 이상 개념 재확인에 쓰이지 않는다`);
+  }
   // ── 개념 지도와 선수 개념 역추적
   {
     await page.goto(BASE + '#/units');

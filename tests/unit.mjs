@@ -114,8 +114,8 @@ if (process.argv[2] === '--review-child') {
     const pr = model.lessonProgress(L);
     log('오답 → 풀이 → 정답은 첫 시도 오답·시도 2회·풀이 봄으로 남는다', cr.firstCorrect === false && cr.tries === 2 && cr.sawSolution && cr.solved);
     log('그 문제는 "도움받아 맞힘"으로 세고 재확인이 다음 날로 예약된다', pr.independent === 0 && pr.helped === 1 && pr.recheck && pr.recheck.due === '2026-10-22' && !pr.recheckDue);
-    const tg = model.recheckTarget(L);
-    log(`재확인은 확인 문제와 다른 문항으로 한다(${tg && (tg.key || tg.pid)})`, tg && (tg.kind === 'variant' || !L.checks.some((c) => c.id === tg.pid)));
+    const tg = model.freshCQ(L);
+    log(`재확인은 확인 문제가 아니라 아직 보지 않은 개념 질문으로 한다(${tg && tg.id})`, tg && L.cq.some((q) => q.id === tg.id) && !model.lessonCQs(L).some((q) => q.id === tg.id));
     let rr;
     store.update((s) => { rr = model.recheckResult(s, 'u1-l1', true); });
     log('재확인 예정일 전 성공은 연습으로만 본다', !rr.counted && rr.why === 'early' && model.lessonProgress(L).recheck);
@@ -133,6 +133,52 @@ if (process.argv[2] === '--review-child') {
     store.update((s) => { model.recordCheck(s, 'u1-l1', 'u1-l1-d2', true, { deep: true }); });
     const pd2 = model.lessonProgress(L);
     log(`심화 확인 문제는 따로 센다(심화 ${pd2.deepRight}/${pd2.deepTotal}, 혼자 ${pd2.deepIndependent})`, pd2.deepTotal === L.deep.checks.length && pd2.deepRight === 1 && pd2.deepIndependent === 1 && pd2.total === L.checks.length);
+  }
+  // #17 "혼자 확인"은 확인 문제와 소단원 화면의 개념 질문을 모두 처음에 혼자 맞혀야 한다
+  // #15 재확인은 문제 은행 문제가 아니라 아직 보지 않은 개념 질문(답 + 이유)으로 한다
+  {
+    const { LESSON_BY_ID } = await import('../assets/js/content/lessons/index.js');
+    const wrongR = (q) => q.mis.findIndex((m) => m);
+    const L = LESSON_BY_ID['u3-l1'];
+    store.resetAll();
+    setClock(2026, 9, 21, 20, 0);
+    store.update((s) => { for (const c of L.checks) model.recordCheck(s, L.id, c.id, true); });
+    let p = model.lessonProgress(L);
+    log('확인 문제만 모두 혼자 맞혀서는 "혼자 확인"이 아니다(개념 질문이 남음)', !p.verified && p.independent === p.total && p.cqTotal === 2 && p.cqTried === 0 && p.state === 'partial');
+    const [qa, qb] = model.lessonCQs(L);
+    store.update((s) => { model.lessonCQAnswer(s, L.id, qa.id, qa.answer, qa.reason); });
+    store.update((s) => { model.lessonCQAnswer(s, L.id, qb.id, qb.answer, qb.reason); });
+    p = model.lessonProgress(L);
+    log('소단원 화면의 개념 질문 두 개까지 처음에 답과 이유를 맞히면 "혼자 확인"이다', p.verified && p.cqRight === 2 && p.state === 'verified' && !p.recheck);
+
+    const M = LESSON_BY_ID['u3-l2'];
+    store.update((s) => { for (const c of M.checks) model.recordCheck(s, M.id, c.id, true); });
+    const [ma, mb] = model.lessonCQs(M);
+    let g;
+    store.update((s) => { g = model.lessonCQAnswer(s, M.id, ma.id, ma.answer, wrongR(ma)); });
+    store.update((s) => { model.lessonCQAnswer(s, M.id, ma.id, ma.answer, ma.reason); }); // 답을 보고 다시 풀기
+    store.update((s) => { model.lessonCQAnswer(s, M.id, mb.id, mb.answer, mb.reason); });
+    p = model.lessonProgress(M);
+    log('개념 질문의 이유를 처음에 틀리면 다시 맞혀도 "혼자 확인"이 아니고 다음 날 재확인이 예약된다',
+      g.kind === 'luck' && !p.verified && p.cqRight === 1 && p.cqMissed === 1 && p.recheck && p.recheck.due === '2026-10-22' && store.getState().lessons[M.id].cq[ma.id].first === false);
+    const f1 = model.freshCQ(M);
+    log('재확인 문항은 소단원 화면에 나오지 않은 3번부터 고른다', f1.id === M.cq[2].id);
+    let ra;
+    store.update((s) => { ra = model.recheckAnswer(s, M.id, f1.id, f1.answer, f1.reason); });
+    log('예정일 전에 맞힌 재확인은 연습으로만 본다', ra.g.ok && !ra.res.counted && ra.res.why === 'early' && model.lessonProgress(M).recheck);
+    setClock(2026, 9, 22, 8, 0);
+    const f2 = model.freshCQ(M);
+    log('다음 날에는 전날 연습한 문항이 아니라 아직 보지 않은 문항이 나온다', f2.id === M.cq[3].id);
+    store.update((s) => { ra = model.recheckAnswer(s, M.id, f2.id, f2.answer, wrongR(f2)); });
+    log('재확인에서 답만 맞고 이유를 틀리면 통과하지 못하고 다음 날로 미뤄진다', !ra.g.ok && ra.res.counted && model.lessonProgress(M).recheck.due === '2026-10-23');
+    setClock(2026, 9, 23, 8, 0);
+    const f3 = model.freshCQ(M);
+    store.update((s) => { ra = model.recheckAnswer(s, M.id, f3.id, f3.answer, f3.reason); });
+    p = model.lessonProgress(M);
+    log('예정일에 답과 이유를 모두 맞히면 재확인 표시가 사라진다(처음에 틀렸으므로 "혼자 확인"은 아님)', ra.g.ok && ra.res.counted && !p.recheck && !p.verified && store.getState().lessons[M.id].rechecked === '2026-10-23');
+    let bad;
+    store.update((s) => { model.scheduleRecheck(s, M.id); bad = model.recheckAnswer(s, M.id, 'u3-l1-q1', 0, 0); });
+    log('다른 소단원의 문항 id로는 재확인할 수 없다', bad.g === null && !bad.res.counted && !!model.lessonProgress(M).recheck);
   }
   // 개념 간격 복습: 배운 날 + 1주 → 3주 → 2개월, 세 번 통과하면 오래 기억함
   {
@@ -210,7 +256,7 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
       'u2-l3-d1': { tries: 1, solved: false, firstCorrect: false, sawSolution: false, lastAt: '2026-10-20T03:06:00.000Z' },
     }, recheck: { due: '2026-10-21', since: '2026-10-20' }, rechecked: null, note: '두 근의 합과 곱으로 식을 다시 쓴다',
       spaced: { stage: 1, due: '2026-11-10', keptAt: null, history: [{ date: '2026-10-20', ok: true }] },
-      cq: { 'u2-l3-q1': { log: [{ d: '2026-10-20', a: 1, r: 2 }, { d: '2026-10-21', a: 0, r: 0 }] } } };
+      cq: { 'u2-l3-q1': { log: [{ d: '2026-10-20', a: 1, r: 2 }, { d: '2026-10-21', a: 0, r: 0 }], first: false }, 'u2-l3-q2': { log: [{ d: '2026-10-20', a: 0, r: 1 }] } } };
   });
   store.logActivity({ solved: 1, attempted: 2, seconds: 150 });
   store.update(() => {});
@@ -239,6 +285,7 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
     ['개념 학습 기록 형식 오류', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: 'yesterday', checks: {} } } } })],
     ['개념 간격 복습 기록 형식 오류', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: null, checks: {}, spaced: { stage: 9, due: 'soon', history: 'x' } } } } })],
     ['개념 질문 기록 형식 오류', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: null, checks: {}, cq: { 'u2-l3-q1': { log: [{ d: 'today', a: '1', r: 0 }] } } } } } })],
+    ['개념 질문 첫 시도 기록이 불리언이 아님', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: null, checks: {}, cq: { 'u2-l3-q1': { log: [], first: 'yes' } } } } } })],
     ['확인 문제 결과가 불리언이 아님', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: null, checks: { 'u2-l3-c1': 'yes' } } } } })],
     ['다른 앱의 파일', JSON.stringify({ app: 'Other', data: { attempts: {}, wrong: {}, activity: {} } })],
     ['JSON이 아님', '{ 이건 JSON이 아님'],
@@ -364,7 +411,7 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   ok(rw[0].l.id === 'u2-l1' && rw[1].l.id === 'u2-l2' && rw[0].above > rw[1].above, '먼저 다질 개념은 그 위에 쌓이는 개념이 많은 순서다');
   store.update((s) => { model.recordCQ(s, 'u2-l1', q2.id, q2.answer, q2.reason); });
   ok(!model.weakSignals(LESSON_BY_ID['u2-l1']).length, '틀렸던 개념 질문을 다시 맞히면 약한 개념에서 빠진다');
-  const q2b = model.traceQuestion(LESSON_BY_ID['u2-l1']);
+  const q2b = model.freshCQ(LESSON_BY_ID['u2-l1']);
   ok(q2b.id !== q2.id, '역추적은 오늘 맞힌 문항 대신 다른 개념 질문을 고른다');
 }
 
