@@ -106,7 +106,7 @@ npm run verify     # 정답 독립 검증(문제 은행, 개념 학습)
 npm test           # 위 검사 전체
 ```
 
-작업 규칙은 [CLAUDE.md](CLAUDE.md)에 정리되어 있습니다. 검사를 하나씩 실행하려면 아래 명령을 씁니다(Windows에서는 `python3` 대신 `python`).
+작업 규칙은 [AGENTS.md](AGENTS.md)에 정리되어 있습니다(사람과 코딩 에이전트 공통. `CLAUDE.md`와 `GEMINI.md`는 이 파일을 불러옵니다). 검사를 하나씩 실행하려면 아래 명령을 씁니다(Windows에서는 `python3` 대신 `python`).
 
 ```bash
 python3 -m http.server 8080        # http://localhost:8080 에서 실행
