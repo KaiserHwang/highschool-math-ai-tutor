@@ -76,7 +76,7 @@ function emptyHTML() {
   const up = conceptQueue().slice(0, 5);
   return `<section class="paper empty-state">
     <h2 class="paper-title">오늘 확인할 개념이 없어요</h2>
-    ${mem.learned ? `<p>배운 개념 ${mem.learned}개 중 ${mem.kept}개는 오래 기억함, 나머지는 예정일에 다시 확인합니다.</p>` : '<p>개념 학습에서 소단원을 공부하고 확인 문제를 풀면, 1주 뒤부터 여기서 짧게 다시 확인합니다.</p>'}
+    ${mem.learned ? `<p>배운 개념 ${mem.learned}개 중 ${mem.kept}개는 오래 기억함입니다. 오래 기억한 개념은 6개월마다 유지 확인을 하고, 나머지는 예정일에 다시 확인합니다.</p>` : '<p>개념 학습에서 소단원을 공부하고 확인 문제를 풀면, 1주 뒤부터 여기서 짧게 다시 확인합니다.</p>'}
     ${up.length ? `<ul class="cr-up">${up.map(({ l, sp }) => `<li><a href="#/l/${l.id}">${esc(l.title)}</a> <span class="hint-text">${fmtDate(sp.due)}</span></li>`).join('')}</ul>` : ''}
     <p><a class="btn btn-primary" href="#/units">개념 학습으로</a></p>
   </section>`;
