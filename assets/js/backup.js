@@ -35,7 +35,7 @@ export function blankState() {
     activity: {}, // 'YYYY-MM-DD' → { solved, attempted, seconds }
     practice: {}, // 생성기 이름 → { tried, solved } (비슷한 문제 연습)
     quizzes: [], // 혼합 평가 기록(최신이 마지막) { date, items:[{ ref, unit, correct, sec }] }
-    lessons: {}, // 소단원 id → { done: 이해 표시 날짜|null, checks: { 확인 문제 id: 풀이 기록 }, recheck: { due, since }|null, rechecked: 날짜|null, note, spaced?, cq: { 개념 질문 id: { log, first? } } }
+    lessons: {}, // 소단원 id → { done: 이해 표시 날짜|null, checks: { 확인 문제 id: 풀이 기록 }, recheck: { due, since }|null, rechecked: 날짜|null, note, spaced?, cq: { 개념 질문 id: { log, first? } }, predict?, goals?, derive?, keys? }
     settings: { theme: 'auto', ai: { gemini: '', chatgpt: '', claude: '' }, preferredAi: 'claude' },
   };
 }
@@ -211,7 +211,12 @@ export function checkState(raw, { strict }) {
       || !(v.rechecked === null || v.rechecked === undefined || isDay(v.rechecked))
       || !(v.note === undefined || (typeof v.note === 'string' && v.note.length <= 4000))
       || !(v.spaced === null || v.spaced === undefined || okSpaced(v.spaced))
-      || !(v.cq === undefined || okCQ(v.cq))) { bad(w, '형식 오류'); continue; }
+      || !(v.cq === undefined || okCQ(v.cq))
+      // 소단원 활동 기록(#22). 없는 예전 기록도 받는다.
+      || !(v.predict === undefined || (isObj(v.predict) && isInt(v.predict.a, 0, 9) && isDay(v.predict.d)))
+      || !(v.goals === undefined || (Array.isArray(v.goals) && v.goals.length <= 200 && v.goals.every((g) => typeof g === 'string' && /^\d{1,2}-\d{1,2}$/.test(g))))
+      || !(v.derive === undefined || isInt(v.derive, 0, 100))
+      || !(v.keys === undefined || (Array.isArray(v.keys) && v.keys.length <= 50 && v.keys.every((k) => isInt(k, 0, 49))))) { bad(w, '형식 오류'); continue; }
     if (!LESSON_BY_ID[lid]) { dropped++; continue; }
     const checks = {};
     for (const [cid, c] of recs) {
@@ -223,6 +228,16 @@ export function checkState(raw, { strict }) {
       if (CQ_BY_ID[qid] && qid.startsWith(lid + '-')) out.lessons[lid].cq[qid] = { log: e.log.map((h) => ({ d: h.d, a: h.a, r: h.r })), ...(isBool(e.first) ? { first: e.first } : {}) }; else dropped++;
     }
     if (v.spaced) out.lessons[lid].spaced = { stage: v.spaced.stage, due: v.spaced.due, keptAt: v.spaced.keptAt ?? null, history: v.spaced.history.map((h) => ({ date: h.date, ok: h.ok })) };
+    // 활동 기록: 콘텐츠가 바뀌어 지금은 없는 보기·과제·단계·항목은 조용히 버린다(기록 전체를 거절하지 않는다)
+    const LL = LESSON_BY_ID[lid];
+    if (v.predict && LL.predict && v.predict.a < LL.predict.options.length) out.lessons[lid].predict = { a: v.predict.a, d: v.predict.d };
+    if (v.goals) {
+      const has = (g) => { const [xi, gi] = g.split('-').map(Number); return gi < (((LL.explore || [])[xi] || {}).goals || []).length; };
+      const goals = [...new Set(v.goals)].filter(has);
+      if (goals.length) out.lessons[lid].goals = goals;
+    }
+    if (v.derive && LL.derive) out.lessons[lid].derive = Math.min(v.derive, LL.derive.steps.length);
+    if (v.keys && LL.explain) out.lessons[lid].keys = [...new Set(v.keys)].filter((k) => k < LL.explain.keys.length).sort((a, b) => a - b);
   }
 
   // 설정

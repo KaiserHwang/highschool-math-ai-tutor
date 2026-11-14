@@ -380,6 +380,70 @@ export function cqFirstOk(q, entry) {
   return gradeCQ(q, entry.log[0].a, entry.log[0].r).ok;
 }
 
+// ── 소단원 활동 기록(#22) ────────────────────────────
+// 예측, 탐구 그래프의 찾아보기 과제, 유도 따라가기, 직접 설명해 보기의 점검 항목을 남겨, 다시 들어와도 한 데까지 보이게 한다.
+// lessons[id] = { predict?: { a: 고른 보기, d: 날짜 }, goals?: ['탐구 번호-과제 번호'], derive?: 확인한 유도 단계 수, keys?: [점검한 항목 번호] }
+// 판정(혼자 확인, 재확인, 간격 복습)에는 쓰지 않는다: 학생이 무엇을 해 봤는지 보여 주는 기록이다.
+const goalKey = (xi, gi) => `${xi}-${gi}`;
+const goalExists = (lesson, xi, gi) => Number.isInteger(xi) && Number.isInteger(gi) && gi >= 0 && gi < (((lesson.explore || [])[xi] || {}).goals || []).length;
+
+/** 예측에서 고른 보기. 처음 고른 것만 남긴다(답을 본 뒤 바꿔도 예측은 처음 생각이다). */
+export function recordPredict(st, lessonId, k) {
+  const L = LBI[lessonId];
+  if (!L || !L.predict || !Number.isInteger(k) || k < 0 || k >= L.predict.options.length) return null;
+  const r = (st.lessons[lessonId] ||= blankLessonRec());
+  if (!r.predict) r.predict = { a: k, d: today() };
+  return r.predict;
+}
+
+/** 찾아보기 과제를 해냈다. 새로 기록했으면 true */
+export function recordGoal(st, lessonId, xi, gi) {
+  const L = LBI[lessonId];
+  if (!L || !goalExists(L, xi, gi)) return false;
+  const r = (st.lessons[lessonId] ||= blankLessonRec());
+  const g = (r.goals ||= []);
+  if (g.includes(goalKey(xi, gi))) return false;
+  g.push(goalKey(xi, gi));
+  return true;
+}
+
+/** 유도 따라가기에서 확인한 단계 수(줄어들지 않는다) */
+export function recordDerive(st, lessonId, n) {
+  const L = LBI[lessonId];
+  if (!L || !L.derive || !Number.isInteger(n)) return;
+  const r = (st.lessons[lessonId] ||= blankLessonRec());
+  r.derive = Math.max(r.derive || 0, Math.min(Math.max(n, 0), L.derive.steps.length));
+}
+
+/** 직접 설명해 보기에서 모범 설명을 열었고, 내 설명에 들어 있다고 표시한 항목들 */
+export function recordKeys(st, lessonId, keys) {
+  const L = LBI[lessonId];
+  if (!L || !L.explain) return;
+  const r = (st.lessons[lessonId] ||= blankLessonRec());
+  r.keys = [...new Set(keys)].filter((k) => Number.isInteger(k) && k >= 0 && k < L.explain.keys.length).sort((a, b) => a - b);
+}
+
+/**
+ * 소단원에서 해 본 활동. 없는 활동은 null.
+ * @returns {{ predict:{answered:boolean, picked:number|null, right:boolean}|null, goals:{done:number, total:number, keys:string[]}|null,
+ *            derive:{done:number, total:number}|null, explain:{wrote:boolean, opened:boolean, keys:number[], total:number}|null, done:number, total:number }}
+ */
+export function lessonActivity(lesson, rec = getState().lessons[lesson.id]) {
+  const r = rec || {};
+  const goalTotal = (lesson.explore || []).reduce((n, x) => n + (x.goals || []).length, 0);
+  const goalKeys = (r.goals || []).filter((k) => { const [xi, gi] = k.split('-').map(Number); return goalExists(lesson, xi, gi); });
+  const predict = lesson.predict ? { answered: !!r.predict, picked: r.predict ? r.predict.a : null, right: !!r.predict && r.predict.a === lesson.predict.answer } : null;
+  const goals = goalTotal ? { done: goalKeys.length, total: goalTotal, keys: goalKeys } : null;
+  const derive = lesson.derive ? { done: Math.min(r.derive || 0, lesson.derive.steps.length), total: lesson.derive.steps.length } : null;
+  const explain = lesson.explain ? { wrote: !!(r.note && r.note.trim()), opened: Array.isArray(r.keys), keys: r.keys || [], total: lesson.explain.keys.length } : null;
+  // 한 줄 요약용: 활동 하나를 끝냈는지(예측에 답함, 과제를 모두 찾음, 유도를 끝까지 봄, 설명을 쓰거나 모범 설명과 비교함)
+  const parts = [predict && predict.answered, goals && goals.done === goals.total, derive && derive.done === derive.total, explain && (explain.wrote || explain.opened)];
+  return { predict, goals, derive, explain, done: parts.filter((x) => x === true).length, total: parts.filter((x) => x !== null).length };
+}
+
+/** 하루 학습량(#22): 개념 문항(확인 문제·개념 질문) 풀이 수 + 문제 은행에서 해결한 문제 수. 오늘 목표, 주간 막대, 4주 달력이 이 값을 쓴다. */
+export const studyCount = (a) => (a ? (a.solved || 0) + (a.checks || 0) : 0);
+
 export function lessonProgress(lesson) {
   const rec = getState().lessons[lesson.id] || blankLessonRec();
   let independent = 0, helped = 0, missed = 0;
@@ -407,6 +471,7 @@ export function lessonProgress(lesson) {
   return {
     done: rec.done, total, right, independent, helped, missed, verified, deepTotal: dcs.length, deepRight, deepIndependent,
     cqTotal, cqTried, cqRight, cqMissed: cqTried - cqRight,
+    act: lessonActivity(lesson, rec),
     recheck, recheckDue: !!recheck && recheck.due <= t, rechecked: rec.rechecked || null,
     spaced, kept, spacedDue: !!spaced && !recheck && spaced.due <= t, // 오래 기억한 개념도 유지 확인 날이 되면 뜬다(#19)
     // 단원 목차와 홈에 보이는 한 줄 상태

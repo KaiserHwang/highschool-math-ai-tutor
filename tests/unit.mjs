@@ -298,7 +298,8 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
       'u2-l3-d1': { tries: 1, solved: false, firstCorrect: false, sawSolution: false, lastAt: '2026-10-20T03:06:00.000Z' },
     }, recheck: { due: '2026-10-21', since: '2026-10-20' }, rechecked: null, note: '두 근의 합과 곱으로 식을 다시 쓴다',
       spaced: { stage: 1, due: '2026-11-10', keptAt: null, history: [{ date: '2026-10-20', ok: true }] },
-      cq: { 'u2-l3-q1': { log: [{ d: '2026-10-20', a: 1, r: 2 }, { d: '2026-10-21', a: 0, r: 0 }], first: false }, 'u2-l3-q2': { log: [{ d: '2026-10-20', a: 0, r: 1 }] } } };
+      cq: { 'u2-l3-q1': { log: [{ d: '2026-10-20', a: 1, r: 2 }, { d: '2026-10-21', a: 0, r: 0 }], first: false }, 'u2-l3-q2': { log: [{ d: '2026-10-20', a: 0, r: 1 }] } },
+      predict: { a: 1, d: '2026-10-20' }, goals: ['0-1', '0-0'], derive: 1, keys: [0, 1] };
   });
   store.logActivity({ solved: 1, attempted: 2, seconds: 150 });
   store.update(() => {});
@@ -327,6 +328,8 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
     ['개념 학습 기록 형식 오류', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: 'yesterday', checks: {} } } } })],
     ['개념 간격 복습 기록 형식 오류', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: null, checks: {}, spaced: { stage: 9, due: 'soon', history: 'x' } } } } })],
     ['개념 질문 기록 형식 오류', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: null, checks: {}, cq: { 'u2-l3-q1': { log: [{ d: 'today', a: '1', r: 0 }] } } } } } })],
+    ['소단원 활동 기록 형식 오류(찾아보기 과제)', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: null, checks: {}, goals: ['첫째 과제'] } } } })],
+    ['소단원 활동 기록 형식 오류(예측)', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: null, checks: {}, predict: { a: '1', d: '2026-10-20' } } } } })],
     ['개념 질문 첫 시도 기록이 불리언이 아님', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: null, checks: {}, cq: { 'u2-l3-q1': { log: [], first: 'yes' } } } } } })],
     ['확인 문제 결과가 불리언이 아님', JSON.stringify({ app: 'MathPulse', data: { attempts: {}, wrong: {}, activity: {}, lessons: { 'u2-l3': { done: null, checks: { 'u2-l3-c1': 'yes' } } } } })],
     ['다른 앱의 파일', JSON.stringify({ app: 'Other', data: { attempts: {}, wrong: {}, activity: {} } })],
@@ -417,6 +420,40 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   const cqIds = items.flat().filter((it) => it.kind === 'cq').map((it) => it.id);
   ok(items.every((it) => it.length === 2) && cqIds.length >= 4 && cqIds.every((id) => L.cq.some((x) => x.id === id)) && new Set(cqIds).size >= 2,
     '오늘의 개념 확인에는 개념 질문이 돌아가며 나온다');
+}
+
+// ── #22 소단원 활동 기록과 하루 학습량 ───────────────
+{
+  const store = await import('../assets/js/store.js');
+  const model = await import('../assets/js/model.js');
+  const { LESSON_BY_ID } = await import('../assets/js/content/lessons/index.js');
+  const L = LESSON_BY_ID['u5-l1'];
+  const nGoals = L.explore.reduce((n, x) => n + x.goals.length, 0);
+  store.update((s) => { delete s.lessons[L.id]; });
+  const a0 = model.lessonActivity(L);
+  ok(a0.predict && !a0.predict.answered && a0.goals.done === 0 && a0.goals.total === nGoals && a0.derive.done === 0 && !a0.explain.opened && a0.done === 0 && a0.total === 4, '아무것도 하지 않은 소단원은 활동이 모두 비어 있다');
+  const wrongPick = L.predict.answer === 0 ? 1 : 0;
+  store.update((s) => { model.recordPredict(s, L.id, wrongPick); model.recordPredict(s, L.id, L.predict.answer); });
+  const a1 = model.lessonActivity(L);
+  ok(a1.predict.answered && a1.predict.picked === wrongPick && !a1.predict.right, '예측은 처음 고른 보기만 남긴다(답을 본 뒤 다시 골라도 바뀌지 않는다)');
+  let added;
+  store.update((s) => { added = [model.recordGoal(s, L.id, 0, 0), model.recordGoal(s, L.id, 0, 0), model.recordGoal(s, L.id, 0, 99), model.recordGoal(s, L.id, 7, 0)]; });
+  ok(added.join() === 'true,false,false,false' && model.lessonActivity(L).goals.done === 1, '찾아보기 과제는 한 번만 기록하고, 없는 과제는 기록하지 않는다');
+  store.update((s) => { model.recordDerive(s, L.id, 2); model.recordDerive(s, L.id, 1); model.recordDerive(s, L.id, 999); });
+  ok(model.lessonActivity(L).derive.done === L.derive.steps.length, '유도 단계 수는 줄어들지 않고 전체 단계 수를 넘지 않는다');
+  store.update((s) => { model.recordKeys(s, L.id, [1, 0, 1, 99]); });
+  const a2 = model.lessonActivity(L);
+  ok(a2.explain.opened && a2.explain.keys.join() === '0,1' && a2.done === 3 && model.lessonProgress(L).act.done === 3 && model.lessonProgress(L).state === 'new' && !model.lessonProgress(L).recheck && model.spacedOf(L) === null,
+    '설명 점검 항목을 남기고, 활동 기록은 판정(상태, 재확인, 간격 복습)에 영향을 주지 않는다');
+  // 내보내기 → 가져오기 왕복, 콘텐츠에 없는 과제·항목은 조용히 버린다
+  const exp = JSON.parse(store.exportData());
+  const before = JSON.stringify(store.getState().lessons[L.id]);
+  exp.data.lessons[L.id].goals.push('9-9');
+  exp.data.lessons[L.id].keys.push(40);
+  exp.data.lessons[L.id].derive = 80;
+  const r = store.importData(JSON.stringify(exp));
+  ok(JSON.stringify(store.getState().lessons[L.id]) === before && r.dropped === 0, '활동 기록은 백업으로 옮겨지고, 지금 콘텐츠에 없는 과제·항목·단계는 버린다');
+  ok(model.studyCount(undefined) === 0 && model.studyCount({ solved: 2, attempted: 5, seconds: 10 }) === 2 && model.studyCount({ solved: 2, attempted: 2, seconds: 10, checks: 3 }) === 5, '하루 학습량은 개념 문항 풀이 수와 문제 해결 수를 더한 값이다');
 }
 
 // ── 개념 지도와 선수 개념 역추적 ─────────────────────

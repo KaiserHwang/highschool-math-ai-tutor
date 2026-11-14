@@ -5,7 +5,7 @@ import { LESSONS, LESSON_BY_ID, lessonsOfUnit, allChecks } from '../content/less
 import { UNIT_BY_ID, LEVELS, unitLabel } from '../content/units.js';
 import { PROBLEM_BY_ID } from '../content/problems.js';
 import { getState, update, today, logActivity } from '../store.js';
-import { isCorrect, normalizeAnswer, statusOf, lessonProgress, blankLessonRec, recordCheck, markCheckSolution, LESSON_STATE, lessonCQs, lessonCQAnswer, lastCQ } from '../model.js';
+import { isCorrect, normalizeAnswer, statusOf, lessonProgress, blankLessonRec, recordCheck, markCheckSolution, LESSON_STATE, lessonCQs, lessonCQAnswer, lastCQ, lessonActivity, recordPredict, recordGoal, recordDerive, recordKeys } from '../model.js';
 import { cqHTML, cqClick, newCQSeed, seedOf } from './cq.js';
 import { tex, esc, CIRCLED, gradeMark, statusGlyph, optionsClass, toast, fmtDate } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
@@ -175,23 +175,46 @@ export function renderLesson(view, { args: [lessonId] }) {
   const $ = (s) => view.querySelector(s);
   const selected = {};
 
+  // 지난번까지 해 본 활동(#22): 예측, 찾아보기 과제, 유도 단계, 설명 점검 항목을 그 상태로 다시 보여 준다
+  const act0 = lessonActivity(L, rec);
+
   // 탐구 그래프: 슬라이더를 움직이면 그림·값·찾아보기 과제를 다시 그린다
   const xpState = (L.explore || []).map((x) => Object.fromEntries(x.params.map((q) => [q.k, q.value])));
-  const goalsDone = (L.explore || []).map(() => new Set());
-  // 찾아보기 과제는 학생이 슬라이더를 움직여 조건을 만들었을 때만 완료로 표시한다
+  const goalsDone = (L.explore || []).map((_, i) => new Set((act0.goals ? act0.goals.keys : []).map((k) => k.split('-').map(Number)).filter(([xi]) => xi === i).map(([, gi]) => gi)));
+  // 찾아보기 과제는 학생이 슬라이더를 움직여 조건을 만들었을 때만 완료로 표시하고, 한 번 해낸 과제는 기록에 남긴다
   function paintExplore(i, byUser = false) {
     const x = L.explore[i], p = xpState[i];
     const box = view.querySelector(`[data-xp="${i}"]`);
     box.querySelector('[data-xp-fig]').innerHTML = figure(x.fig(p));
     box.querySelector('[data-xp-read]').innerHTML = readHTML(x, p);
+    const fresh = [];
     (x.goals || []).forEach((g, k) => {
-      if (byUser && g.test(p)) goalsDone[i].add(k);
+      if (byUser && g.test(p) && !goalsDone[i].has(k)) { goalsDone[i].add(k); fresh.push(k); }
       const li = box.querySelector(`[data-goal="${k}"]`);
       li.classList.toggle('done', goalsDone[i].has(k));
       li.classList.toggle('now', g.test(p));
     });
+    if (fresh.length) { update((s) => { for (const k of fresh) recordGoal(s, L.id, i, k); }); paintProgress(); }
   }
+
+  // 예측: 고른 보기와 설명을 보여 준다(처음 고를 때와 다시 들어왔을 때 같은 모습)
+  function showPredict(k) {
+    const box = $('[data-pd]'), pd = L.predict, right = k === pd.answer;
+    box.classList.add('answered');
+    box.querySelectorAll('[data-pd-opt]').forEach((b, j) => { b.disabled = true; b.setAttribute('aria-checked', String(j === k)); if (j === pd.answer) b.classList.add('is-ans'); });
+    box.querySelector('.pd-fb').innerHTML = `<p class="${right ? 'fb-right' : 'fb-note'}">${right ? '예측이 맞았어요.' : `정답은 ${CIRCLED[pd.answer]}입니다. 예측과 다른 부분이 바로 이번에 배울 내용이에요.`}</p><div class="c-body">${tex(pd.explain)}</div>${L.explore && L.explore.length ? '<p class="hint-text">아래 그래프를 직접 움직여 확인해 보세요.</p>' : ''}`;
+  }
+  /** 유도 따라가기: 앞에서부터 n단계를 확인한 상태로 만든다 */
+  function showDerive(n) {
+    view.querySelectorAll('[data-dv-step]').forEach((li, k) => {
+      if (k < n) { li.hidden = false; li.querySelector('.dv-line').hidden = false; li.querySelector('.dv-btn')?.remove(); }
+      else if (k === n) li.hidden = false;
+    });
+  }
+  const checkedKeys = () => [...view.querySelectorAll('[data-key]')].filter((c) => c.checked).map((c) => Number(c.dataset.key));
+
   view.oninput = (e) => {
+    if (e.target.matches('[data-key]')) { update((s) => recordKeys(s, L.id, checkedKeys())); return; }
     const r = e.target.closest('input[type="range"]');
     if (r) {
       const i = Number(r.closest('[data-xp]').dataset.xp);
@@ -206,7 +229,6 @@ export function renderLesson(view, { args: [lessonId] }) {
       noteTimer = setTimeout(() => update((s) => { (s.lessons[L.id] ||= blankLessonRec()).note = v.slice(0, 4000); }), 400);
     }
   };
-  (L.explore || []).forEach((_, i) => paintExplore(i));
   let noteTimer;
 
   function recheckHTML(pr) {
@@ -218,12 +240,28 @@ export function renderLesson(view, { args: [lessonId] }) {
   function paintProgress() {
     const pr = lessonProgress(L);
     const parts = [`혼자 맞힘 ${pr.independent}`, pr.helped ? `도움받아 맞힘 ${pr.helped}` : '', `남음 ${pr.total - pr.right}`].filter(Boolean).join(' · ');
-    $('[data-progress]').innerHTML = `확인 문제 ${parts}${pr.cqTotal ? ` · 이유까지 답하기 ${pr.cqRight}/${pr.cqTotal}${pr.cqMissed ? `(처음에 틀림 ${pr.cqMissed})` : ''}` : ''}${pr.deepTotal ? ` · 심화 ${pr.deepRight}/${pr.deepTotal}` : ''}${pr.verified ? ' · <span class="done-tag">혼자 확인 완료</span>' : ''}${pr.done ? ' · 이해 표시함' : ''}${pr.recheck ? ' · <span class="recheck-tag">다시 확인할 개념</span>' : ''}${pr.kept ? ' · <span class="done-tag">오래 기억함</span>' : pr.spaced && !pr.recheck ? ` · 다음 개념 확인 ${fmtDate(pr.spaced.due)}` : ''}`;
+    const a = pr.act;
+    const acts = [
+      a.predict ? `예측 ${a.predict.answered ? '✓' : '–'}` : '',
+      a.goals ? `찾아보기 ${a.goals.done}/${a.goals.total}` : '',
+      a.derive ? `유도 ${a.derive.done}/${a.derive.total}` : '',
+      a.explain ? `설명 ${a.explain.wrote || a.explain.opened ? '✓' : '–'}` : '',
+    ].filter(Boolean).join(' · ');
+    $('[data-progress]').innerHTML = `${acts ? `<span class="act-line">${acts}</span><br>` : ''}확인 문제 ${parts}${pr.cqTotal ? ` · 이유까지 답하기 ${pr.cqRight}/${pr.cqTotal}${pr.cqMissed ? `(처음에 틀림 ${pr.cqMissed})` : ''}` : ''}${pr.deepTotal ? ` · 심화 ${pr.deepRight}/${pr.deepTotal}` : ''}${pr.verified ? ' · <span class="done-tag">혼자 확인 완료</span>' : ''}${pr.done ? ' · 이해 표시함' : ''}${pr.recheck ? ' · <span class="recheck-tag">다시 확인할 개념</span>' : ''}${pr.kept ? ' · <span class="done-tag">오래 기억함</span>' : pr.spaced && !pr.recheck ? ` · 다음 개념 확인 ${fmtDate(pr.spaced.due)}` : ''}`;
     const self = pr.done
       ? `<p class="l-done-msg"><span class="done-tag">이해했어요</span> 표시를 했습니다. ${pr.verified ? '확인 문제와 개념 질문도 모두 처음에 혼자 맞혔어요.' : '이 표시는 스스로 판단한 것이고, 확인 문제와 "이유까지 답하기"를 모두 처음에 혼자 맞히면 "혼자 확인"으로 따로 표시됩니다.'}</p><p class="row">${related.length ? `<a class="btn btn-primary" href="#/p/${related[0].id}">관련 문제 풀기</a>` : ''}${next && next.unit === L.unit ? `<a class="btn${related.length ? ' btn-quiet' : ' btn-primary'}" href="#/l/${next.id}">다음 개념</a>` : ''}<button type="button" class="btn btn-quiet" data-act="undone">표시 취소</button></p>`
       : `<p class="l-done-msg">예제와 확인 문제까지 마쳤다면 표시해 두세요. 확인 문제를 아직 다 풀지 않았어도 표시할 수 있지만, 그때는 "이해 표시"로만 기록됩니다.</p><p class="row"><button type="button" class="btn btn-primary" data-act="done">이해했어요</button></p>`;
     $('[data-done]').innerHTML = recheckHTML(pr) + self;
     view.querySelectorAll('.lstrip-i.is-cur').forEach((a) => { a.className = a.className.replace(/st-\w+/, `st-${pr.state}`); });
+  }
+  // 처음 그릴 때: 탐구 그래프를 그리고, 지난번에 한 예측·유도·설명 점검을 되살린다
+  (L.explore || []).forEach((_, i) => paintExplore(i));
+  if (act0.predict && act0.predict.answered) showPredict(act0.predict.picked);
+  if (act0.derive && act0.derive.done) showDerive(act0.derive.done);
+  if (act0.explain && act0.explain.opened) {
+    $('.say-model').hidden = false;
+    $('[data-act="say-model"]')?.remove();
+    for (const k of act0.explain.keys) { const c = view.querySelector(`[data-key="${k}"]`); if (c) c.checked = true; }
   }
   paintProgress();
 
@@ -284,10 +322,10 @@ export function renderLesson(view, { args: [lessonId] }) {
     if (pdo) {
       const box = pdo.closest('[data-pd]');
       if (box.classList.contains('answered')) return;
-      const k = Number(pdo.dataset.pdOpt), pd = L.predict, right = k === pd.answer;
-      box.classList.add('answered');
-      box.querySelectorAll('[data-pd-opt]').forEach((b, j) => { b.disabled = true; b.setAttribute('aria-checked', String(j === k)); if (j === pd.answer) b.classList.add('is-ans'); });
-      box.querySelector('.pd-fb').innerHTML = `<p class="${right ? 'fb-right' : 'fb-note'}">${right ? '예측이 맞았어요.' : `정답은 ${CIRCLED[pd.answer]}입니다. 예측과 다른 부분이 바로 이번에 배울 내용이에요.`}</p><div class="c-body">${tex(pd.explain)}</div>${L.explore && L.explore.length ? '<p class="hint-text">아래 그래프를 직접 움직여 확인해 보세요.</p>' : ''}`;
+      const k = Number(pdo.dataset.pdOpt);
+      update((s) => recordPredict(s, L.id, k));
+      showPredict(k);
+      paintProgress();
       return;
     }
     const opt = t.closest('[data-opt]');
@@ -324,13 +362,13 @@ export function renderLesson(view, { args: [lessonId] }) {
     }
     if (act === 'dv-show') {
       const li = t.closest('[data-dv-step]');
-      li.querySelector('.dv-line').hidden = false;
-      t.remove();
-      const nx = li.nextElementSibling;
-      if (nx) nx.hidden = false;
+      const n = Number(li.dataset.dvStep) + 1;
+      update((s) => recordDerive(s, L.id, n));
+      showDerive(n);
+      paintProgress();
       return;
     }
-    if (act === 'say-model') { $('.say-model').hidden = false; t.remove(); return; }
+    if (act === 'say-model') { $('.say-model').hidden = false; t.remove(); update((s) => recordKeys(s, L.id, checkedKeys())); paintProgress(); return; }
     if (act === 'check') { const li = t.closest('[data-check]'); grade(li, selected[li.dataset.check]); return; }
     if (act === 'show-sol') {
       const li = t.closest('[data-check]');

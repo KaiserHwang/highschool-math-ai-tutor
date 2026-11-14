@@ -1,6 +1,6 @@
 import { getState, today, addDays } from '../store.js';
 import { UNITS, UNIT_BY_ID, SKILLS, TRACKS, unitLabel, NEXT_SUBJECTS_NOTE } from '../content/units.js';
-import { latestDiagnosis, currentSkills, unitMastery, periodStats, wrongList, REASONS, streak, totals, activeTrack, lessonTotals, conceptMemory, rootWeaknesses, misconceptionStats } from '../model.js';
+import { latestDiagnosis, currentSkills, unitMastery, periodStats, wrongList, REASONS, streak, totals, activeTrack, lessonTotals, conceptMemory, rootWeaknesses, misconceptionStats, studyCount } from '../model.js';
 import { MISCONCEPTIONS } from '../content/misconceptions.js';
 import { LESSON_BY_ID } from '../content/lessons/index.js';
 import { radar } from '../lib/radar.js';
@@ -23,9 +23,9 @@ export function renderReport(view) {
   for (let i = 27; i >= 0; i--) {
     const d = addDays(today(), -i);
     const a = st.activity[d];
-    const n = a ? a.solved : 0;
+    const n = studyCount(a); // 개념 문항 풀이 + 문제 해결(#22)
     const lv = n === 0 ? 0 : n < 3 ? 1 : n < 6 ? 2 : 3;
-    days.push(`<span class="cal-d lv${lv}" title="${fmtDate(d)} ${n}문제"></span>`);
+    days.push(`<span class="cal-d lv${lv}" title="${fmtDate(d)} 개념 문항 ${a ? a.checks || 0 : 0} · 문제 ${a ? a.solved : 0}"></span>`);
   }
 
   const series = [];
@@ -67,7 +67,7 @@ export function renderReport(view) {
         <section class="side-block">
           <h2 class="h3">최근 4주</h2>
           <div class="cal" role="img" aria-label="최근 28일 학습 기록">${days.join('')}</div>
-          <p class="hint-text">4주 동안 ${w28.solved}문제 해결 · ${w28.activeDays}일 공부</p>
+          <p class="hint-text">4주 동안 개념 문항 ${w28.checks}번 풀이 · ${w28.solved}문제 해결 · ${w28.activeDays}일 공부. 칸의 진하기는 그날의 개념 문항 풀이와 문제 해결을 더한 수입니다.</p>
         </section>
         <section class="side-block">
           <h2 class="h3">남아 있는 오답 ${wr.length}문제의 원인</h2>
