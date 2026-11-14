@@ -5,7 +5,7 @@ import { UNIT_BY_ID, unitLabel } from '../content/units.js';
 import { MISCONCEPTIONS } from '../content/misconceptions.js';
 import { getState, update, logActivity, today } from '../store.js';
 import { ancestorsOf, lessonProgress, traceStart, traceNext, traceAnswer, traceSummary, traceRecord, TRACE_MAX } from '../model.js';
-import { cqHTML, cqClick } from './cq.js';
+import { cqHTML, cqClick, newCQSeed } from './cq.js';
 import { esc } from '../lib/ui.js';
 
 let sess = null; // { root, queue, asked } — 화면을 떠났다 돌아와도 같은 개념이면 이어서
@@ -53,9 +53,11 @@ function summaryHTML(root, s) {
 export function renderTrace(view, { args: [id] }) {
   const root = LESSON_BY_ID[id];
   if (!root) { location.replace('#/units'); return; }
-  const start = () => ({ ...traceStart(id), date: today() });
+  const start = () => ({ ...traceStart(id), date: today(), seeds: {} });
   if (!sess || sess.root !== id || sess.date !== today()) sess = start();
   const anc = ancestorsOf(id);
+  // 문항마다 보기 순서를 한 번 정해 두고, 이 역추적 동안 다시 그릴 때는 같은 순서를 쓴다
+  const seedFor = (qid) => (sess.seeds[qid] ||= newCQSeed());
 
   const draw = () => {
     const next = traceNext(sess);
@@ -69,7 +71,7 @@ export function renderTrace(view, { args: [id] }) {
         <p class="lead"><strong>${esc(root.title)}</strong>에서 막혔다면, 이 개념이 기대는 앞 개념을 하나씩 확인해 약한 곳을 찾습니다. 앞 개념마다 개념 질문 하나(답 + 이유)를 풀고, 틀리면 그보다 더 앞 개념으로 내려갑니다. 최대 ${TRACE_MAX}문항(약 5분)이에요.</p>
         ${anc.length ? `<p class="pre-row"><span class="pre-l">앞 개념</span>${anc.map((a) => `<span class="chip tr-chip d${Math.min(a.depth, 3)}${sess.asked.some((x) => x.lid === a.l.id) ? (sess.asked.find((x) => x.lid === a.l.id).ok ? ' is-ok' : ' is-miss') : ''}" title="${depthText(a.depth)}">${esc(a.l.title)}</span>`).join('')}</p>` : ''}
       </header>
-      ${anc.length ? `<ol class="ck-list tr-list">${sess.asked.map((a, k) => cqHTML(CQ_BY_ID[a.qid], { num: k + 1, done: a.resp, tag: itemTag(a) })).join('')}${next ? cqHTML(CQ_BY_ID[next.qid], { num: n + 1, tag: itemTag(next), attrs: `data-tr-cur="1"` }) : ''}</ol>
+      ${anc.length ? `<ol class="ck-list tr-list">${sess.asked.map((a, k) => cqHTML(CQ_BY_ID[a.qid], { num: k + 1, done: a.resp, tag: itemTag(a), seed: seedFor(a.qid) })).join('')}${next ? cqHTML(CQ_BY_ID[next.qid], { num: n + 1, tag: itemTag(next), attrs: `data-tr-cur="1"`, seed: seedFor(next.qid) }) : ''}</ol>
         ${next ? `<p class="hint-text tr-prog">${n + 1}번째 문항${n ? ` · 지금까지 맞힘 ${s.passed.length}, 틀림 ${s.weak.length}` : ''}</p>` : summaryHTML(root, s)}`
       : `<section class="paper tr-sum ok"><h2 class="paper-title">고1 과정의 앞 소단원이 없는 개념이에요</h2><p>이 개념은 중학교 내용에 바로 기댑니다. 핵심 정리와 "왜 그럴까"부터 다시 보세요.</p><p class="row"><a class="btn btn-primary" href="#/l/${root.id}">${esc(root.title)} 다시 보기</a></p></section>`}
     </section>`;

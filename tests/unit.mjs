@@ -242,7 +242,24 @@ if (process.argv[2] === '--review-child') {
       okAll = okAll && r.counted && model.spacedOf(L).stage === stage;
     }
     const pk = model.lessonProgress(L);
-    log('1주 → 3주 → 2개월을 모두 통과하면 오래 기억함이 된다', okAll && pk.kept && pk.state === 'kept' && !model.conceptQueue().some((x) => x.l.id === L.id) && model.conceptMemory().kept === 1);
+    log('1주 → 3주 → 2개월을 모두 통과하면 오래 기억함이 된다', okAll && pk.kept && pk.state === 'kept' && !model.conceptsDue().some((x) => x.l.id === L.id) && model.conceptMemory().kept === 1);
+    // #19 오래 기억한 개념도 6개월마다 유지 확인을 한다
+    log('오래 기억함이 되면 다음 확인은 6개월 뒤로 잡힌다', model.spacedOf(L).due === '2027-07-24' && !pk.spacedDue);
+    setClock(2027, 3, 1, 9, 0);
+    store.update((s) => { r = model.conceptResult(s, L.id, true); });
+    log('유지 확인 예정일 전에 맞힌 것은 연습으로만 본다', !r.counted && r.why === 'early' && model.spacedOf(L).due === '2027-07-24');
+    setClock(2027, 6, 24, 9, 0);
+    log('6개월이 지나면 오래 기억한 개념이 오늘의 개념 확인에 다시 뜬다', model.conceptsDue().some((x) => x.l.id === L.id) && model.lessonProgress(L).spacedDue && model.lessonProgress(L).state === 'kept');
+    store.update((s) => { r = model.conceptResult(s, L.id, true); });
+    log('유지 확인을 통과하면 오래 기억함을 유지하고 다시 6개월 뒤로 미룬다', r.counted && r.maintained && r.kept && model.spacedOf(L).due === '2028-01-20' && model.lessonProgress(L).state === 'kept' && !model.conceptsDue().some((x) => x.l.id === L.id));
+    setClock(2028, 0, 20, 9, 0);
+    store.update((s) => { r = model.conceptResult(s, L.id, false); });
+    const pm = model.lessonProgress(L);
+    log('유지 확인에서 틀리면 오래 기억함에서 내려와 1주 단계로 돌아가고 재확인이 예약된다', r.counted && !r.kept && !pm.kept && model.spacedOf(L).stage === 0 && model.spacedOf(L).due === '2028-01-27' && pm.recheck && pm.state === 'recheck' && model.conceptMemory().kept === 0);
+    // 유지 확인이 없던 때의 기록(오래 기억함, 예정일이 2개월 뒤로 남아 있음)은 통과한 날로부터 6개월 뒤에 뜬다
+    store.update((s) => { s.lessons[L.id].recheck = null; s.lessons[L.id].spaced = { stage: 3, due: '2028-03-20', keptAt: '2028-01-20', history: [] }; });
+    setClock(2028, 3, 1, 9, 0);
+    log('예전 기록의 오래 기억한 개념은 통과한 날로부터 6개월 뒤에 유지 확인을 한다', model.spacedOf(L).due === '2028-07-18' && !model.conceptsDue().some((x) => x.l.id === L.id));
     const items = [0, 1, 2].map((k) => model.conceptItems(L, k));
     log('개념 확인 문항은 두 개이고 복습할 때마다 다른 확인 문제로 돌아간다', items.every((it) => it.length === 2) && new Set(items.map((it) => JSON.stringify(it))).size > 1);
   }
@@ -362,6 +379,18 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   const { LESSONS, LESSON_BY_ID, CQ_RAW } = await import('../assets/js/content/lessons/index.js');
   const { MISCONCEPTIONS } = await import('../assets/js/content/misconceptions.js');
   ok(LESSONS.every((l) => l.cq.length >= 4), '모든 소단원에 개념 질문이 4개 이상 있다');
+  // #19 낼 때마다 보기의 화면 순서를 섞는다. 보기 번호(기록·채점에 쓰는 값)는 바뀌지 않는다
+  {
+    const isPerm = (a, n) => a.length === n && [...a].sort((x, y) => x - y).every((v, i) => v === i);
+    const all = LESSONS.flatMap((l) => l.cq);
+    const seeds = [1, 2, 3, 12345, 987654321, 0x7ffffffe];
+    ok(all.every((q) => seeds.every((s) => { const o = model.cqOrder(q, s); return isPerm(o.oa, q.options.length) && isPerm(o.or, q.reasons.length); })), '섞은 순서는 모든 보기를 빠짐없이 한 번씩 담는다');
+    const q0 = LESSON_BY_ID['u3-l1'].cq[0];
+    const id = model.cqOrder(q0, 0);
+    ok(id.oa.every((v, i) => v === i) && id.or.every((v, i) => v === i) && JSON.stringify(model.cqOrder(q0, 777)) === JSON.stringify(model.cqOrder(q0, 777)), 'seed가 0이면 원래 순서이고, 같은 seed는 같은 순서를 낸다(채점 뒤 다시 그려도 자리가 그대로)');
+    const spots = new Set(Array.from({ length: 40 }, (_, k) => model.cqOrder(q0, 1000 + k * 7919).or.indexOf(q0.reason)));
+    ok(spots.size === q0.reasons.length, `seed가 달라지면 정답 이유의 자리가 달라진다(40번 중 ${spots.size}가지 자리)`);
+  }
   // 화면용으로 섞은 순서도 정답·이유·오개념 짝이 그대로다
   let pairOk = true, moved = 0;
   for (const l of LESSONS) l.cq.forEach((q, i) => {

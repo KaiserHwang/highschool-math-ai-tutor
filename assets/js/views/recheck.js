@@ -4,7 +4,7 @@ import { LESSON_BY_ID } from '../content/lessons/index.js';
 import { UNIT_BY_ID, unitLabel } from '../content/units.js';
 import { update, logActivity } from '../store.js';
 import { lessonProgress, freshCQ, recheckAnswer } from '../model.js';
-import { cqHTML, cqClick } from './cq.js';
+import { cqHTML, cqClick, newCQSeed } from './cq.js';
 import { esc, fmtDate } from '../lib/ui.js';
 
 function outcomeHTML(L, out) {
@@ -27,11 +27,11 @@ function outcomeHTML(L, out) {
 export function renderRecheck(view, { args: [id] }) {
   const L = LESSON_BY_ID[id];
   if (!L) { location.replace('#/review'); return; }
-  let q = null, done = null, out = null;
+  let q = null, done = null, out = null, seed = 0;
 
   const draw = () => {
     const pr = lessonProgress(L);
-    if (!done) q = pr.recheck ? freshCQ(L) : null;
+    if (!done) { q = pr.recheck ? freshCQ(L) : null; seed = newCQSeed(); } // 문항을 새로 낼 때마다 보기 순서를 섞는다
     const early = pr.recheck && !pr.recheckDue;
     view.innerHTML = `
     <section class="page narrow trace">
@@ -41,7 +41,7 @@ export function renderRecheck(view, { args: [id] }) {
         <p class="lead"><strong>${esc(L.title)}</strong> · ${esc(unitLabel(UNIT_BY_ID[L.unit]))}. 아직 보지 않은 개념 질문 하나로 확인합니다. 답과 이유를 모두 맞혀야 통과예요.</p>
         ${!done && early ? `<p class="banner">예정일(${fmtDate(pr.recheck.due)}) 전이라 맞혀도 연습으로만 기록됩니다.</p>` : ''}
       </header>
-      ${q ? `<ol class="ck-list tr-list">${cqHTML(q, { num: 1, done })}</ol>${out ? outcomeHTML(L, out) : ''}`
+      ${q ? `<ol class="ck-list tr-list">${cqHTML(q, { num: 1, done, seed })}</ol>${out ? outcomeHTML(L, out) : ''}`
       : `<section class="paper tr-sum ok"><h2 class="paper-title">다시 확인할 것이 없어요</h2><p>이 개념은 재확인 목록에 없습니다.</p><p class="row"><a class="btn btn-primary" href="#/l/${L.id}">${esc(L.title)} 보기</a><a class="btn btn-quiet" href="#/review">복습 목록으로</a></p></section>`}
     </section>`;
   };

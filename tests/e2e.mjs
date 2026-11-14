@@ -308,9 +308,16 @@ async function run(viewport, tag) {
     await li.locator('[data-act="cq-check"]').click();
     ok((await page.textContent('.toast')).includes('이유'), `[${tag}] 이유를 고르지 않으면 채점하지 않고 알려 준다`);
     await li.locator(`[data-cq-r="${wr}"]`).click();
+    const orderOf = (loc) => loc.locator('[data-cq-r]').evaluateAll((bs) => bs.map((b) => b.dataset.cqR).join());
+    const orderBefore = await orderOf(li);
     await li.locator('[data-act="cq-check"]').click();
     const li2 = page.locator(`[aria-labelledby="h-cq"] [data-cq="${q.id}"]`);
     await li2.locator('.mis-tag').waitFor();
+    // #19 보기 순서는 낼 때마다 섞지만, 채점 결과는 풀던 순서 그대로이고 "맞는 답·이유"의 번호는 화면의 자리와 같다
+    const rightText = await li2.locator('.cq-right').textContent();
+    const ansMarks = await li2.locator('.opt.is-ans .opt-n').allTextContents();
+    ok(Number(await li2.getAttribute('data-seed')) > 0 && (await orderOf(li2)) === orderBefore && orderBefore.split(',').sort().join() === '0,1,2,3' && ansMarks.length === 2 && ansMarks.every((m) => rightText.includes(m)),
+      `[${tag}] 개념 질문의 보기 순서를 섞어도 채점 뒤 자리가 그대로이고 정답 번호가 화면과 맞는다`);
     ok((await li2.locator('.mis-tag').textContent()).includes(MISCONCEPTIONS[q.mis[wr]].name) && (await li2.locator('.fb-wrong').count()) === 1 && (await li2.locator('.opt.is-ans').count()) === 2,
       `[${tag}] 답은 맞고 이유가 틀리면 어떤 오개념인지와 맞는 답·이유를 보여 준다`);
     await page.reload();

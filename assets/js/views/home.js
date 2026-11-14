@@ -54,7 +54,7 @@ export function renderHome(view) {
     steps.push(`<li class="plan-step plan-main">
       <article class="paper concept-today" aria-labelledby="ct-h">
         <header class="paper-head"><h2 id="ct-h" class="paper-title">오늘의 개념 확인</h2><span class="meta">${n}개 · 약 ${n * 2}분${cDue.length > n ? ` · 남은 ${cDue.length - n}개는 이어서` : ''}</span></header>
-        <ul class="ct-list">${cDue.slice(0, n).map(({ l, sp }) => `<li><span class="ct-t">${esc(l.title)}</span><span class="hint-text">${['1주', '3주', '2개월'][sp.stage] || ''} 간격 확인</span></li>`).join('')}</ul>
+        <ul class="ct-list">${cDue.slice(0, n).map(({ l, sp }) => `<li><span class="ct-t">${esc(l.title)}</span><span class="hint-text">${sp.keptAt ? '6개월 유지 확인' : `${['1주', '3주', '2개월'][sp.stage] || ''} 간격 확인`}</span></li>`).join('')}</ul>
         <p class="row"><a class="btn btn-primary" href="#/cr">개념 확인 시작</a><span class="hint-text">배운 개념을 잊기 전에 두 문항씩 다시 꺼내 봅니다.</span></p>
       </article></li>`);
   } else if (mem.learned) {
@@ -131,7 +131,7 @@ export function renderHome(view) {
         <section class="side-block">
           <h2 class="h3">개념 기억</h2>
           <p class="mem-row"><span><b>${mem.learned}</b> 배운 개념</span><span><b>${mem.learned - mem.kept}</b> 기억 관리 중</span><span><b>${mem.kept}</b> 오래 기억함</span></p>
-          <p class="hint-text">배운 개념은 1주 → 3주 → 2개월 뒤 다시 확인하고, 세 번 모두 통과하면 "오래 기억함"이 됩니다.</p>
+          <p class="hint-text">배운 개념은 1주 → 3주 → 2개월 뒤 다시 확인하고, 세 번 모두 통과하면 "오래 기억함"이 됩니다. 그 뒤에는 6개월에 한 번만 유지 확인을 합니다.</p>
           ${roots.length ? `<p class="hint-text">먼저 다지면 좋은 개념: ${roots.map(({ l }) => `<a href="#/map/${l.id}">${esc(l.title)}</a>`).join(', ')}</p>` : ''}
           <p class="row"><a class="btn btn-quiet" href="#/map">개념 지도 보기</a></p>
         </section>
