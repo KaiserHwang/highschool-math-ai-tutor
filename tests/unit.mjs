@@ -422,6 +422,51 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
     '오늘의 개념 확인에는 개념 질문이 돌아가며 나온다');
 }
 
+// ── #24 id 형식과 단원 찾기(구조 정리 1단계: 동작 변화 없음) ──
+{
+  const ids = await import('../assets/js/lib/ids.js');
+  const { unitOf } = await import('../assets/js/content/registry.js');
+  const { PROBLEMS } = await import('../assets/js/content/problems.js');
+  const { GENERATORS, makeVariant } = await import('../assets/js/content/generators.js');
+  const { LESSONS, allChecks, lessonForProblem } = await import('../assets/js/content/lessons/index.js');
+  const { UNITS, REGULAR_UNITS, isFusionUnit } = await import('../assets/js/content/units.js');
+  const model = await import('../assets/js/model.js');
+  const store = await import('../assets/js/store.js');
+  // 지금까지는 id의 앞 두 글자를 단원으로 썼다. 기존 항목 전부에서 새 방식이 같은 답을 내야 한다
+  const items = [...PROBLEMS.map((p) => p.id), ...LESSONS.map((l) => l.id), ...LESSONS.flatMap((l) => allChecks(l).map((c) => c.id)), ...LESSONS.flatMap((l) => l.cq.map((q) => q.id))];
+  const diff = items.filter((id) => unitOf(id) !== id.slice(0, 2));
+  ok(items.length > 600 && diff.length === 0, `기존 문제·소단원·확인 문제·개념 질문 ${items.length}개에서 단원 찾기가 예전 방식(id 앞 두 글자)과 같다${diff.length ? ': ' + diff.slice(0, 3).join() : ''}`);
+  ok(Object.entries(GENERATORS).every(([k, g]) => unitOf(k) === g.unit && unitOf(`${k}:42`) === g.unit && unitOf(makeVariant(k, 42)) === g.unit) && unitOf(PROBLEMS[0]) === PROBLEMS[0].unit,
+    '생성기 id, 생성된 문제 표시(g-sym:42), 항목 객체에서도 단원을 찾는다');
+  ok(['u9-01', 'u1-99', 'u1', 'u10-l1', 'a1-l1', '__proto__', 'constructor', 'toString', 'g-nope', 'g-nope:1', 'g-sym:', 'g-sym:nope', 'g-sym:42:other', 'g-sym:-1', 'g-sym:1.5', ':42', '__proto__:1', '', null, undefined, 7].every((x) => unitOf(x) === null),
+    '등록되지 않은 id는 형식이 그럴듯해도 단원으로 인정하지 않는다(객체의 기본 속성 이름 포함)');
+  // 형식: 단원 번호가 두 자리가 되거나 과목별 접두어가 생겨도 받고, 생성기 접두어 g와 잘못된 모양은 거절한다
+  const yes = (f, list) => list.every((x) => f(x)), no = (f, list) => list.every((x) => !f(x));
+  ok(yes(ids.isUnitId, ['u1', 'u8', 'u10', 'a1', 'a10', 's3']) && no(ids.isUnitId, ['g1', 'u', '1', 'U1', 'ab1', 'u1-', 'u-1', '__proto__', '', null])
+    && yes(ids.isLessonId, ['u2-l3', 'u2-l11', 'a10-l12']) && no(ids.isLessonId, ['g1-l1', 'u2-3', 'u2-l', 'u2-l3-c1', 'u2-L3'])
+    && yes(ids.isProblemId, ['u1-05', 'u10-01', 'a1-12']) && no(ids.isProblemId, ['u1-5', 'u1-005', 'g1-01', 'u1-l1', 'g-sym'])
+    && yes(ids.isGeneratorId, ['g-sym', 'g-graph-ineq', 'g-rem2']) && no(ids.isGeneratorId, ['gsym', 'g-', 'u1-01', 'g-Sym']),
+    'id 형식은 a1·a10·u10 같은 새 단원을 받고, g로 시작하는 단원과 잘못된 모양은 거절한다');
+  const routeRe = (part) => new RegExp(`^/p/(${part})$`);
+  ok(routeRe(ids.ID_PART.problem).test('/p/u1-05') && routeRe(ids.ID_PART.problem).test('/p/a10-01') && !routeRe(ids.ID_PART.problem).test('/p/g-sym') && !routeRe(ids.ID_PART.problem).test('/p/u1-05/x'),
+    '주소 규칙 조각은 문제 주소와 생성기 주소를 구분한다');
+  // 융합 단원을 id가 아니라 단원의 종류로 구분해도 결과가 같다
+  ok(UNITS.filter((u) => isFusionUnit(u.id)).map((u) => u.id).join() === 'u8' && REGULAR_UNITS.map((u) => u.id).join() === 'u1,u2,u3,u4,u5,u6,u7' && !isFusionUnit('__proto__') && !isFusionUnit('u9'),
+    '융합 단원은 u8 하나이고 교과서 단원은 u1~u7이다');
+  store.resetAll();
+  ok(model.studiedUnits().join() === 'u1,u2,u3,u4,u5,u6,u7', '공부한 흔적이 없으면 혼합 평가 범위는 교과서 단원 전체다');
+  store.update((s) => {
+    s.lessons['u8-l1'] = { ...model.blankLessonRec(), done: '2026-10-01' };
+    s.attempts['u8-01'] = { tries: 1, solved: true, firstCorrect: true, hints: 0, sawSolution: false, lastAt: '2026-10-01T00:00:00.000Z', sec: 1, lastResponse: null };
+  });
+  ok(model.studiedUnits().join() === 'u1,u2,u3,u4,u5,u6,u7', '융합 단원만 공부했으면 범위에 넣지 않고 교과서 단원 전체를 낸다');
+  store.update((s) => { s.lessons['u5-l2'] = { ...model.blankLessonRec(), done: '2026-10-01' }; s.attempts['u3-01'] = { ...s.attempts['u8-01'] }; });
+  ok(model.studiedUnits().join() === 'u3,u5', '공부한 단원은 소단원 기록과 문제 기록에서 모으고 융합 단원은 뺀다');
+  ok(PROBLEMS.every((p) => { const l = lessonForProblem(p.id); return l && (l.unit === p.unit || !LESSONS.some((x) => x.unit === p.unit && x.related.includes(p.id))); }),
+    '문제에 연결된 소단원은 같은 단원의 것을 먼저 고른다');
+  store.resetAll();
+}
+
 // ── #22 소단원 활동 기록과 하루 학습량 ───────────────
 {
   const store = await import('../assets/js/store.js');

@@ -134,6 +134,7 @@ export const UNITS = [
   },
   {
     id: 'u8',
+    kind: 'fusion', // 여러 단원을 잇는 융합 단원. 진단·혼합 평가·약한 단원 계산에서 빼고, 최상위 트랙에서만 추천한다
     course: '융합',
     no: '★',
     title: '단원 융합 최상위',
@@ -148,6 +149,12 @@ export const UNITS = [
 
 export const UNIT_BY_ID = Object.fromEntries(UNITS.map((u) => [u.id, u]));
 
+/** 융합 단원인지. 단원 id를 직접 비교하지 않고 단원의 종류로 구분한다(#24). */
+export const isFusion = (u) => !!u && u.kind === 'fusion';
+export const isFusionUnit = (unitId) => Object.hasOwn(UNIT_BY_ID, unitId) && isFusion(UNIT_BY_ID[unitId]);
+/** 교과서 단원(융합 단원 제외) */
+export const REGULAR_UNITS = UNITS.filter((u) => !isFusion(u));
+
 /** 화면에 보일 짧은 단원 이름. 공통수학1·2의 단원 번호가 겹치므로 과목을 붙인다. */
 export const COURSE_SHORT = { 공통수학1: '공수1', 공통수학2: '공수2', 융합: '융합' };
-export const unitLabel = (u) => (u.course === '융합' ? u.title : `${COURSE_SHORT[u.course]} ${u.no}. ${u.title}`);
+export const unitLabel = (u) => (isFusion(u) ? u.title : `${COURSE_SHORT[u.course]} ${u.no}. ${u.title}`);
