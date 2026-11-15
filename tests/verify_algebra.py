@@ -137,7 +137,87 @@ def expected_algebra_bank(P=None):
     E['d22'] = val(5 * sp.cos(th) + 4 * sp.tan(th))
     f23 = 2 * sp.cos(sp.pi * x / 3) - 1
     E['d23'] = val(sp.periodicity(f23, x) + minimum(f23, x, sp.Interval(0, 6)))
+    # ── 삼각방정식·부등식, 사인법칙, 코사인법칙(은행 a2-09~a2-16): 해는 solveset, 삼각형은 좌표로 직접 만든다
+    E['a2-09'] = val(sum(sols_in(2 * sp.cos(x) - 1)) / sp.pi)
+    E['a2-10'] = val(ineq_len(2 * sp.cos(x) ** 2 + 3 * sp.sin(x) - 3 >= 0) / sp.pi)
+    kf = -sp.cos(x) ** 2 - sp.sin(x)  # 실근을 가질 k = 이 함수의 값
+    E['a2-11'] = val(maximum(kf, x, I02) - minimum(kf, x, I02))
+    # 반지름 3인 원 위에 A(맨 위)와 각 A를 보는 현 BC를 잡고, 실제로 각 A의 사인이 1/3인지 확인
+    A0 = sp.asin(S(1, 3))
+    Pa, Pb, Pc = sp.Point(0, 3), sp.Point(3 * sp.cos(3 * sp.pi / 2 - A0), 3 * sp.sin(3 * sp.pi / 2 - A0)), sp.Point(3 * sp.cos(3 * sp.pi / 2 + A0), 3 * sp.sin(3 * sp.pi / 2 + A0))
+    assert val(sp.sin(ang(Pa, Pb, Pc))) == S(1, 3) and sp.simplify(sp.Triangle(Pa, Pb, Pc).circumradius - 3) == 0
+    E['a2-12'] = val(Pb.distance(Pc))
+    E['a2-13'] = val(sp.cos(min(tri_angles(tri_sss(5, 6, 7)), key=lambda v: float(v))))
+    T = tri_sss(3, 5, 7)
+    A_, B_, C_ = tri_angles(T)
+    assert val(sp.sin(A_) / sp.sin(C_)) == S(3, 7) and val(sp.sin(B_) / sp.sin(C_)) == S(5, 7)  # 사인의 비가 3:5:7인 삼각형
+    E['a2-14'] = to_deg(max(tri_angles(T), key=lambda v: float(v)))
+    E['a2-15'] = val(sp.Triangle(*tri_sas(2, 3, deg(60))).circumradius ** 2)
+    # 원에 내접: B + D = π. 두 삼각형을 좌표로 놓고 cos B + cos D = 0 인 대각선 길이를 찾는다
+    dd = sp.Symbol('dd', positive=True)
+    cosB = ((9 + 25 - dd ** 2) / 10) / 3  # B(0,0), C(5,0), |BA|=3, |CA|=dd 인 A의 x좌표 / 3
+    cosD = ((64 + 9 - dd ** 2) / 6) / 8   # D(0,0), C(3,0), |DA|=8, |CA|=dd
+    E['a2-16'] = val(single(sp.solve(cosB + cosD, dd)))
+    E['d24'] = val(sp.Point(5, 0).distance(sp.Point(4 * sp.cos(deg(60)), 4 * sp.sin(deg(60)))) ** 2)
     return E
+
+
+TWO_PI = sp.Interval.Ropen(0, 2 * sp.pi)
+
+
+def sols_in(expr, dom=TWO_PI):
+    """구간 dom에서 방정식 expr=0의 해(정확한 값, 오름차순)"""
+    s = sp.solveset(expr, x, dom)
+    assert isinstance(s, sp.FiniteSet), s
+    return sorted(s, key=lambda v: float(v))
+
+
+def ineq_len(rel, dom=TWO_PI):
+    """구간 dom에서 부등식 rel의 해 집합이 구간 하나일 때 그 길이"""
+    s = sp.solveset(rel, x, dom)
+    assert isinstance(s, sp.Interval), s
+    return s.measure
+
+
+def deg(d):
+    return sp.pi * S(d) / 180
+
+
+def ang(P, Q, R):
+    """점 P에서 Q, R을 바라보는 각(라디안)"""
+    u, v = sp.Matrix(Q - P), sp.Matrix(R - P)
+    return sp.acos(sp.nsimplify(u.dot(v) / (u.norm() * v.norm())))
+
+
+def tri_sas(p, q, th):
+    """두 변 p, q와 끼인각 th(라디안)인 삼각형의 꼭짓점: 끼인각의 꼭짓점이 원점"""
+    return sp.Point(0, 0), sp.Point(p, 0), sp.Point(q * sp.cos(th), q * sp.sin(th))
+
+
+def tri_asa(a, B, C):
+    """변 BC=a와 양 끝각 B, C(라디안)인 삼각형 (A, B, C): 두 반직선의 교점으로 A를 찾는다"""
+    Pb, Pc = sp.Point(0, 0), sp.Point(a, 0)
+    la = sp.Line(Pb, Pb + sp.Point(sp.cos(B), sp.sin(B)))
+    lc = sp.Line(Pc, Pc + sp.Point(-sp.cos(C), sp.sin(C)))
+    Pa = single(la.intersection(lc))
+    return Pa, Pb, Pc
+
+
+def tri_sss(a, b, c):
+    """세 변이 a=BC, b=CA, c=AB인 삼각형 (A, B, C): 두 원의 교점 중 위쪽으로 A를 찾는다"""
+    Pb, Pc = sp.Point(0, 0), sp.Point(a, 0)
+    X, Y = sp.symbols('X Y', real=True)
+    sol = [s for s in sp.solve([X ** 2 + Y ** 2 - c ** 2, (X - a) ** 2 + Y ** 2 - b ** 2], [X, Y], dict=True) if s[Y] > 0]
+    return sp.Point(single(sol)[X], sol[0][Y]), Pb, Pc
+
+
+def tri_angles(T):
+    A, B, C = T
+    return ang(A, B, C), ang(B, C, A), ang(C, A, B)
+
+
+def to_deg(r):
+    return val(r * 180 / sp.pi)
 
 
 def angles(eqs, lo, hi):
@@ -303,6 +383,65 @@ def expected_algebra_lessons():
     E['a2-l3-de2'] = val(maximum(sp.sin(x) ** 2 - 2 * sp.sin(x) + 3, x, I02))
     E['a2-l3-d1'] = val(sp.cos(2 * sp.pi / 3) + sp.tan(5 * sp.pi / 4))
     E['a2-l3-d2'] = val(maximum(sp.cos(x) ** 2 + 2 * sp.sin(x), x, I02))
+    # ── a2-l4 방정식과 부등식
+    E['a2-l4-e1'] = val(sum(sols_in(2 * sp.sin(x) - sp.sqrt(3))) / sp.pi)
+    E['a2-l4-e2'] = val(ineq_len(sp.cos(x) < S(1, 2)) / sp.pi)
+    E['a2-l4-e3'] = len(sols_in(2 * sp.cos(x) ** 2 - sp.sin(x) - 1))
+    E['a2-l4-c1'] = val(sum(sols_in(sp.tan(x) + 1)) / sp.pi)
+    E['a2-l4-c2'] = val(ineq_len(2 * sp.sin(x) + 1 <= 0) / sp.pi)
+    E['a2-l4-p'] = {1: 0, 2: 1, 0: 3}[len(sols_in(sp.sin(x) - S(1, 2)))]  # 보기: 1개, 2개, 무수히, 없다
+    HALF = sp.Interval.Ropen(0, sp.pi)
+    E['a2-l4-de1'] = val(sum(sols_in(sp.sin(2 * x) - S(1, 2), HALF)) / sp.pi)
+    E['a2-l4-de2'] = len(set(sols_in(sp.sin(x) - S(1, 2))) | set(sols_in(sp.sin(x) + S(1, 2))))
+    al, be = sols_in(sp.cos(2 * x) + S(1, 2), HALF)
+    E['a2-l4-d1'] = val((be - al) / sp.pi)
+    E['a2-l4-d2'] = len(sols_in(2 * sp.sin(x) ** 2 - 3 * sp.sin(x) + 1))
+    # ── a2-l5 사인법칙: 남은 각을 여러 가지로 바꿔도 값이 같은지 본다
+    E['a2-l5-e1'] = same_for([45, 60, 100], lambda Bd: sp.Triangle(*tri_asa(4, deg(Bd), deg(150 - Bd))).circumradius)
+    T = tri_sss(2, 3, 4)
+    A_, B_, C_ = tri_angles(T)
+    assert val(sp.sin(A_) / sp.sin(C_)) == S(2, 4) and val(sp.sin(B_) / sp.sin(C_)) == S(3, 4)
+    E['a2-l5-e2'] = val(4 * S(18, 2 + 3 + 4))  # 사인의 비가 2:3:4인 삼각형을 둘레 18로 닮음 확대
+    # R = 5, A = 150°: 변 BC=1인 닮은 삼각형의 외접원 반지름으로 확대 비율을 정한다
+    E['a2-l5-c1'] = same_for([10, 20], lambda Bd: 5 / sp.Triangle(*tri_asa(1, deg(Bd), deg(30 - Bd))).circumradius)
+    Pa, Pb, Pc = tri_asa(6, deg(45), deg(75))
+    E['a2-l5-c2'] = val(Pc.distance(Pa) ** 2)
+    Pa, Pb, Pc = tri_asa(5, deg(30), deg(60))  # A = 90°
+    E['a2-l5-p'] = pick([S(2), S(1), 2 * sp.pi], Pb.distance(Pc) / sp.Triangle(Pa, Pb, Pc).circumradius)  # 보기: 지름, 반지름, 둘레
+    Pa, Pb, Pc = tri_asa(1, deg(30), deg(120))
+    E['a2-l5-de1'] = val((Pa.distance(Pb) / Pb.distance(Pc)) ** 2)
+    hitsA = set()
+    for Bd in range(10, 171, 10):
+        for Cd in range(10, 171 - Bd, 10):
+            Ad = 180 - Bd - Cd
+            if sp.simplify(sp.sin(deg(Ad)) ** 2 - sp.sin(deg(Bd)) ** 2 - sp.sin(deg(Cd)) ** 2) == 0:
+                hitsA.add(Ad)
+    assert hitsA == {90}, hitsA
+    E['a2-l5-de2'] = hitsA.pop()
+    Pa, Pb, Pc = tri_asa(1, deg(60), deg(90))
+    E['a2-l5-d1'] = val(Pa.distance(Pb) / Pb.distance(Pc))
+    # 둘레 = (2R)(sinA+sinB+sinC)인지 여러 삼각형에서 확인한 뒤 R=4, 합 2를 넣는다
+    ratio = same_for([(40, 60), (30, 100), (70, 50)], lambda bc: (lambda T: (T[0].distance(T[1]) + T[1].distance(T[2]) + T[2].distance(T[0])) / (sp.Triangle(*T).circumradius * sum(sp.sin(v) for v in tri_angles(T))))(tri_asa(3, deg(bc[0]), deg(bc[1]))))
+    E['a2-l5-d2'] = val(ratio * 4 * 2)
+    # ── a2-l6 코사인법칙과 넓이
+    side = lambda p, q, d: (lambda T: T[1].distance(T[2]))(tri_sas(p, q, deg(d)))
+    E['a2-l6-e1'] = val(side(5, 3, 120))
+    E['a2-l6-e2'] = to_deg(tri_angles(tri_sss(7, 5, 8))[0])
+    E['a2-l6-e3'] = val(abs(sp.Triangle(*tri_sas(5, 4, deg(30))).area))
+    E['a2-l6-c1'] = val(side(2, 3, 60) ** 2)
+    E['a2-l6-c2'] = to_deg(max(tri_angles(tri_sss(3, 5, 7)), key=lambda v: float(v)))
+    E['a2-l6-p'] = only_true([lambda: all(sp.N(side(3, 4, d)) > 5 for d in (100, 120, 150)), lambda: all(sp.N(side(3, 4, d)) < 5 for d in (100, 120, 150)), lambda: False])
+    def obtuse_count(m, n):
+        cnt = 0
+        for v in range(1, 30):
+            if max(m, n, v) < m + n + v - max(m, n, v):  # 삼각형 조건
+                if any(float(t) > float(sp.pi / 2) + 1e-12 for t in tri_angles(tri_sss(v, m, n))):
+                    cnt += 1
+        return cnt
+    E['a2-l6-de1'] = obtuse_count(4, 5)
+    E['a2-l6-de2'] = val(sp.Triangle(*tri_sss(5, 7, 8)).area ** 2)
+    E['a2-l6-d1'] = obtuse_count(3, 4)
+    E['a2-l6-d2'] = val(sp.Triangle(*tri_sss(3, 5, 7)).area ** 2)
     return E
 
 
@@ -360,6 +499,30 @@ def expected_algebra_cq():
     C['a2-l3-q2'] = pick([S(-1), S(1), S(-2)], minimum(2 * sp.sin(x) + 1, x, sp.Interval(0, 2 * sp.pi)))
     C['a2-l3-q3'] = 0 if sp.limit(sp.tan(x), x, sp.pi / 2, '-') == sp.oo and sp.tan(sp.pi) == 0 else None
     C['a2-l3-q4'] = 0 if sp.simplify(sp.cos(-x) - sp.cos(x)) == 0 and sp.simplify(sp.cos(-x) + sp.cos(x)) != 0 else None
+    C['a2-l4-q1'] = [2, 1].index(len(sols_in(sp.cos(x) + S(1, 2))))
+    C['a2-l4-q2'] = 0 if sp.solveset(sp.sin(x) > 0, x, TWO_PI) == sp.Interval.open(0, sp.pi) else None
+    C['a2-l4-q3'] = 0 if sp.solveset(sp.sin(x) - 2, x, sp.S.Reals) == sp.S.EmptySet else None
+    C['a2-l4-q4'] = [4, 2, 1].index(len(sols_in(sp.sin(2 * x) - S(1, 2))))
+    T = tri_asa(5, deg(40), deg(70))
+    C['a2-l5-q1'] = pick([S(2), S(1), S(1, 2)], T[1].distance(T[2]) / (sp.sin(tri_angles(T)[0]) * sp.Triangle(*T).circumradius))
+    A_, B_, C_ = tri_angles(tri_sss(3, 4, 5))
+    C['a2-l5-q2'] = 0 if val(sp.sin(A_) / sp.sin(C_)) == S(3, 5) and val(sp.sin(B_) / sp.sin(C_)) == S(4, 5) else None
+    ok = True
+    for Bd in range(10, 171, 20):
+        for Cd in range(10, 171 - Bd, 20):
+            Ad = 180 - Bd - Cd
+            Pa, Pb, Pc = tri_asa(1, deg(Bd), deg(Cd))
+            a_, b_ = Pb.distance(Pc), Pc.distance(Pa)
+            if Ad > Bd and not sp.N(a_ - b_) > 0:
+                ok = False
+    C['a2-l5-q3'] = 0 if ok else None
+    C['a2-l6-q1'] = 0 if sp.cos(sp.pi / 2) == 0 else None
+    ok = all(float(tri_angles(tri_sss(a_, b_, c_))[0]) > float(sp.pi / 2)
+             for a_ in range(2, 8) for b_ in range(1, 8) for c_ in range(1, 8)
+             if b_ ** 2 + c_ ** 2 < a_ ** 2 and a_ < b_ + c_)
+    C['a2-l6-q2'] = 0 if ok else None
+    C['a2-l6-q3'] = 0 if all(sp.simplify(abs(sp.Triangle(*tri_sas(p, q, deg(d))).area) - S(1, 2) * p * q * sp.sin(deg(d))) == 0 for p, q, d in ((3, 4, 30), (2, 5, 120), (4, 4, 60))) else None
+    C['a2-l6-q4'] = 0 if max(range(3), key=lambda i: float(tri_angles(tri_sss(4, 2, 3))[i])) == 0 else None  # 꼭짓점 A가 길이 4인 변의 대각
     C['a1-l6-q4'] = 0 if all((sp.log(v) / sp.log(S(1, 3)) > sp.log(2) / sp.log(S(1, 3))) == (0 < v < 2) for v in (S(1, 2), 1, S(3, 2), 3, 5)) else None
     return {k: v for k, v in C.items() if v is not None}
 

@@ -200,6 +200,14 @@ export const DIAGNOSIS = [
     skills: { concept: 1, reason: 0.5 },
     hint: t`$y=a\cos bx+c$의 주기는 $\dfrac{2\pi}{|b|}$, 최솟값은 $-|a|+c$입니다.`,
     solution: t`주기는 $\dfrac{2\pi}{\pi/3}=6$, 최솟값은 $-2-1=-3$이므로 $p+m=3$`,
+  },
+  {
+    id: 'd24', unit: 'a2', level: 'core', type: 'short', sec: 90, lesson: 'a2-l6',
+    q: t`삼각형 $ABC$에서 $a=4$, $b=5$, $C=60^\circ$일 때, $c^2$의 값을 구하시오.`,
+    answer: '21',
+    skills: { calc: 1, concept: 0.5 },
+    hint: t`두 변과 끼인각을 알면 코사인법칙 $c^2=a^2+b^2-2ab\cos C$를 씁니다.`,
+    solution: t`$c^2=16+25-2\times4\times5\times\dfrac12=21$`,
   },];
 
 // ── 진단 묶음 ─────────────────────────────────────
@@ -208,7 +216,7 @@ export const DIAGNOSIS = [
 // 묶음 id는 기록의 키이므로 바꾸지 않는다.
 export const DIAG_SETS = [
   { id: 'common', title: '공통수학1·2', courses: ['common1', 'common2'], minutes: 35 },
-  { id: 'algebra', title: '대수', courses: ['algebra'], minutes: 15 },
+  { id: 'algebra', title: '대수', courses: ['algebra'], minutes: 17 },
 ];
 export const DIAG_SET_BY_ID = Object.fromEntries(DIAG_SETS.map((s) => [s.id, s]));
 export const isDiagSetId = (id) => typeof id === 'string' && Object.hasOwn(DIAG_SET_BY_ID, id);
