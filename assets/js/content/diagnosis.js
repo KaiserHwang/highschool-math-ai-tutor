@@ -232,6 +232,14 @@ export const DIAGNOSIS = [
     skills: { calc: 1, reason: 0.5 },
     hint: t`전개해서 $\displaystyle\sum k^2+2\sum k+\sum1$로 나누거나, $2^2$부터 $11^2$까지의 합으로 봅니다.`,
     solution: t`$\displaystyle\sum_{k=1}^{10}k^2+2\sum_{k=1}^{10}k+10=385+110+10=505$`,
+  },
+  {
+    id: 'd28', unit: 'a3', level: 'core', type: 'short', sec: 90, lesson: 'a3-l5',
+    q: t`$a_1=2$, $a_{n+1}=a_n+2n+1$로 정의된 수열 $\{a_n\}$에서 $a_5$의 값을 구하시오.`,
+    answer: '26',
+    skills: { calc: 1, concept: 0.5 },
+    hint: t`$n=1,\ 2,\ 3,\ 4$를 차례로 넣어 $a_2$부터 구합니다.`,
+    solution: t`$a_2=5$, $a_3=10$, $a_4=17$, $a_5=26$`,
   },];
 
 // ── 진단 묶음 ─────────────────────────────────────
@@ -240,7 +248,7 @@ export const DIAGNOSIS = [
 // 묶음 id는 기록의 키이므로 바꾸지 않는다.
 export const DIAG_SETS = [
   { id: 'common', title: '공통수학1·2', courses: ['common1', 'common2'], minutes: 35 },
-  { id: 'algebra', title: '대수', courses: ['algebra'], minutes: 25 },
+  { id: 'algebra', title: '대수', courses: ['algebra'], minutes: 28 },
 ];
 export const DIAG_SET_BY_ID = Object.fromEntries(DIAG_SETS.map((s) => [s.id, s]));
 export const isDiagSetId = (id) => typeof id === 'string' && Object.hasOwn(DIAG_SET_BY_ID, id);
