@@ -263,7 +263,7 @@ def expected_algebra_lessons():
     # 보기: 반지름과 같다, π배, 1/π배, 2배. 1 라디안: 중심각 1인 부채꼴의 호 = 원 둘레 × 1/(2π)
     E['a2-l1-p'] = pick([S(1), sp.pi, 1 / sp.pi, S(2)], 2 * sp.pi * 1 / (2 * sp.pi))
     E['a2-l1-de1'] = val(single(angles([lambda v: sp.sin(5 * v) - sp.sin(v), lambda v: sp.cos(5 * v) - sp.cos(v)], 0, sp.pi)) / sp.pi)
-    sector = lambda P: maximum(sp.pi * rr ** 2 * ((P - 2 * rr) / (2 * sp.pi * rr)), rr, sp.Interval.open(0, P / 2))
+    sector = lambda P: maximum(sp.pi * rr ** 2 * ((P - 2 * rr) / (2 * sp.pi * rr)), rr, sp.Interval.open(P / (2 * sp.pi + 2), P / 2))  # 0 < 중심각 < 2π
     E['a2-l1-de2'] = val(sector(20))
     E['a2-l1-d1'] = val(single(angles([lambda v: sp.sin(4 * v) + sp.sin(v), lambda v: sp.cos(4 * v) - sp.cos(v)], 0, sp.pi / 2)) / sp.pi)
     E['a2-l1-d2'] = val(sector(16))

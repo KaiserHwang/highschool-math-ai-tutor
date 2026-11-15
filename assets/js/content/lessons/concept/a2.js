@@ -20,7 +20,7 @@ export default {
     {
       id: 'a2-l1-q3', q: t`반지름의 길이가 $r$, 중심각의 크기가 $\theta$ (라디안)인 부채꼴의 호의 길이는?`,
       options: [t`$r\theta$`, t`$\dfrac{\pi r\theta}{180}$`, t`$2\pi r\theta$`], answer: 0,
-      reasons: [t`호의 길이는 중심각에 비례하고, 중심각이 $1$ 라디안이면 호의 길이가 $r$이다`, '도 단위로 쓰던 공식을 그대로 쓴다', '원의 둘레에 중심각을 곱한다', '넓이 공식에서 1/2만 빼면 된다'],
+      reasons: [t`호의 길이는 중심각에 비례하고, 중심각이 $1$ 라디안이면 호의 길이가 $r$이다`, '도 단위로 쓰던 공식을 그대로 쓴다', '원의 둘레에 중심각을 곱한다', t`넓이 공식에서 $\dfrac12$만 빼면 된다`],
       reason: 0, mis: [null, 'formula', 'formula', 'formula'],
       note: t`$\dfrac{\pi r\theta}{180}$은 $\theta$가 도일 때의 공식입니다. 라디안을 쓰면 $l=r\theta$로 간단해집니다.`,
     },
@@ -37,7 +37,7 @@ export default {
     {
       id: 'a2-l2-q1', q: t`$\sin\theta<0$, $\cos\theta>0$이면 $\theta$는 제몇 사분면의 각일까요?`,
       options: [t`제$4$사분면`, t`제$2$사분면`, t`제$3$사분면`], answer: 0,
-      reasons: ['동경 위의 점의 y좌표가 음수, x좌표가 양수인 곳이다', t`$\sin\theta$가 음수이면 제$2$사분면이다`, t`둘 중 하나라도 음수이면 제$3$사분면이다`, t`$\tan\theta$가 양수인 사분면이다`],
+      reasons: [t`동경 위의 점의 $y$좌표가 음수, $x$좌표가 양수인 곳이다`, t`$\sin\theta$가 음수이면 제$2$사분면이다`, t`둘 중 하나라도 음수이면 제$3$사분면이다`, t`$\tan\theta$가 양수인 사분면이다`],
       reason: 0, mis: [null, 'formula', 'overgen', 'def'],
       note: t`$\sin\theta$는 $y$좌표, $\cos\theta$는 $x$좌표의 부호를 따릅니다. 이때 $\tan\theta=\dfrac yx<0$입니다.`,
     },
@@ -51,7 +51,7 @@ export default {
     {
       id: 'a2-l2-q3', q: t`$\tan\theta=\dfrac{\sin\theta}{\cos\theta}$가 성립하기 위한 조건은?`,
       options: [t`$\cos\theta\ne0$`, '조건 없이 모든 각에서', t`$\sin\theta\ne0$`], answer: 0,
-      reasons: [t`$\tan\theta=\dfrac yx$는 $x\ne0$, 곧 $\cos\theta\ne0$일 때만 정의된다`, '삼각함수 사이의 관계는 모든 각에서 성립한다', '분자가 0이면 분수가 정의되지 않는다', t`$\tan\theta$는 예각일 때만 정의된다`],
+      reasons: [t`$\tan\theta=\dfrac yx$는 $x\ne0$, 곧 $\cos\theta\ne0$일 때만 정의된다`, '삼각함수 사이의 관계는 모든 각에서 성립한다', t`분자가 $0$이면 분수가 정의되지 않는다`, t`$\tan\theta$는 예각일 때만 정의된다`],
       reason: 0, mis: [null, 'cond', 'def', 'def'],
       note: t`$\theta=\dfrac{\pi}{2}$처럼 $\cos\theta=0$인 각에서는 $\tan\theta$가 정의되지 않습니다. 분자가 $0$인 것은 문제가 없습니다($\tan0=0$).`,
     },
@@ -68,7 +68,7 @@ export default {
     {
       id: 'a2-l3-q1', q: t`함수 $y=\sin2x$의 주기는?`,
       options: [t`$\pi$`, t`$4\pi$`, t`$2\pi$`], answer: 0,
-      reasons: [t`$2x$가 $0$부터 $2\pi$까지 변하려면 $x$는 $0$부터 $\pi$까지만 변하면 된다`, t`$\sin x$의 주기 $2\pi$에 $2$를 곱한다`, '계수와 관계없이 사인함수의 주기는 2π이다', t`$x$에 $2$를 곱하면 그래프가 가로로 두 배 늘어난다`],
+      reasons: [t`$2x$가 $0$부터 $2\pi$까지 변하려면 $x$는 $0$부터 $\pi$까지만 변하면 된다`, t`$\sin x$의 주기 $2\pi$에 $2$를 곱한다`, t`계수와 관계없이 사인함수의 주기는 $2\pi$이다`, t`$x$에 $2$를 곱하면 그래프가 가로로 두 배 늘어난다`],
       reason: 0, mis: [null, 'formula', 'overgen', 'sign'],
       note: t`$y=\sin bx$의 주기는 $\dfrac{2\pi}{|b|}$입니다. $b=2$이면 그래프가 가로로 절반으로 줄어듭니다.`,
     },

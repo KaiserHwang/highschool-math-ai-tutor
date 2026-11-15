@@ -30,7 +30,7 @@ export default {
       intro: t`반지름과 중심각을 바꾸며 중심각을 라디안으로 읽고, 호의 길이와 넓이가 어떻게 바뀌는지 봅니다.`,
       params: [
         { k: 'r', label: t`반지름 $r$`, min: 1, max: 4, step: 1, value: 2 },
-        { k: 'd', label: t`중심각(도)`, min: 0, max: 360, step: 15, value: 60 },
+        { k: 'd', label: t`중심각(도)`, min: 15, max: 360, step: 15, value: 60 },
       ],
       fig: ({ r, d }) => {
         const arc = Array.from({ length: 49 }, (_, i) => { const a = (d * RAD * i) / 48; return [r * Math.cos(a), r * Math.sin(a)]; });
@@ -85,7 +85,7 @@ export default {
           body: t`<p>둘레가 일정하면 $l=(\text{둘레})-2r$로 호의 길이를 $r$로 나타낼 수 있고, 넓이 $\dfrac12rl$은 $r$의 이차함수가 됩니다.</p>`,
           example: {
             q: t`둘레의 길이가 $20$인 부채꼴의 넓이의 최댓값을 구하시오.`,
-            think: [t`$l=20-2r$이고 $0<r<10$입니다.`],
+            think: [t`$l=20-2r$입니다. 중심각 $\theta=\dfrac lr$가 $0<\theta<2\pi$여야 하므로 $\dfrac{10}{\pi+1}<r<10$입니다.`],
             steps: [t`$S=\dfrac12r(20-2r)=-r^2+10r=-(r-5)^2+25$`, t`$r=5$일 때 최댓값 $25$`],
             answer: '25',
           },
@@ -218,7 +218,7 @@ export default {
       goals: [
         { text: t`주기가 $\pi$가 되게 해 보세요.`, test: ({ a, b }) => a !== 0 && b === 2 },
         { text: t`최댓값이 $3$, 최솟값이 $-1$이 되게 해 보세요.`, test: ({ a, d }) => Math.abs(a) + d === 3 && -Math.abs(a) + d === -1 },
-        { text: t`그래프가 $x$축과 만나지 않게 해 보세요.`, test: ({ a, d }) => a !== 0 && Math.abs(a) < Math.abs(d) },
+        { text: t`그래프가 $x$축과 만나지 않게 해 보세요.`, test: ({ a, d }) => Math.abs(a) < Math.abs(d) },
       ],
       note: t`$a$의 부호를 바꾸면 그래프가 가로선 $y=d$를 기준으로 뒤집히지만 최댓값과 최솟값은 그대로입니다. $b$를 두 배로 하면 주기가 절반이 됩니다.`,
     }],
