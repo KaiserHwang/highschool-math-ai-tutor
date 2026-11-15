@@ -1,7 +1,8 @@
 // 채점, 숙련도, 추천, 복습 주기 계산
 import { PROBLEMS, problemsOfUnit, PROBLEM_BY_ID } from './content/problems.js';
 import { DIAGNOSIS } from './content/diagnosis.js';
-import { UNITS, SKILLS, LEVELS, TRACKS, REVIEW_GAPS } from './content/units.js';
+import { UNITS, SKILLS, LEVELS, TRACKS, REVIEW_GAPS, REGULAR_UNITS, isFusion } from './content/units.js';
+import { unitOf } from './content/registry.js';
 import { getState, today, addDays, localDay } from './store.js';
 import { LESSONS, lessonsOfUnit } from './content/lessons/index.js';
 import { GENERATORS } from './content/generators.js';
@@ -218,7 +219,7 @@ export function recommendNext() {
   const st = getState();
   const diag = latestDiagnosis();
   const unsolved = (q) => !(st.attempts[q.id] && st.attempts[q.id].solved);
-  const allowed = UNITS.filter((u) => u.id !== 'u8' || trackKey === 'killer');
+  const allowed = UNITS.filter((u) => !isFusion(u) || trackKey === 'killer'); // 융합 단원은 최상위 트랙에서만 추천
 
   const recent = Object.entries(st.attempts)
     .filter(([, a]) => a.lastAt)
@@ -244,7 +245,7 @@ export function recommendNext() {
 /** 오늘 연습할 유형: 숙련도가 가장 낮은 단원의 생성기 */
 export function weakestUnit() {
   const diag = latestDiagnosis();
-  return UNITS.filter((u) => u.id !== 'u8')
+  return REGULAR_UNITS
     .map((u) => ({ u, score: unitNeed(u.id, diag) }))
     .sort((a, b) => a.score - b.score)[0].u;
 }
@@ -678,9 +679,9 @@ export function studiedUnits() {
   const st = getState();
   const set = new Set();
   for (const [pid, a] of Object.entries(st.attempts)) if (a.tries && PROBLEM_BY_ID[pid]) set.add(PROBLEM_BY_ID[pid].unit);
-  for (const [lid, r] of Object.entries(st.lessons)) if (Object.keys(r.checks || {}).length || r.done) set.add(lid.slice(0, 2));
-  set.delete('u8');
-  return set.size ? UNITS.filter((u) => set.has(u.id)).map((u) => u.id) : UNITS.filter((u) => u.id !== 'u8').map((u) => u.id);
+  for (const [lid, r] of Object.entries(st.lessons)) if (Object.keys(r.checks || {}).length || r.done) { const u = unitOf(lid); if (u) set.add(u); }
+  const studied = REGULAR_UNITS.filter((u) => set.has(u.id)); // 융합 단원은 평가 범위에 넣지 않는다
+  return (studied.length ? studied : REGULAR_UNITS).map((u) => u.id);
 }
 
 /**

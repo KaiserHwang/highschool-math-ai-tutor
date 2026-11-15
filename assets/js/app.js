@@ -1,6 +1,7 @@
 import { subscribe, getState, isMemoryOnly } from './store.js';
 import { dueReviews, conceptsDue, lessonRechecks } from './model.js';
 import { toast } from './lib/ui.js';
+import { ID_PART } from './lib/ids.js';
 import { renderHome } from './views/home.js';
 import { renderDiagnosis } from './views/diagnosis.js';
 import { renderUnits, renderUnit } from './views/units.js';
@@ -18,19 +19,22 @@ import { renderSettings } from './views/settings.js';
 const view = document.getElementById('view');
 let cleanup = null;
 
+// 주소의 id 형식은 lib/ids.js에서 가져온다(#24). 형식이 맞아도 실제로 없는 id는 각 화면이 목록으로 돌려보낸다.
+const P = ID_PART;
+const re = (s) => new RegExp(`^${s}$`);
 const routes = [
   [/^\/?$/, () => renderHome, 'home'],
   [/^\/diagnosis$/, () => renderDiagnosis, 'diagnosis'],
   [/^\/units$/, () => renderUnits, 'units'],
-  [/^\/u\/(u\d)$/, () => renderUnit, 'units'],
-  [/^\/l\/(u\d-l\d+)$/, () => renderLesson, 'units'],
-  [/^\/p\/(u\d-\d\d)$/, () => renderProblem, 'units'],
-  [/^\/v\/(g-[a-z0-9-]+)$/, () => renderProblem, 'units'],
+  [re(`/u/(${P.unit})`), () => renderUnit, 'units'],
+  [re(`/l/(${P.lesson})`), () => renderLesson, 'units'],
+  [re(`/p/(${P.problem})`), () => renderProblem, 'units'],
+  [re(`/v/(${P.generator})`), () => renderProblem, 'units'],
   [/^\/review$/, () => renderReview, 'review'],
   [/^\/cr$/, () => renderConcepts, 'home'],
-  [/^\/map(?:\/(u\d-l\d+))?$/, () => renderMap, 'units'],
-  [/^\/t\/(u\d-l\d+)$/, () => renderTrace, 'units'],
-  [/^\/rc\/(u\d-l\d+)$/, () => renderRecheck, 'review'],
+  [re(`/map(?:/(${P.lesson}))?`), () => renderMap, 'units'],
+  [re(`/t/(${P.lesson})`), () => renderTrace, 'units'],
+  [re(`/rc/(${P.lesson})`), () => renderRecheck, 'review'],
   [/^\/quiz$/, () => renderQuiz, 'units'],
   [/^\/report$/, () => renderReport, 'report'],
   [/^\/settings$/, () => renderSettings, 'settings'],

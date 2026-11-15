@@ -4,7 +4,7 @@
   "type": "module",
   "description": "2022 개정 고1 공통수학1·2 개념 학습 웹앱",
   "scripts": {
-    "gen": "node tools/coverage.mjs && node tools/gen-sw.mjs",
+    "gen": "node tools/ids.mjs && node tools/coverage.mjs && node tools/gen-sw.mjs",
     "test": "npm run test:js && npm run verify",
     "test:js": "node tests/unit.mjs && node tests/gen-check.mjs && node tests/content-check.mjs",
     "test:unit": "node tests/unit.mjs",

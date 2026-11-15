@@ -1,6 +1,6 @@
 // 혼합 평가(#/quiz): 배운 범위에서 단원 이름을 숨기고 섞어 낸다. 힌트와 정답은 모두 제출한 뒤에 공개한다.
 // 학습용으로 이미 본 문제(예제, 확인 문제, 시도한 은행 문제)는 쓰지 않으므로 처음 보는 문제에 대한 실력을 본다.
-import { UNITS, UNIT_BY_ID, unitLabel } from '../content/units.js';
+import { REGULAR_UNITS, UNIT_BY_ID, unitLabel } from '../content/units.js';
 import { PROBLEM_BY_ID } from '../content/problems.js';
 import { makeVariant, GENERATORS } from '../content/generators.js';
 import { lessonForProblem } from '../content/lessons/index.js';
@@ -48,7 +48,7 @@ function renderIntro(view) {
       </ul>
     </div>
     <fieldset class="field"><legend class="field-l">범위</legend>
-      <div class="row" role="group">${UNITS.filter((u) => u.id !== 'u8').map((u) => `<label class="chip-check"><input type="checkbox" value="${u.id}" ${studied.includes(u.id) ? 'checked' : ''}> ${esc(unitLabel(u))}</label>`).join('')}</div>
+      <div class="row" role="group">${REGULAR_UNITS.map((u) => `<label class="chip-check"><input type="checkbox" value="${u.id}" ${studied.includes(u.id) ? 'checked' : ''}> ${esc(unitLabel(u))}</label>`).join('')}</div>
       <p class="hint-text">공부한 흔적이 있는 단원을 미리 골라 두었습니다.</p>
     </fieldset>
     <p class="row"><button class="btn btn-primary" data-act="start">평가 시작</button></p>

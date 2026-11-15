@@ -4,7 +4,8 @@ import { readFileSync } from 'fs';
 import katex from '../assets/vendor/katex/katex.mjs';
 import { PROBLEMS } from '../assets/js/content/problems.js';
 import { DIAGNOSIS } from '../assets/js/content/diagnosis.js';
-import { UNITS } from '../assets/js/content/units.js';
+import { UNITS, REGULAR_UNITS, isFusionUnit } from '../assets/js/content/units.js';
+import { isUnitId, isLessonId, isProblemId, isGeneratorId } from '../assets/js/lib/ids.js';
 import { LESSONS } from '../assets/js/content/lessons/index.js';
 import { PROBLEM_BY_ID } from '../assets/js/content/problems.js';
 import { normalizeAnswer } from '../assets/js/model.js';
@@ -49,6 +50,44 @@ for (const p of [...PROBLEMS, ...DIAGNOSIS]) {
   // 그림에는 설명(alt)이 있어야 한다(화면 낭독기와 AI 질문에 쓰임)
   if (p.fig && !(p.fig.alt && p.fig.alt.length > 10)) fail(`${p.id}: 그림 설명(alt)이 없거나 너무 짧음`);
 }
+// id 형식(#24): 단원·문제·생성기 id가 정해진 형식이고, 문제의 단원 필드와 id의 앞부분이 같은지.
+// 화면과 기록은 id를 잘라 단원을 알아내지 않지만(content/registry.js), 둘이 어긋나면 사람이 읽을 때 잘못 분류하게 된다.
+{
+  const unitIds = new Set();
+  for (const u of UNITS) {
+    if (!isUnitId(u.id)) fail(`단원 ${u.id}: id 형식(영문 소문자 한 글자 + 번호, g는 생성기용이라 쓸 수 없음)`);
+    if (unitIds.has(u.id)) fail(`단원 ${u.id}: id 중복`);
+    unitIds.add(u.id);
+  }
+  const pids = new Set();
+  for (const p of PROBLEMS) {
+    if (!isProblemId(p.id)) fail(`${p.id}: 문제 id 형식(단원-두 자리 번호)`);
+    if (!unitIds.has(p.unit)) fail(`${p.id}: 없는 단원 ${p.unit}`);
+    else if (!p.id.startsWith(p.unit + '-')) fail(`${p.id}: id의 앞부분이 단원 ${p.unit}과 다름`);
+    if (pids.has(p.id)) fail(`${p.id}: 문제 id 중복`);
+    pids.add(p.id);
+  }
+  for (const q of DIAGNOSIS) if (!unitIds.has(q.unit)) fail(`${q.id}: 없는 단원 ${q.unit}`);
+  const { GENERATORS } = await import('../assets/js/content/generators.js');
+  for (const [k, g] of Object.entries(GENERATORS)) {
+    if (!isGeneratorId(k)) fail(`${k}: 생성기 id 형식(g-이름)`);
+    if (!unitIds.has(g.unit)) fail(`${k}: 없는 단원 ${g.unit}`);
+    for (const pid of g.like) if (!pids.has(pid)) fail(`${k}.like: 없는 문제 ${pid}`);
+  }
+  // 모든 등록 항목에서 단원을 찾을 수 있고, 모르는 id는 단원이 없다
+  const { unitOf } = await import('../assets/js/content/registry.js');
+  for (const p of PROBLEMS) if (unitOf(p.id) !== p.unit) fail(`${p.id}: unitOf가 ${unitOf(p.id)}`);
+  for (const k of Object.keys(GENERATORS)) if (unitOf(k) !== GENERATORS[k].unit || unitOf(`${k}:123`) !== GENERATORS[k].unit) fail(`${k}: unitOf`);
+}
+
+// id 장부(#24): 한 번 내보낸 id가 사라지면 그 id의 학습 기록이 불러올 때 버려진다
+{
+  const { diffIds } = await import('../tools/ids.mjs');
+  const { gone, fresh } = diffIds();
+  for (const g of gone) fail(`id가 사라짐(${g}): 이 id의 학습 기록이 버려집니다. 되돌리거나, 의도한 삭제라면 tests/ids.json에서 지우고 PR에 이유를 적으세요.`);
+  if (fresh.length) fail(`tests/ids.json에 없는 새 id ${fresh.length}개(${fresh.slice(0, 3).join(', ')}${fresh.length > 3 ? ' …' : ''}). npm run gen 을 실행하세요.`);
+}
+
 for (const u of UNITS) u.traps.forEach((t, i) => check(`${u.id}.traps[${i}]`, t));
 for (const u of UNITS) if (!Array.isArray(u.next) || !u.next.length || !u.next.every((n) => n.subject && n.what)) fail(`${u.id}: 후속 과목 연결(next)이 없음`);
 
@@ -57,7 +96,7 @@ const lessonIds = new Set(), checkIds = new Set(), covered = new Set();
 for (const u of UNITS) if (!LESSONS.some((l) => l.unit === u.id)) fail(`${u.id}: 개념 학습 소단원이 없음`);
 for (const L of LESSONS) {
   const w = L.id;
-  if (!/^u\d-l\d+$/.test(w) || !w.startsWith(L.unit + '-')) fail(`${w}: id 형식`);
+  if (!isLessonId(w) || !w.startsWith(L.unit + '-') || !UNITS.some((u) => u.id === L.unit)) fail(`${w}: id 형식(단원-l번호)이 아니거나 단원 ${L.unit}과 맞지 않음`);
   if (lessonIds.has(w)) fail(`${w}: id 중복`);
   lessonIds.add(w);
   for (const k of ['title', 'summary', 'core', 'why']) if (typeof L[k] !== 'string' || !L[k].trim()) fail(`${w}.${k}: 비어 있음`);
@@ -251,7 +290,7 @@ console.log(`보강: 소단원 ${PLUS_IDS.length}개, 탐구 그래프 ${nExplor
 for (const L of LESSONS) {
   const rel = L.related.map((pid) => PROBLEM_BY_ID[pid]).filter(Boolean);
   if (rel.length < 2) fail(`${L.id}: 관련 문제가 ${rel.length}개뿐(2개 이상 필요)`);
-  if (L.unit !== 'u8' && !rel.some((p) => p.level === 'basic')) fail(`${L.id}: 관련 문제에 기본 문제가 없음`);
+  if (!isFusionUnit(L.unit) && !rel.some((p) => p.level === 'basic')) fail(`${L.id}: 관련 문제에 기본 문제가 없음`);
 }
 
 // 학습용(예제·확인 문제), 문제 은행, 진단 사이에 사실상 같은 문항이 없는지(#7)
@@ -281,13 +320,13 @@ for (const L of LESSONS) {
 // 진단: 문항마다 먼저 볼 소단원이 있고, 공통수학 단원(Ⅰ~Ⅶ)마다 2문항 이상(#8)
 const { LESSON_BY_ID } = await import('../assets/js/content/lessons/index.js');
 for (const q of DIAGNOSIS) if (!LESSON_BY_ID[q.lesson] || LESSON_BY_ID[q.lesson].unit !== q.unit) fail(`${q.id}: lesson이 없거나 다른 단원의 소단원`);
-for (const u of UNITS.filter((x) => x.id !== 'u8')) {
+for (const u of REGULAR_UNITS) {
   const n = DIAGNOSIS.filter((q) => q.unit === u.id).length;
   if (n < 2) fail(`${u.id}: 진단 문항이 ${n}개뿐(2개 이상 필요)`);
 }
 
 // 단원마다 모든 난이도가 있는지(u8 제외)
-for (const u of UNITS.filter((x) => x.id !== 'u8')) {
+for (const u of REGULAR_UNITS) {
   for (const lv of ['basic', 'core', 'adv', 'killer']) {
     if (!PROBLEMS.some((p) => p.unit === u.id && p.level === lv)) fail(`${u.id}: ${lv} 문제가 없음`);
   }

@@ -15,6 +15,7 @@
 // 개념 질문(concept/uN.js, 소단원 id → 문항 목록). 답과 그렇게 고른 이유를 함께 묻는다.
 //   { id:'u2-l3-q1', q, options:[답 보기], answer, reasons:[이유 4개], reason, mis:[오개념 키|null(정답 이유)], note }
 //   앞의 두 문항은 소단원 화면의 "이유까지 답하기"에, 모든 문항은 오늘의 개념 확인에 돌아가며 나온다.
+import { PROBLEM_BY_ID } from '../problems.js';
 import u1 from './u1.js';
 import u2 from './u2.js';
 import u3 from './u3.js';
@@ -76,13 +77,16 @@ export const allChecks = (l) => [...l.checks, ...((l.deep && l.deep.checks) || [
 export const CQ_BY_ID = Object.fromEntries(LESSONS.flatMap((l) => l.cq.map((q) => [q.id, q])));
 export const CHECK_BY_ID = Object.fromEntries(LESSONS.flatMap((l) => allChecks(l).map((c) => [c.id, c])));
 export const lessonsOfUnit = (unitId) => LESSONS.filter((l) => l.unit === unitId);
+/** 확인 문제(기본·심화)와 개념 질문의 id → 그 문항이 속한 소단원 */
+export const LESSON_OF_ITEM = Object.fromEntries(LESSONS.flatMap((l) => [...allChecks(l), ...l.cq].map((c) => [c.id, l])));
 
-/** 문제와 연결된 소단원. 같은 단원의 소단원을 먼저 찾는다. */
+/** 문제와 연결된 소단원. 같은 단원의 소단원을 먼저 찾는다. 문제의 단원은 id를 자르지 않고 문제 자체에서 읽는다(#24). */
 const BY_PROBLEM = {};
 for (const l of LESSONS) {
   for (const pid of l.related) {
     const cur = BY_PROBLEM[pid];
-    if (!cur || (cur.unit !== pid.slice(0, 2) && l.unit === pid.slice(0, 2))) BY_PROBLEM[pid] = l;
+    const pu = Object.hasOwn(PROBLEM_BY_ID, pid) ? PROBLEM_BY_ID[pid].unit : null;
+    if (!cur || (cur.unit !== pu && l.unit === pu)) BY_PROBLEM[pid] = l;
   }
 }
 export const lessonForProblem = (pid) => BY_PROBLEM[pid] || null;

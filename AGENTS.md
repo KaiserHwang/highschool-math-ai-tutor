@@ -8,7 +8,7 @@
 
 ```bash
 npm run serve      # http://localhost:8080 에서 앱 실행
-npm run gen        # docs/COVERAGE.md 와 sw.js 다시 만들기
+npm run gen        # tests/ids.json, docs/COVERAGE.md, sw.js 다시 만들기
 npm run test:js    # 회귀 검사 + 생성기 검사 + 콘텐츠 검사 (Node만 필요)
 npm run verify     # 정답 독립 검증 (Python 3 + sympy 필요)
 npm test           # test:js + verify 전체
@@ -36,7 +36,8 @@ Windows, macOS, Linux에서 같은 명령을 쓴다. 파이썬 실행 파일 이
 ## 콘텐츠를 고칠 때
 
 - **문항을 추가하거나 정답을 바꾸면 독립 계산도 함께 고친다.** 문제 은행·진단은 `tests/verify_answers.py`(`verify_extra.py`, `verify_ladder.py`), 개념 학습은 `tests/verify_lessons.py`(`verify_plus.py`), 생성기는 `tests/gen-check.mjs`. 풀이와 다른 방법(전수 조사, 기호 계산)으로 계산해야 한다.
-- **id는 바꾸거나 재사용하지 않는다.** 문제(`u1-05`), 소단원(`u2-l3`), 확인 문제(`u2-l3-c1`), 심화 확인(`-d1`), 개념 질문(`-q1`), 생성기(`g-sym`)의 id는 학습 기록의 키다. 앱에 없는 id의 기록은 불러올 때 버려지므로, id가 바뀌면 사용자 기록이 사라진다.
+- **id는 바꾸거나 재사용하지 않는다.** 문제(`u1-05`), 소단원(`u2-l3`), 확인 문제(`u2-l3-c1`), 심화 확인(`-d1`), 개념 질문(`-q1`), 생성기(`g-sym`)의 id는 학습 기록의 키다. 앱에 없는 id의 기록은 불러올 때 버려지므로, id가 바뀌면 사용자 기록이 사라진다. 한 번 내보낸 id는 `tests/ids.json`에 적혀 있고(`npm run gen`이 새 id를 더한다), 거기 있는 id가 사라지면 콘텐츠 검사가 실패한다.
+- **id 형식은 `assets/js/lib/ids.js`에 있다.** 단원은 영문 소문자 한 글자 + 번호(`u1`, `a10`), 소단원은 `단원-l번호`, 문제는 `단원-두 자리 번호`, 생성기는 `g-이름`. `g`는 생성기 접두어라 단원에 쓰지 않는다. 항목의 `unit` 필드와 id의 앞부분은 같아야 한다.
 - 단답형 정답은 정수 또는 기약분수 문자열(`"-3"`, `"10/3"`), 객관식 정답은 0부터 시작하는 보기 번호.
 - 콘텐츠 문자열은 `$...$` 수식과 허용된 태그만 쓴다(문항: `p br ul ol li strong em span`, 개념 본문은 `div table` 계열 추가). 그림에는 10자 넘는 `alt`가 필요하다.
 - 개념 질문은 정답 이유를 맨 앞(0번)에 두고 작성한다. 정답 보기는 `answer`로 표시하며 0번이 아니어도 된다. 화면에 낼 때 `lessons/index.js`가 id 기준으로 섞는다. 틀린 이유마다 `misconceptions.js`의 오개념 키를 붙인다.
@@ -45,6 +46,7 @@ Windows, macOS, Linux에서 같은 명령을 쓴다. 파이썬 실행 파일 이
 
 ## 코드를 고칠 때
 
+- **id를 잘라서 단원을 알아내지 않는다.** 어느 단원인지는 항목의 `unit` 필드나 `content/registry.js`의 `unitOf`로 찾는다. 특정 단원 id(`'u8'` 등)를 코드에서 직접 비교하지 않고 단원의 속성(`kind: 'fusion'`, `isFusion`, `REGULAR_UNITS`)을 쓴다.
 - 학습 판정 로직(채점, 숙련도, 간격 복습, 추천)은 `assets/js/model.js`에 두고 `tests/unit.mjs`에 회귀 검사를 추가한다. 화면 파일(`views/`)에만 있는 로직은 Node 검사로 잡히지 않는다.
 - 사용자 입력과 URL 매개변수는 신뢰하지 않는다. 화면에 넣을 때 `esc()`/`texUser()`를 쓰고, URL에서 온 id는 실제 존재하는 값일 때만 받는다. `tex()`는 앱이 작성한 콘텐츠에만 쓴다.
 - 저장 형식(`assets/js/backup.js`의 `blankState`, `checkState`)을 바꾸면 예전 기록·백업을 계속 읽을 수 있어야 하고, 내보내기→가져오기 왕복 검사(`tests/unit.mjs`)를 함께 고친다.

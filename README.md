@@ -100,7 +100,7 @@ Node 22 이상과 Python 3(+ `pip install sympy`)가 필요합니다. Windows, m
 
 ```bash
 npm run serve      # http://localhost:8080 에서 실행
-npm run gen        # 파일을 고친 뒤: docs/COVERAGE.md 와 sw.js 갱신
+npm run gen        # 파일을 고친 뒤: tests/ids.json, docs/COVERAGE.md, sw.js 갱신
 npm run test:js    # 회귀 검사 + 생성기 검사 + 콘텐츠 검사
 npm run verify     # 정답 독립 검증(문제 은행, 개념 학습)
 npm test           # 위 검사 전체
@@ -121,7 +121,7 @@ npm i --no-save playwright && npx playwright install chromium
 node tests/e2e.mjs                 # 브라우저 종단 테스트(서버 실행 중일 때)
 ```
 
-파일을 고치면 `node tools/coverage.mjs`와 `node tools/gen-sw.mjs`를 실행하세요. 버전이 파일 내용의 해시로 정해지므로, 배포하면 사용자의 오프라인 캐시도 자동으로 새 버전으로 바뀝니다. `content-check.mjs`가 최신인지 검사합니다. 그림을 고칠 때는 `tests/gallery.html`에서 모든 그림을 한눈에 볼 수 있습니다. GitHub Actions(`.github/workflows/check.yml`)가 푸시할 때마다 여섯 가지 검사를 실행합니다.
+파일을 고치면 `npm run gen`(`node tools/ids.mjs`, `node tools/coverage.mjs`, `node tools/gen-sw.mjs`)을 실행하세요. `tests/ids.json`은 한 번 내보낸 문항·소단원 id의 장부로, 학습 기록의 키인 id가 실수로 바뀌거나 사라지는 것을 콘텐츠 검사가 잡아냅니다. 버전이 파일 내용의 해시로 정해지므로, 배포하면 사용자의 오프라인 캐시도 자동으로 새 버전으로 바뀝니다. `content-check.mjs`가 최신인지 검사합니다. 그림을 고칠 때는 `tests/gallery.html`에서 모든 그림을 한눈에 볼 수 있습니다. GitHub Actions(`.github/workflows/check.yml`)가 푸시할 때마다 여섯 가지 검사를 실행합니다.
 
 ## 라이선스
 
