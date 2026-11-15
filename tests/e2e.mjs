@@ -587,7 +587,8 @@ async function run(viewport, tag) {
     ok((await page.locator('.lesson .l-sec').count()) > 3, `[${tag}] 끈 과목의 소단원도 그대로 열린다`);
     await page.goto(BASE + '#/settings');
     await page.waitForSelector('[data-course="common1"]');
-    await page.uncheck('[data-course="common1"]');
+    await page.click('[data-course="common1"]'); // 마지막 남은 과목을 끄려고 하면 앱이 다시 켠다(uncheck는 꺼진 상태를 기대하므로 click을 쓴다)
+    await page.waitForFunction(() => /하나 이상/.test(document.getElementById('toast').textContent));
     ok(await page.isChecked('[data-course="common1"]'), `[${tag}] 과목을 모두 끌 수는 없다`);
     await page.check('[data-course="common2"]');
     await page.goto(BASE + '#/');
