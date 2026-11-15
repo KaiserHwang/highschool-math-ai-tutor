@@ -105,6 +105,12 @@ for (const p of [...PROBLEMS, ...DIAGNOSIS]) {
 }
 
 for (const u of UNITS) u.traps.forEach((t, i) => check(`${u.id}.traps[${i}]`, t));
+// 단원 화면에 수식으로 그려지는 나머지 단원 정보도 같은 검사를 거친다(#33)
+for (const u of UNITS) {
+  check(`${u.id}.title`, u.title);
+  check(`${u.id}.sub`, u.sub);
+  (u.next || []).forEach((n, i) => check(`${u.id}.next[${i}].what`, n.what));
+}
 for (const u of UNITS) if (!Array.isArray(u.next) || !u.next.length || !u.next.every((n) => n.subject && n.what)) fail(`${u.id}: 후속 과목 연결(next)이 없음`);
 
 // 개념 학습: 본문 수식·태그, 확인 문제 형식, 관련 문제 연결
