@@ -1,6 +1,6 @@
 // 채점, 숙련도, 추천, 복습 주기 계산
 import { PROBLEMS, problemsOfUnit, PROBLEM_BY_ID } from './content/problems.js';
-import { DIAGNOSIS } from './content/diagnosis.js';
+import { DIAGNOSIS, DIAG_SETS, diagItems, diagSetOfUnit } from './content/diagnosis.js';
 import { UNITS, SKILLS, LEVELS, TRACKS, REVIEW_GAPS, REGULAR_UNITS, UNIT_BY_ID, isFusion, unitCourses } from './content/units.js';
 import { COURSE_BY_ID, normalizeCourses } from './content/courses.js';
 import { unitOf } from './content/registry.js';
@@ -180,14 +180,20 @@ export function diagUnitReadiness(d) {
   return out;
 }
 
-export function gradeDiagnosis(responses) {
+/**
+ * 진단 채점. 진단 묶음(setId)의 문항만 채점한다.
+ * 트랙 추천: 보정 점수 50 이상이면 내신 1등급, 75 이상이고 심화·최상위 문항의 3분의 2 이상을 맞히면 최상위 도전.
+ * (공통수학 진단은 심화·최상위 6문항 중 4문항으로 예전 기준과 같다.)
+ */
+export function gradeDiagnosis(responses, setId = 'common') {
   // responses: { [id]: { response, conf, hint, sec } }
+  const qs = diagItems(setId);
   const skillAcc = Object.fromEntries(SKILLS.map((s) => [s.key, { num: 0, den: 0 }]));
   const unitAcc = {};
   let num = 0, den = 0;
   const items = [];
   const confidentWrong = [];
-  for (const q of DIAGNOSIS) {
+  for (const q of qs) {
     const r = responses[q.id] || {};
     const correct = isCorrect(q, r.response);
     let credit = 0;
@@ -208,21 +214,47 @@ export function gradeDiagnosis(responses) {
     u.num += lw * credit; u.den += lw;
     items.push({ id: q.id, correct, credit: Math.round(credit * 100) / 100, conf: r.conf || null, hint: !!r.hint, sec: Math.round(r.sec || 0), response: r.response ?? null });
   }
-  const skills = Object.fromEntries(Object.entries(skillAcc).map(([k, v]) => [k, v.den ? Math.round((v.num / v.den) * 100) : 0]));
+  // 문항이 다루지 않는 역량은 점수 대신 null(그 진단에 근거가 없음)
+  const skills = Object.fromEntries(Object.entries(skillAcc).map(([k, v]) => [k, v.den ? Math.round((v.num / v.den) * 100) : null]));
   const units = Object.fromEntries(Object.entries(unitAcc).map(([k, v]) => [k, readinessOf(v.num, v.den)]));
-  const overall = Math.round((num / den) * 100);
+  const overall = den ? Math.round((num / den) * 100) : 0;
   const correctCount = items.filter((i) => i.correct).length;
-  const advCorrect = DIAGNOSIS.filter((q) => (q.level === 'adv' || q.level === 'killer') && items.find((i) => i.id === q.id).correct).length;
+  const adv = qs.filter((q) => q.level === 'adv' || q.level === 'killer');
+  const advCorrect = adv.filter((q) => items.find((i) => i.id === q.id).correct).length;
   let track = 'foundation';
-  if (overall >= 75 && advCorrect >= 4) track = 'killer';
+  if (overall >= 75 && adv.length && advCorrect >= Math.ceil((adv.length * 2) / 3)) track = 'killer';
   else if (overall >= 50) track = 'standard';
-  return { date: new Date().toISOString(), overall, correctCount, total: DIAGNOSIS.length, skills, units, items, confidentWrong, track, advCorrect };
+  return { date: new Date().toISOString(), set: setId, overall, correctCount, total: qs.length, skills, units, items, confidentWrong, track, advCorrect };
 }
 
-export const latestDiagnosis = () => {
-  const d = getState().diagnoses;
-  return d.length ? d[d.length - 1] : null;
-};
+// ── 진단 조회(#24 3단계) ───────────────────────────────
+// 진단은 묶음(공통수학1·2, 대수 …)별로 따로 본다. 기록에 set이 없는 예전 진단은 공통수학 진단이다.
+// 단원 준비도는 그 단원이 속한 묶음의 최근 진단에서, 트랙과 역량은 "기준 진단"에서 가져온다.
+// 기준 진단: 공부하는 과목의 묶음 중 앞쪽(공통수학 → 대수 …) 묶음의 최근 진단. 뒤 과목 진단을 새로 봤다고
+// 앞 과목에서 정한 트랙·역량이 덮어쓰이지 않게 한다.
+export const diagSetOf = (d) => (d && d.set) || 'common';
+export function latestDiagnosisOf(setId) {
+  const ds = getState().diagnoses.filter((d) => diagSetOf(d) === setId);
+  return ds.length ? ds[ds.length - 1] : null;
+}
+/** 공부하는 과목에 걸친 진단 묶음(묶음 순서) */
+export function activeDiagSets() {
+  const a = activeCourses();
+  return DIAG_SETS.filter((s) => s.courses.some((c) => a.includes(c)));
+}
+/** 기준 진단: 공부하는 과목의 묶음 중 진단 기록이 있는 앞쪽 묶음의 최근 진단 */
+export function latestDiagnosis() {
+  for (const s of activeDiagSets()) { const d = latestDiagnosisOf(s.id); if (d) return d; }
+  return null;
+}
+/** 공부하는 과목의 묶음 중 아직 진단을 보지 않은 것 */
+export const missingDiagSets = () => activeDiagSets().filter((s) => !latestDiagnosisOf(s.id));
+/** 단원의 진단 준비도(그 단원이 속한 묶음의 최근 진단 기준). 진단이 없으면 null */
+export function unitReadiness(unitId) {
+  const set = diagSetOfUnit(unitId);
+  const d = set ? latestDiagnosisOf(set) : null;
+  return d ? diagUnitReadiness(d)[unitId] || null : null;
+}
 
 export function activeTrack() {
   const st = getState();
@@ -238,7 +270,6 @@ export function recommendNext() {
   const trackKey = activeTrack();
   const track = TRACKS[trackKey];
   const st = getState();
-  const diag = latestDiagnosis();
   const unsolved = (q) => !(st.attempts[q.id] && st.attempts[q.id].solved);
   const allowed = activeUnits().filter((u) => !isFusion(u) || trackKey === 'killer'); // 공부하는 과목 안에서, 융합 단원은 최상위 트랙에서만 추천
 
@@ -252,7 +283,7 @@ export function recommendNext() {
     if (p) return p;
   }
 
-  const unitOrder = allowed.map((u) => ({ u, score: unitNeed(u.id, diag) })).sort((a, b) => a.score - b.score);
+  const unitOrder = allowed.map((u) => ({ u, score: unitNeed(u.id) })).sort((a, b) => a.score - b.score);
   const levelOrder = [...track.levels, ...Object.keys(LEVELS).filter((l) => !track.levels.includes(l))];
   for (const lv of levelOrder) {
     for (const { u } of unitOrder) {
@@ -265,17 +296,16 @@ export function recommendNext() {
 
 /** 오늘 연습할 유형: 숙련도가 가장 낮은 단원의 생성기 */
 export function weakestUnit() {
-  const diag = latestDiagnosis();
   return activeRegularUnits()
-    .map((u) => ({ u, score: unitNeed(u.id, diag) }))
+    .map((u) => ({ u, score: unitNeed(u.id) }))
     .sort((a, b) => a.score - b.score)[0].u;
 }
 
 /** 추천 순서용 점수(낮을수록 먼저). 진단 준비도에서 출발해, 그 단원 문제를 풀수록 실제 풀이 결과의 비중이 커진다(#8).
  *  문제 은행 진행도(안 푼 문제)도 조금 반영해 손대지 않은 단원이 뒤로 밀리지 않게 한다. */
-export function unitNeed(unitId, diag = latestDiagnosis()) {
+export function unitNeed(unitId) {
   const m = unitMastery(unitId);
-  const r = diag ? diagUnitReadiness(diag)[unitId] : null;
+  const r = unitReadiness(unitId); // 그 단원이 속한 과목 묶음의 최근 진단
   const prior = r ? r.pct : 60;
   const wPrior = 4 / (4 + m.tried); // 문제를 4개 풀면 진단과 풀이 결과가 반반
   const perf = m.triedPct == null ? prior : wPrior * prior + (1 - wPrior) * m.triedPct;

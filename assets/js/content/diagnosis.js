@@ -1,6 +1,9 @@
-// 수준 진단 17문항. 학습 문제와 겹치지 않게 별도로 구성했다. 공통수학 단원(Ⅰ~Ⅶ)마다 최소 2문항으로 준비도를 본다.
+// 수준 진단 문항. 학습 문제와 겹치지 않게 별도로 구성했다. 교과서 단원마다 최소 2문항으로 준비도를 본다.
+// 진단은 과목 묶음(DIAG_SETS)별로 따로 본다(#24 3단계): 공통수학1·2 진단(d01~d17), 대수 진단(d18~).
 // lesson: 틀렸을 때 먼저 볼 개념 소단원
-// skills: 역량별 가중치, sec: 고1 상위권 기준 예상 풀이 시간(초)
+// skills: 역량별 가중치, sec: 상위권 학생 기준 예상 풀이 시간(초)
+import { UNIT_BY_ID, isFusion } from './units.js';
+
 const t = String.raw;
 
 export const DIAGNOSIS = [
@@ -150,4 +153,48 @@ export const DIAGNOSIS = [
     hint: t`점근선에서 $p=1,\ q=-1$입니다. 지나는 점을 대입해 $k$를 구하세요.`,
     solution: t`$-3=\frac{k}{-1}-1$에서 $k=2$이므로 $k+p+q=2+1-1=2$`,
   },
+  // ── 대수 진단(#24 3단계). 대수를 공부하는 과목으로 고른 학생이 따로 본다.
+  {
+    id: 'd18', unit: 'a1', level: 'basic', type: 'short', sec: 60, lesson: 'a1-l1',
+    q: t`$-27$의 세제곱근 중 실수인 것을 $a$, $81$의 네제곱근 중 양수인 것을 $b$라 할 때, $a+b$의 값을 구하시오.`,
+    answer: '0',
+    skills: { concept: 1, calc: 0.5 },
+    hint: t`$x^3=-27$, $x^4=81$의 실근을 생각하세요.`,
+    solution: t`$a=-3$, $b=3$이므로 $a+b=0$`,
+  },
+  {
+    id: 'd19', unit: 'a1', level: 'core', type: 'short', sec: 90, lesson: 'a1-l2',
+    q: t`$\left(\sqrt[3]{4}\right)^{\frac32}\times16^{-\frac14}\times\sqrt{8}$의 값을 $2^k$으로 나타낼 때, 유리수 $k$의 값을 구하시오.`,
+    answer: '3/2',
+    skills: { calc: 1 },
+    hint: t`모두 밑이 $2$인 거듭제곱으로 바꾸세요: $\sqrt[3]{4}=2^{\frac23}$, $16=2^4$, $\sqrt8=2^{\frac32}$`,
+    solution: t`$2^{1}\times2^{-1}\times2^{\frac32}=2^{\frac32}$이므로 $k=\dfrac32$`,
+  },
+  {
+    id: 'd20', unit: 'a1', level: 'adv', type: 'short', sec: 150, lesson: 'a1-l3',
+    q: t`$\log_2 x+\log_4 y=4$, $\log_2 x-\log_4 y=2$를 만족하는 양수 $x,\ y$에 대하여 $x+y$의 값을 구하시오.`,
+    answer: '12',
+    skills: { reason: 1, calc: 0.5 },
+    hint: t`두 식을 더하고 빼면 $\log_2 x$와 $\log_4 y$가 각각 나옵니다.`,
+    solution: t`두 식을 더하면 $2\log_2 x=6$이므로 $\log_2 x=3$, $x=8$. 빼면 $2\log_4 y=2$이므로 $\log_4 y=1$, $y=4$. 따라서 $x+y=12$`,
+  },];
+
+// ── 진단 묶음 ─────────────────────────────────────
+// 과목마다 진단을 따로 본다. 묶음은 과목 하나 또는 함께 배우는 과목 여럿이다.
+// 공통수학1·2는 한 번의 진단으로 본다(예전 진단 기록도 이 묶음으로 읽는다: 기록에 set이 없으면 'common').
+// 묶음 id는 기록의 키이므로 바꾸지 않는다.
+export const DIAG_SETS = [
+  { id: 'common', title: '공통수학1·2', courses: ['common1', 'common2'], minutes: 35 },
+  { id: 'algebra', title: '대수', courses: ['algebra'], minutes: 8 },
 ];
+export const DIAG_SET_BY_ID = Object.fromEntries(DIAG_SETS.map((s) => [s.id, s]));
+export const isDiagSetId = (id) => typeof id === 'string' && Object.hasOwn(DIAG_SET_BY_ID, id);
+/** 단원이 속한 진단 묶음 id. 융합 단원과 진단 묶음이 없는 과목의 단원은 null */
+export function diagSetOfUnit(unitId) {
+  const u = Object.hasOwn(UNIT_BY_ID, unitId) ? UNIT_BY_ID[unitId] : null;
+  if (!u || isFusion(u)) return null;
+  const s = DIAG_SETS.find((x) => x.courses.includes(u.course));
+  return s ? s.id : null;
+}
+/** 진단 묶음의 문항(작성 순서) */
+export const diagItems = (setId) => DIAGNOSIS.filter((q) => diagSetOfUnit(q.unit) === setId);

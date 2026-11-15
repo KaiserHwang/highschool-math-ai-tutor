@@ -13,7 +13,9 @@ const BASE = process.env.BASE_URL || 'http://localhost:8080/';
 const shotsDir = process.argv.includes('--shots') ? process.argv[process.argv.indexOf('--shots') + 1] : null;
 if (shotsDir) mkdirSync(shotsDir, { recursive: true });
 
-const { DIAGNOSIS } = await import('../assets/js/content/diagnosis.js');
+const { diagItems } = await import('../assets/js/content/diagnosis.js');
+const DIAGNOSIS = diagItems('common'); // 처음 진단은 공통수학1·2 진단
+const ALG_DIAG = diagItems('algebra');
 const { PROBLEM_BY_ID } = await import('../assets/js/content/problems.js');
 const { makeVariant } = await import('../assets/js/content/generators.js');
 const { LESSONS, lessonsOfUnit, LESSON_BY_ID } = await import('../assets/js/content/lessons/index.js');
@@ -613,6 +615,28 @@ async function run(viewport, tag) {
     await page.goto(BASE + '#/');
     await page.waitForSelector('.unit-minis');
     ok((await page.locator('.unit-minis a[href="#/u/a1"]').count()) === 1 && (await page.textContent('.scope-note')).includes('대수'), `[${tag}] 대수를 켜면 오늘 화면에 대수 단원이 나온다`);
+    // #24 3단계: 대수 진단을 따로 본다. 공통수학 진단에서 정한 트랙은 그대로다
+    ok((await page.locator('.plan a[href="#/diagnosis?set=algebra"]').count()) === 1, `[${tag}] 대수를 켜면 아직 보지 않은 대수 진단을 안내한다`);
+    const trackBefore = await page.evaluate(() => JSON.parse(localStorage.getItem('mathpulse:v2')).diagnoses.at(-1).track);
+    await page.goto(BASE + '#/diagnosis');
+    await page.waitForSelector('[data-start="algebra"]');
+    ok((await page.locator('[data-start="common"]').count()) === 1, `[${tag}] 진단 화면에 공부하는 과목의 진단이 모두 나온다`);
+    await page.click('[data-start="algebra"]');
+    for (const q of ALG_DIAG) {
+      await page.waitForSelector('.diag .q-text');
+      if (q.type === 'mc') await page.click(`[data-opt="${q.answer}"]`); else await page.fill('.short-in', q.answer);
+      await page.click('[data-conf="sure"]');
+      await page.click('[data-act="next"]');
+    }
+    await page.waitForSelector('text=대수 진단 결과');
+    ok(new RegExp(`${ALG_DIAG.length}문제 중 ${ALG_DIAG.length}문제 정답`).test(await page.locator('.lead').first().textContent()) && (await page.locator('text=이 진단에서 다루지 않은 역량').count()) === 1,
+      `[${tag}] 대수 진단은 대수 문항만 채점하고, 다루지 않은 역량을 알려 준다`);
+    const after = await page.evaluate(() => { const s = JSON.parse(localStorage.getItem('mathpulse:v2')); return { sets: s.diagnoses.map((d) => d.set), track: s.profile.track }; });
+    await page.goto(BASE + '#/');
+    await page.waitForSelector('.unit-minis');
+    ok(after.sets.at(-1) === 'algebra' && after.sets.includes('common') && (await page.locator('.plan a[href="#/diagnosis?set=algebra"]').count()) === 0
+      && (await page.textContent('.home-side')).includes('대수') && trackBefore !== undefined,
+      `[${tag}] 대수 진단 기록이 따로 남고, 오늘 화면의 안내가 사라진다`);
     await page.goto(BASE + '#/settings');
     await page.waitForSelector('[data-course="algebra"]');
     await page.uncheck('[data-course="algebra"]');

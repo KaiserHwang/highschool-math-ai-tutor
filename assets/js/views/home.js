@@ -1,11 +1,11 @@
 import { getState, today, addDays } from '../store.js';
 import { TRACKS, UNIT_BY_ID, LEVELS, unitLabel, isFusion, courseShort } from '../content/units.js';
 import { generatorsOfUnit, newSeed } from '../content/generators.js';
-import { latestDiagnosis, recommendNext, dueReviews, unitMastery, streak, activeTrack, totals, weakestUnit, lessonTotals, lessonRechecks, conceptsDue, conceptQueue, conceptMemory, learnedOn, rootWeaknesses, studyCount, activeUnits, activeLessons, activeCourseTitles } from '../model.js';
+import { latestDiagnosis, recommendNext, dueReviews, unitMastery, streak, activeTrack, totals, weakestUnit, lessonTotals, lessonRechecks, conceptsDue, conceptQueue, conceptMemory, learnedOn, rootWeaknesses, studyCount, activeUnits, activeLessons, activeCourseTitles, activeDiagSets, missingDiagSets, latestDiagnosisOf } from '../model.js';
 import { lessonForProblem, lessonsOfUnit } from '../content/lessons/index.js';
 import { CONCEPT_SET } from './concepts.js';
 import { tex, esc, fmtDate } from '../lib/ui.js';
-import { DIAGNOSIS } from '../content/diagnosis.js';
+import { diagItems } from '../content/diagnosis.js';
 import { figure } from '../lib/plot.js';
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -42,6 +42,9 @@ export function renderHome(view) {
   }
 
   const steps = [];
+  const firstSet = activeDiagSets()[0];
+  const missing = diag ? missingDiagSets() : []; // 진단을 하나라도 봤는데 아직 안 본 과목 진단
+  if (missing.length) steps.push(`<li class="plan-step"><div class="plan-body"><h2 class="h3">${missing.map((s) => esc(s.title)).join(', ')} 진단을 아직 보지 않았어요</h2><p class="hint-text">그 과목의 추천 순서를 정하는 출발점입니다. 약 ${missing[0].minutes}분 걸려요.</p></div><a class="btn" href="#/diagnosis?set=${missing[0].id}">진단 보기</a></li>`);
   const nextLesson = next ? lessonForProblem(next.id) : null;
   const lessonFirst = nextLesson && !st.lessons[nextLesson.id]?.done && !Object.values(st.lessons[nextLesson.id]?.checks || {}).some((c) => c.solved);
 
@@ -111,7 +114,7 @@ export function renderHome(view) {
     ${diag ? '' : `
       <section class="first-run">
         <h2 class="h2">먼저 지금 실력을 확인해 볼까요</h2>
-        <p>고1 공통수학1·2의 일곱 단원에서 단원마다 2~4문제씩, 모두 ${DIAGNOSIS.length}문제를 풉니다. 약 35분 걸리고, 결과에 따라 학습 트랙과 순서를 추천해 드려요.</p>
+        <p>${esc(firstSet.title)}의 단원마다 2~4문제씩, 모두 ${diagItems(firstSet.id).length}문제를 풉니다. 약 ${firstSet.minutes}분 걸리고, 결과에 따라 학습 트랙과 순서를 추천해 드려요.</p>
         <p class="row"><a class="btn btn-primary" href="#/diagnosis">수준 진단 시작</a><a class="btn btn-quiet" href="#/units">진단 없이 개념 학습부터</a></p>
       </section>`}
     <div class="home-grid">
@@ -138,7 +141,7 @@ export function renderHome(view) {
           <p class="row"><a class="btn btn-quiet" href="#/map">개념 지도 보기</a></p>
         </section>
         <section class="side-block"><h2 class="h3">혼합 평가</h2><p class="hint-text">공부한 단원에서 처음 보는 문제 8개를 단원 이름 없이 섞어 풉니다. 힌트와 정답은 끝나고 공개됩니다.</p><p class="row"><a class="btn btn-quiet" href="#/quiz?view=intro">혼합 평가 보기</a></p></section>
-        ${diag ? `<section class="side-block"><h2 class="h3">수준 진단</h2><p class="hint-text">최근 진단 ${diag.overall}점 · ${TRACKS[diag.track].label} 트랙 추천</p><p class="row"><a class="btn btn-quiet" href="#/diagnosis?view=result">결과 보기</a><a class="btn btn-quiet" href="#/diagnosis">다시 진단</a></p></section>` : ''}
+        ${diag ? `<section class="side-block"><h2 class="h3">수준 진단</h2><p class="hint-text">${activeDiagSets().map((s) => { const d = latestDiagnosisOf(s.id); return d ? `${esc(s.title)} ${d.overall}점(${TRACKS[d.track].label} 트랙 추천)` : `${esc(s.title)} 아직 안 봄`; }).join(' · ')}</p><p class="row"><a class="btn btn-quiet" href="#/diagnosis?view=result&set=${diag.set || 'common'}">결과 보기</a><a class="btn btn-quiet" href="#/diagnosis">다시 진단</a></p></section>` : ''}
       </aside>
     </div>
   </section>`;

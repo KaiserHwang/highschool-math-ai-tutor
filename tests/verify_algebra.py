@@ -56,6 +56,14 @@ def expected_algebra_bank(P=None):
     p = sp.Symbol('p', real=True)
     sols = [v for v in sp.solve(sp.Eq((3 - p) / p + p / (3 - p), S(5, 2)), p) if v != 0 and v != 3]
     E['a1-08'] = same_for(sols, lambda v: 2 ** v + 2 ** (3 - v))
+    # ── 대수 진단
+    E['d18'] = val(real_roots(3, -27)[0] + max(real_roots(4, 81)))
+    E['d19'] = val(sp.log(real_roots(3, 4)[0] ** S(3, 2) * S(16) ** S(-1, 4) * sp.sqrt(8), 2))
+    # 양수 x, y에 대한 연립방정식을 그대로 풀어 해가 하나뿐인지 확인한다
+    Xs, Ys = sp.symbols('Xs Ys', positive=True)
+    sol = sp.solve([sp.log(Xs, 2) + sp.log(Ys, 4) - 4, sp.log(Xs, 2) - sp.log(Ys, 4) - 2], [Xs, Ys], dict=True)
+    assert len(sol) == 1, sol
+    E['d20'] = val(sol[0][Xs] + sol[0][Ys])
     return E
 
 

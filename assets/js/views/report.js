@@ -1,6 +1,6 @@
 import { getState, today, addDays } from '../store.js';
 import { UNIT_BY_ID, SKILLS, TRACKS, unitLabel, NEXT_SUBJECTS_NOTE } from '../content/units.js';
-import { latestDiagnosis, currentSkills, unitMastery, periodStats, wrongList, REASONS, streak, totals, activeTrack, lessonTotals, conceptMemory, rootWeaknesses, misconceptionStats, studyCount, activeUnits, activeCourseTitles, hiddenReviews } from '../model.js';
+import { latestDiagnosis, currentSkills, unitMastery, periodStats, wrongList, REASONS, streak, totals, activeTrack, lessonTotals, conceptMemory, rootWeaknesses, misconceptionStats, studyCount, activeDiagSets, latestDiagnosisOf, activeUnits, activeCourseTitles, hiddenReviews } from '../model.js';
 import { MISCONCEPTIONS } from '../content/misconceptions.js';
 import { LESSON_BY_ID } from '../content/lessons/index.js';
 import { radar } from '../lib/radar.js';
@@ -30,7 +30,8 @@ export function renderReport(view) {
 
   const series = [];
   if (Object.values(now).every((v) => v != null)) series.push({ values: now, cls: 'now', name: '현재' });
-  if (diag) series.push({ values: diag.skills, cls: 'diag', name: '진단' });
+  // 진단이 다루지 않은 역량이 있으면(값이 null) 진단 차트는 그리지 않는다(0점으로 보이지 않게)
+  if (diag && SKILLS.every((s) => diag.skills[s.key] != null)) series.push({ values: diag.skills, cls: 'diag', name: '진단' });
 
   const scope = activeCourseTitles().join('·');
   const hidden = hiddenReviews();
@@ -124,7 +125,10 @@ function buildSummary({ diag, now, w7, tt, wr }) {
   lines.push(`범위: ${activeCourseTitles().join('·')}(2022 개정 교육과정). 이 앱에서 공부하는 과목만 포함`);
   lines.push(`트랙: ${TRACKS[activeTrack()].label}`);
   if (diag) {
-    lines.push(`최근 진단(${fmtDate(diag.date)}): ${diag.total}문제 중 ${diag.correctCount}개 정답, 확신도 반영 점수 ${diag.overall}점`);
+    for (const s of activeDiagSets()) {
+      const d = latestDiagnosisOf(s.id);
+      lines.push(d ? `${s.title} 진단(${fmtDate(d.date)}): ${d.total}문제 중 ${d.correctCount}개 정답, 확신도 반영 점수 ${d.overall}점` : `${s.title} 진단: 아직 보지 않음`);
+    }
     if (diag.confidentWrong.length) lines.push(`- 확신했는데 틀린 문제 ${diag.confidentWrong.length}개`);
   }
   lines.push('역량(0~100): ' + SKILLS.map((s) => `${s.label} ${now[s.key] ?? '없음'}`).join(', '));

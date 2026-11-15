@@ -6,7 +6,7 @@
 import { TRACKS, SKILLS, UNIT_BY_ID, REASONS, REVIEW_GAPS } from './content/units.js';
 import { COURSES } from './content/courses.js';
 import { PROBLEM_BY_ID } from './content/problems.js';
-import { DIAGNOSIS } from './content/diagnosis.js';
+import { DIAGNOSIS, isDiagSetId } from './content/diagnosis.js';
 import { GENERATORS } from './content/generators.js';
 import { LESSON_BY_ID, CHECK_BY_ID, CQ_BY_ID } from './content/lessons/index.js';
 
@@ -102,7 +102,9 @@ export function checkState(raw, { strict }) {
       if (!isNum(d.overall, 0, 100)) errs.push('overall');
       if (!isInt(d.correctCount, 0, 1000) || !isInt(d.total, 1, 1000) || d.correctCount > d.total) errs.push('정답 수');
       if (!Object.hasOwn(TRACKS, d.track)) errs.push('track');
-      if (!isObj(d.skills) || !SKILLS.every((s) => isNum(d.skills[s.key], 0, 100))) errs.push('skills');
+      // 진단 묶음(#24): 없으면 예전 공통수학 진단. 그 진단이 다루지 않은 역량은 null일 수 있다
+      if (d.set !== undefined && !isDiagSetId(d.set)) errs.push('set');
+      if (!isObj(d.skills) || !SKILLS.every((s) => d.skills[s.key] === null || isNum(d.skills[s.key], 0, 100))) errs.push('skills');
       if (!isObj(d.units) || !Object.entries(d.units).every(([u, v]) => UNIT_BY_ID[u] && isNum(v, 0, 100))) errs.push('units');
       if (!Array.isArray(d.confidentWrong) || !d.confidentWrong.every((x) => typeof x === 'string')) errs.push('confidentWrong');
       if (!Array.isArray(d.items) || !d.items.every((it) => isObj(it) && typeof it.id === 'string' && isBool(it.correct)
@@ -112,7 +114,7 @@ export function checkState(raw, { strict }) {
     }
     if (errs.length) { bad(w, errs.join(', ')); return; }
     out.diagnoses.push({
-      date: d.date, overall: d.overall, correctCount: d.correctCount, total: d.total, track: d.track,
+      date: d.date, set: d.set ?? 'common', overall: d.overall, correctCount: d.correctCount, total: d.total, track: d.track,
       skills: Object.fromEntries(SKILLS.map((s) => [s.key, d.skills[s.key]])),
       units: { ...d.units },
       confidentWrong: d.confidentWrong.filter((x) => DIAG_IDS.has(x)),
