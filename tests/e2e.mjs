@@ -285,6 +285,20 @@ async function run(viewport, tag) {
   await page.goto(BASE + '#/l/u2-l1');
   await page.waitForSelector('[data-note]');
   ok((await page.inputValue('[data-note]')) === '실수부분과 허수부분을 각각 비교한다', `[${tag}] 직접 쓴 설명이 저장되어 다시 보인다`);
+  // #22 예측·찾아보기 과제·유도·설명 비교는 기록에 남아, 다시 들어와도 한 데까지 보인다
+  ok((await page.locator('[data-pd].answered .pd-fb .c-body').count()) === 1 && (await page.locator(`[data-pd-opt="${wrongPd}"][aria-checked="true"]`).count()) === 1
+    && (await page.locator('[data-xp="0"] [data-goal="0"].done').count()) === 1
+    && !(await page.locator('[data-dv-step="0"] .dv-line').isHidden()) && !(await page.locator('[data-dv-step="1"]').isHidden())
+    && !(await page.locator('.say-model').isHidden()) && /예측 ✓/.test(await page.textContent('[data-progress]')),
+    `[${tag}] 소단원에 다시 들어오면 예측·찾아보기 과제·유도·설명 비교가 한 데까지 보인다`);
+  await page.check('[data-key="0"]');
+  await page.goto(BASE + '#/');
+  await page.waitForSelector('.home .ring');
+  const dayAct = await page.evaluate(() => { const s = JSON.parse(localStorage.getItem('mathpulse:v2')); return { keys: s.lessons['u2-l1'].keys, act: Object.values(s.activity)[Object.values(s.activity).length - 1] }; });
+  ok(dayAct.keys.join() === '0' && dayAct.act.checks > 0 && Number(await page.textContent('.ring-t b')) === dayAct.act.checks + dayAct.act.solved && (await page.getAttribute('.ring', 'aria-label')).includes('개념 문항'),
+    `[${tag}] 오늘 목표는 개념 문항 풀이와 문제 해결을 더해 센다 (개념 ${dayAct.act.checks} + 문제 ${dayAct.act.solved})`);
+  await page.goto(BASE + '#/l/u2-l1');
+  await page.waitForSelector('[data-note]');
   await shot('lesson');
   await page.goto(BASE + '#/u/u2');
   await page.waitForSelector('.lesson-toc');

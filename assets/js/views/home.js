@@ -1,7 +1,7 @@
 import { getState, today, addDays } from '../store.js';
 import { UNITS, TRACKS, UNIT_BY_ID, LEVELS, COURSE_SHORT, unitLabel } from '../content/units.js';
 import { generatorsOfUnit, newSeed } from '../content/generators.js';
-import { latestDiagnosis, recommendNext, dueReviews, unitMastery, streak, activeTrack, totals, weakestUnit, lessonTotals, lessonRechecks, conceptsDue, conceptQueue, conceptMemory, learnedOn, rootWeaknesses } from '../model.js';
+import { latestDiagnosis, recommendNext, dueReviews, unitMastery, streak, activeTrack, totals, weakestUnit, lessonTotals, lessonRechecks, conceptsDue, conceptQueue, conceptMemory, learnedOn, rootWeaknesses, studyCount } from '../model.js';
 import { lessonForProblem, LESSONS, lessonsOfUnit } from '../content/lessons/index.js';
 import { CONCEPT_SET } from './concepts.js';
 import { tex, esc, fmtDate } from '../lib/ui.js';
@@ -10,10 +10,11 @@ import { figure } from '../lib/plot.js';
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
-function goalRing(done, goal) {
+// 오늘 목표와 주간 막대는 하루 학습량(개념 문항 풀이 + 문제 해결)으로 센다(#22). 개념 학습만 한 날도 0이 아니다.
+function goalRing(done, goal, a) {
   const r = 26, c = 2 * Math.PI * r;
   const v = Math.min(1, done / goal);
-  return `<div class="ring" role="img" aria-label="오늘 목표 ${goal}문제 중 ${done}문제 해결">
+  return `<div class="ring" role="img" aria-label="오늘 목표 ${goal}개 중 ${done}개 (개념 문항 ${a.checks || 0}개 풀이, 문제 ${a.solved || 0}개 해결)" title="개념 문항 ${a.checks || 0} · 문제 ${a.solved || 0}">
     <svg viewBox="0 0 64 64" aria-hidden="true"><circle class="ring-bg" cx="32" cy="32" r="${r}"/><circle class="ring-v${v >= 1 ? ' full' : ''}" cx="32" cy="32" r="${r}" stroke-dasharray="${(c * v).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 32 32)"/></svg>
     <span class="ring-t"><span><b>${done}</b>/${goal}</span></span>
   </div>`;
@@ -36,8 +37,8 @@ export function renderHome(view) {
   for (let i = 6; i >= 0; i--) {
     const d = addDays(today(), -i);
     const a = st.activity[d];
-    const n = a ? a.solved : 0;
-    week.push(`<li class="wk-day${d === today() ? ' is-today' : ''}"><span class="wk-bar" style="--h:${Math.min(1, n / goal)}" title="${n}문제"></span><span class="wk-n">${n || ''}</span><span class="wk-l">${DAYS[new Date(d + 'T00:00:00').getDay()]}</span></li>`);
+    const n = studyCount(a);
+    week.push(`<li class="wk-day${d === today() ? ' is-today' : ''}"><span class="wk-bar" style="--h:${Math.min(1, n / goal)}" title="개념 문항 ${a ? a.checks || 0 : 0} · 문제 ${a ? a.solved : 0}"></span><span class="wk-n">${n || ''}</span><span class="wk-l">${DAYS[new Date(d + 'T00:00:00').getDay()]}</span></li>`);
   }
 
   const steps = [];
@@ -105,7 +106,7 @@ export function renderHome(view) {
         <h1 class="page-title">${st.profile.name ? `${esc(st.profile.name)}, ` : ''}오늘도 개념 하나씩</h1>
         <p class="scope-note">학습 범위: 고1 공통수학1·2 (2022 개정 교육과정)</p>
       </div>
-      ${goalRing(todayAct.solved, goal)}
+      ${goalRing(studyCount(todayAct), goal, todayAct)}
     </header>
     ${diag ? '' : `
       <section class="first-run">
@@ -121,7 +122,8 @@ export function renderHome(view) {
       <aside class="home-side">
         <section class="side-block">
           <h2 class="h3">이번 주</h2>
-          <ol class="week" aria-label="최근 7일 해결한 문제 수">${week.join('')}</ol>
+          <ol class="week" aria-label="최근 7일 학습량(개념 문항 풀이 + 문제 해결)">${week.join('')}</ol>
+          <p class="hint-text">오늘 개념 문항 ${todayAct.checks || 0}개 풀이 · 문제 ${todayAct.solved || 0}개 해결. 하루 목표는 둘을 더해 ${goal}개입니다.</p>
         </section>
         <section class="side-block">
           <h2 class="h3">단원별 숙련도</h2>

@@ -23,7 +23,7 @@ export function renderSettings(view) {
     <section class="set-sec">
       <h2 class="h3">학생</h2>
       <label class="field"><span class="field-l">이름(화면 인사에만 사용)</span><input data-k="name" value="${esc(st.profile.name)}" maxlength="20"></label>
-      <label class="field"><span class="field-l">하루 목표 문제 수</span><input data-k="goal" type="number" min="1" max="30" value="${st.profile.dailyGoal}"></label>
+      <label class="field"><span class="field-l">하루 목표 <span class="hint-text">개념 문항 풀이 + 문제 해결을 더한 수</span></span><input data-k="goal" type="number" min="1" max="30" value="${st.profile.dailyGoal}"></label>
       <fieldset class="field"><legend class="field-l">학습 트랙</legend>
         <div class="row">
           <button type="button" class="chip" data-track="" aria-pressed="${!st.profile.track}">진단 추천 따르기${diagTrack ? ` (${TRACKS[diagTrack].label})` : ''}</button>
