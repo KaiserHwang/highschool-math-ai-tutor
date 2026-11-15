@@ -73,7 +73,7 @@ export function renderTrace(view, { args: [id] }) {
       </header>
       ${anc.length ? `<ol class="ck-list tr-list">${sess.asked.map((a, k) => cqHTML(CQ_BY_ID[a.qid], { num: k + 1, done: a.resp, tag: itemTag(a), seed: seedFor(a.qid) })).join('')}${next ? cqHTML(CQ_BY_ID[next.qid], { num: n + 1, tag: itemTag(next), attrs: `data-tr-cur="1"`, seed: seedFor(next.qid) }) : ''}</ol>
         ${next ? `<p class="hint-text tr-prog">${n + 1}번째 문항${n ? ` · 지금까지 맞힘 ${s.passed.length}, 틀림 ${s.weak.length}` : ''}</p>` : summaryHTML(root, s)}`
-      : `<section class="paper tr-sum ok"><h2 class="paper-title">고1 과정의 앞 소단원이 없는 개념이에요</h2><p>이 개념은 중학교 내용에 바로 기댑니다. 핵심 정리와 "왜 그럴까"부터 다시 보세요.</p><p class="row"><a class="btn btn-primary" href="#/l/${root.id}">${esc(root.title)} 다시 보기</a></p></section>`}
+      : `<section class="paper tr-sum ok"><h2 class="paper-title">앞 소단원이 없는 개념이에요</h2><p>이 개념은 중학교 내용에 바로 기댑니다. 핵심 정리와 "왜 그럴까"부터 다시 보세요.</p><p class="row"><a class="btn btn-primary" href="#/l/${root.id}">${esc(root.title)} 다시 보기</a></p></section>`}
     </section>`;
   };
 

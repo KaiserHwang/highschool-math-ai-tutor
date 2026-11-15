@@ -54,7 +54,17 @@ for (const p of [...PROBLEMS, ...DIAGNOSIS]) {
 // 화면과 기록은 id를 잘라 단원을 알아내지 않지만(content/registry.js), 둘이 어긋나면 사람이 읽을 때 잘못 분류하게 된다.
 {
   const unitIds = new Set();
+  // 과목: 단원은 등록된 과목 하나를 가리키고, 융합 단원은 걸친 과목들을 courses로 적는다
+  const { COURSES, isCourseId } = await import('../assets/js/content/courses.js');
+  if (new Set(COURSES.map((c) => c.id)).size !== COURSES.length) fail('과목 id 중복');
+  for (const c of COURSES) {
+    if (!/^[a-z][a-z0-9]*$/.test(c.id) || !c.title || !c.short || typeof c.starter !== 'boolean') fail(`과목 ${c.id}: 형식(id, title, short, starter)`);
+    for (const r of c.requires || []) if (!isCourseId(r) || r === c.id) fail(`과목 ${c.id}.requires: ${r}`);
+  }
+  if (!COURSES.some((c) => c.starter)) fail('기본 과목(starter)이 하나도 없음');
   for (const u of UNITS) {
+    const cs = isFusionUnit(u.id) ? u.courses : [u.course];
+    if (!Array.isArray(cs) || !cs.length || !cs.every(isCourseId)) fail(`단원 ${u.id}: 과목이 없거나 등록되지 않은 과목`);
     if (!isUnitId(u.id)) fail(`단원 ${u.id}: id 형식(영문 소문자 한 글자 + 번호, g는 생성기용이라 쓸 수 없음)`);
     if (unitIds.has(u.id)) fail(`단원 ${u.id}: id 중복`);
     unitIds.add(u.id);

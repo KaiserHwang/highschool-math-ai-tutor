@@ -1,18 +1,23 @@
-import { UNITS, UNIT_BY_ID, LEVELS, TRACKS, NEXT_SUBJECTS_NOTE } from '../content/units.js';
+import { UNITS, UNIT_BY_ID, LEVELS, TRACKS, NEXT_SUBJECTS_NOTE, isFusion, courseTitle } from '../content/units.js';
+import { COURSES } from '../content/courses.js';
 import { problemsOfUnit } from '../content/problems.js';
-import { unitMastery, statusOf, activeTrack, latestDiagnosis, unitLessonStats, lessonProgress, LESSON_STATE, diagUnitReadiness } from '../model.js';
+import { unitMastery, statusOf, activeTrack, latestDiagnosis, unitLessonStats, lessonProgress, LESSON_STATE, diagUnitReadiness, activeCourses, activeCourseTitles, isActiveUnit } from '../model.js';
 import { tex, esc, statusGlyph } from '../lib/ui.js';
 import { lessonsOfUnit } from '../content/lessons/index.js';
 import { generatorsOfUnit, newSeed } from '../content/generators.js';
 import { getState } from '../store.js';
 
-const COURSES = ['공통수학1', '공통수학2', '융합'];
-
 export function renderUnits(view) {
   const track = activeTrack();
   const diag = latestDiagnosis();
-  const block = (course) => {
-    const list = UNITS.filter((u) => u.course === course).map((u) => {
+  // 과목별로 묶는다. 공부하는 과목을 먼저 보이고, 꺼 둔 과목은 접어 둔다(기록은 그대로이고 언제든 열어 볼 수 있다).
+  const active = activeCourses();
+  const groups = [
+    ...COURSES.map((c) => ({ title: c.title, on: active.includes(c.id), units: UNITS.filter((u) => !isFusion(u) && u.course === c.id) })),
+    { title: '단원 융합', on: UNITS.some((u) => isFusion(u) && isActiveUnit(u, active)), units: UNITS.filter((u) => isFusion(u)) },
+  ].filter((g) => g.units.length);
+  const block = (g) => {
+    const list = g.units.map((u) => {
       const m = unitMastery(u.id);
       const dr = diag ? diagUnitReadiness(diag)[u.id] : null;
       const ready = dr ? `진단 ${dr.pct}(${dr.n}문항)` : '';
@@ -26,16 +31,18 @@ export function renderUnits(view) {
         </a>
       </li>`;
     }).join('');
-    return `<section class="toc-group"><h2 class="toc-h">${course === '융합' ? '단원 융합' : course}</h2><ol class="toc">${list}</ol></section>`;
+    return `<section class="toc-group"><h2 class="toc-h">${esc(g.title)}</h2><ol class="toc">${list}</ol></section>`;
   };
+  const off = groups.filter((g) => !g.on);
   view.innerHTML = `
   <section class="page">
     <header class="page-head">
       <h1 class="page-title">개념 학습</h1>
-      <p class="lead">2022 개정 교육과정 공통수학1·2(고1)의 일곱 단원과 선행 학습자를 위한 융합 단원입니다. 소단원마다 예측 → 탐구 → 정리 → 예제 → 확인 → 심화 → 설명 순서로 공부하고, 배운 개념은 1주·3주·2개월 뒤 "오늘의 개념 확인"에서 다시 꺼내 봅니다. 지금 트랙은 <a href="#/settings">${TRACKS[track].label}</a>입니다.</p>
+      <p class="lead">2022 개정 교육과정 ${esc(activeCourseTitles().join('·'))}의 단원입니다. 소단원마다 예측 → 탐구 → 정리 → 예제 → 확인 → 심화 → 설명 순서로 공부하고, 배운 개념은 1주·3주·2개월 뒤 "오늘의 개념 확인"에서 다시 꺼내 봅니다. 지금 트랙은 <a href="#/settings">${TRACKS[track].label}</a>입니다.</p>
       <p class="row"><a class="btn btn-primary" href="#/map">개념 지도</a><a class="btn btn-quiet" href="#/quiz?view=intro">배운 범위 혼합 평가</a></p>
     </header>
-    ${COURSES.map(block).join('')}
+    ${groups.filter((g) => g.on).map(block).join('')}
+    ${off.length ? `<details class="toc-off"><summary class="h3">공부하지 않는 과목 ${off.length}개 <span class="hint-text">${off.map((g) => esc(g.title)).join(', ')} · 추천과 복습에 나오지 않습니다. <a href="#/settings">설정</a>에서 바꿀 수 있어요.</span></summary>${off.map(block).join('')}</details>` : ''}
   </section>`;
 }
 
@@ -67,7 +74,7 @@ export function renderUnit(view, { args: [unitId] }) {
 
   view.innerHTML = `
   <section class="page">
-    <nav class="crumbs" aria-label="위치"><a href="#/units">단원</a><span aria-hidden="true">/</span><span>${u.course}</span></nav>
+    <nav class="crumbs" aria-label="위치"><a href="#/units">단원</a><span aria-hidden="true">/</span><span>${esc(courseTitle(u))}</span></nav>
     <header class="page-head unit-head">
       <h1 class="page-title"><span class="unit-no">${u.no}</span>${esc(u.title)}</h1>
       <p class="lead">${esc(u.sub)}</p>

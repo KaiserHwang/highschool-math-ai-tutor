@@ -1,11 +1,32 @@
 // 채점, 숙련도, 추천, 복습 주기 계산
 import { PROBLEMS, problemsOfUnit, PROBLEM_BY_ID } from './content/problems.js';
 import { DIAGNOSIS } from './content/diagnosis.js';
-import { UNITS, SKILLS, LEVELS, TRACKS, REVIEW_GAPS, REGULAR_UNITS, isFusion } from './content/units.js';
+import { UNITS, SKILLS, LEVELS, TRACKS, REVIEW_GAPS, REGULAR_UNITS, UNIT_BY_ID, isFusion, unitCourses } from './content/units.js';
+import { COURSE_BY_ID, normalizeCourses } from './content/courses.js';
 import { unitOf } from './content/registry.js';
 import { getState, today, addDays, localDay } from './store.js';
 import { LESSONS, lessonsOfUnit } from './content/lessons/index.js';
 import { GENERATORS } from './content/generators.js';
+
+// ── 공부하는 과목(#24 2단계) ───────────────────────────
+// 학생이 설정에서 고른 과목만 "오늘 할 일"에 쓴다: 추천 문제, 약한 단원, 오늘의 개념 확인, 재확인, 오답 복습, 혼합 평가 범위, 리포트의 단원 표.
+// 고르지 않은 과목은 약점으로 해석하지 않는다. 기록은 지우지 않고 예정일도 바꾸지 않으므로, 과목을 다시 켜면 그대로 이어진다.
+// 소단원·문제 화면, 개념 지도, 선수 개념 역추적은 과목을 가리지 않는다(앞 과목의 개념으로 거슬러 올라갈 수 있어야 한다).
+/** 공부하는 과목 id(과목 순서). 고른 적이 없으면 기본 과목 */
+export const activeCourses = () => normalizeCourses(getState().profile.courses);
+export const activeCourseTitles = () => activeCourses().map((id) => COURSE_BY_ID[id].title);
+/** 이 단원이 공부하는 과목에 들어 있는지. 융합 단원은 걸친 과목을 모두 공부할 때만 */
+export function isActiveUnit(unitOrId, active = activeCourses()) {
+  const u = typeof unitOrId === 'string' ? (Object.hasOwn(UNIT_BY_ID, unitOrId) ? UNIT_BY_ID[unitOrId] : null) : unitOrId;
+  const cs = u ? unitCourses(u) : [];
+  return cs.length > 0 && cs.every((c) => active.includes(c));
+}
+export const activeUnits = () => { const a = activeCourses(); return UNITS.filter((u) => isActiveUnit(u, a)); };
+export const activeRegularUnits = () => { const a = activeCourses(); return REGULAR_UNITS.filter((u) => isActiveUnit(u, a)); };
+/** 공부하는 과목의 소단원·문제만 남긴다 */
+const inScope = () => { const a = activeCourses(); return (item) => isActiveUnit(item.unit, a); };
+export const activeLessons = () => LESSONS.filter(inScope());
+export const activeProblems = () => PROBLEMS.filter(inScope());
 
 // ── 답 비교 ──────────────────────────────────────────
 function gcd(a, b) {
@@ -219,7 +240,7 @@ export function recommendNext() {
   const st = getState();
   const diag = latestDiagnosis();
   const unsolved = (q) => !(st.attempts[q.id] && st.attempts[q.id].solved);
-  const allowed = UNITS.filter((u) => !isFusion(u) || trackKey === 'killer'); // 융합 단원은 최상위 트랙에서만 추천
+  const allowed = activeUnits().filter((u) => !isFusion(u) || trackKey === 'killer'); // 공부하는 과목 안에서, 융합 단원은 최상위 트랙에서만 추천
 
   const recent = Object.entries(st.attempts)
     .filter(([, a]) => a.lastAt)
@@ -245,7 +266,7 @@ export function recommendNext() {
 /** 오늘 연습할 유형: 숙련도가 가장 낮은 단원의 생성기 */
 export function weakestUnit() {
   const diag = latestDiagnosis();
-  return REGULAR_UNITS
+  return activeRegularUnits()
     .map((u) => ({ u, score: unitNeed(u.id, diag) }))
     .sort((a, b) => a.score - b.score)[0].u;
 }
@@ -317,14 +338,27 @@ export function reviewResult(st, pid, ok) {
   return { counted: true };
 }
 
-export function wrongList() {
+/** 오답노트. 기본은 공부하는 과목의 문제만, { all: true }면 꺼 둔 과목의 것까지 */
+export function wrongList({ all = false } = {}) {
   const st = getState();
+  const ok = inScope();
   return Object.entries(st.wrong)
     .map(([pid, w]) => ({ pid, ...w, p: PROBLEM_BY_ID[pid] }))
-    .filter((w) => w.p);
+    .filter((w) => w.p && (all || ok(w.p)));
 }
 
 export const dueReviews = () => wrongList().filter((w) => !w.resolved && w.due <= today());
+
+/** 꺼 둔 과목에 남아 있는 복습(졸업하지 않은 오답, 재확인할 개념, 기억 관리 중인 개념). 숨기기만 하고 예정일은 그대로다. */
+export function hiddenReviews() {
+  const ok = inScope();
+  const st = getState();
+  const wrong = wrongList({ all: true }).filter((w) => !w.resolved && !ok(w.p)).length;
+  const off = LESSONS.filter((l) => !ok(l));
+  const rechecks = off.filter((l) => st.lessons[l.id]?.recheck).length;
+  const concepts = off.filter((l) => { const sp = spacedOf(l); return sp && !st.lessons[l.id].recheck; }).length;
+  return { wrong, rechecks, concepts, total: wrong + rechecks + concepts };
+}
 
 // ── 학습 통계 ─────────────────────────────────────────
 export function streak() {
@@ -353,14 +387,16 @@ export function periodStats(days = 7, now = new Date()) {
   return { solved, attempted, seconds, activeDays, checks, problems: atts.length, hintUse, firstRight };
 }
 
+/** 문제 은행 진행(공부하는 과목의 문제만) */
 export function totals() {
   const st = getState();
-  const atts = Object.values(st.attempts);
+  const ps = activeProblems();
+  const atts = ps.map((p) => st.attempts[p.id]).filter(Boolean);
   return {
     tried: atts.filter((a) => a.tries).length,
     solved: atts.filter((a) => a.solved).length,
     clean: atts.filter((a) => a.solved && a.firstCorrect && !a.hints && !a.sawSolution).length,
-    total: PROBLEMS.length,
+    total: ps.length,
   };
 }
 
@@ -551,7 +587,7 @@ export function practiceTarget(lesson) {
 }
 
 export function lessonRechecks() {
-  return LESSONS.map((l) => ({ l, pr: lessonProgress(l) })).filter((x) => x.pr.recheck);
+  return activeLessons().map((l) => ({ l, pr: lessonProgress(l) })).filter((x) => x.pr.recheck);
 }
 
 // ── 개념 간격 복습 ─────────────────────────────────
@@ -620,7 +656,7 @@ export function conceptResult(st, lessonId, ok) {
 /** 개념 복습 목록: 배웠고 재확인 중이 아닌 개념(예정일 순). 오래 기억한 개념도 6개월 뒤 유지 확인으로 들어 있다. */
 export function conceptQueue() {
   const st = getState();
-  return LESSONS.map((l) => ({ l, rec: st.lessons[l.id], sp: spacedOf(l) }))
+  return activeLessons().map((l) => ({ l, rec: st.lessons[l.id], sp: spacedOf(l) }))
     .filter((x) => x.sp && !x.rec.recheck)
     .sort((a, b) => a.sp.due.localeCompare(b.sp.due) || LESSONS.indexOf(a.l) - LESSONS.indexOf(b.l));
 }
@@ -629,8 +665,9 @@ export const conceptsDue = () => conceptQueue().filter((x) => x.sp.due <= today(
 /** 개념 기억 현황: 배운 개념, 기억 관리 중, 오래 기억함 */
 export function conceptMemory() {
   const st = getState();
-  const sps = LESSONS.map((l) => spacedOf(l, st.lessons[l.id])).filter(Boolean);
-  return { learned: sps.length, kept: sps.filter((s) => s.keptAt).length, due: conceptsDue().length, total: LESSONS.length };
+  const ls = activeLessons();
+  const sps = ls.map((l) => spacedOf(l, st.lessons[l.id])).filter(Boolean);
+  return { learned: sps.length, kept: sps.filter((s) => s.keptAt).length, due: conceptsDue().length, total: ls.length };
 }
 
 /**
@@ -668,20 +705,22 @@ export function unitLessonStats(unitId) {
   };
 }
 
+/** 개념 학습 진행(공부하는 과목의 소단원만) */
 export function lessonTotals() {
-  const prs = LESSONS.map((l) => lessonProgress(l));
-  return { done: prs.filter((p) => p.done).length, verified: prs.filter((p) => p.verified).length, recheck: prs.filter((p) => p.recheck).length, total: LESSONS.length };
+  const prs = activeLessons().map((l) => lessonProgress(l));
+  return { done: prs.filter((p) => p.done).length, verified: prs.filter((p) => p.verified).length, recheck: prs.filter((p) => p.recheck).length, total: prs.length };
 }
 
 // ── 혼합 평가(#7) ───────────────────────────────────
-/** 학생이 공부한 흔적이 있는 단원(문제를 풀었거나 개념 확인 문제를 풀었음). 없으면 공통수학 전 단원 */
+/** 공부하는 과목에서 학생이 공부한 흔적이 있는 단원(문제를 풀었거나 개념 확인 문제를 풀었음). 없으면 공부하는 과목의 교과서 단원 전체 */
 export function studiedUnits() {
   const st = getState();
   const set = new Set();
   for (const [pid, a] of Object.entries(st.attempts)) if (a.tries && PROBLEM_BY_ID[pid]) set.add(PROBLEM_BY_ID[pid].unit);
   for (const [lid, r] of Object.entries(st.lessons)) if (Object.keys(r.checks || {}).length || r.done) { const u = unitOf(lid); if (u) set.add(u); }
-  const studied = REGULAR_UNITS.filter((u) => set.has(u.id)); // 융합 단원은 평가 범위에 넣지 않는다
-  return (studied.length ? studied : REGULAR_UNITS).map((u) => u.id);
+  const regular = activeRegularUnits(); // 융합 단원은 평가 범위에 넣지 않는다
+  const studied = regular.filter((u) => set.has(u.id));
+  return (studied.length ? studied : regular).map((u) => u.id);
 }
 
 /**
@@ -777,12 +816,12 @@ export function lastCQ(lessonId, qid) {
   return e && e.log.length ? e.log[e.log.length - 1] : null;
 }
 
-/** 최근 days일 동안 개념 질문에서 고른 틀린 이유를 오개념별로 센다(많은 순). */
-export function misconceptionStats(days = 60) {
+/** 최근 days일 동안 개념 질문에서 고른 틀린 이유를 오개념별로 센다(많은 순). 기본은 공부하는 과목의 소단원만, { all: true }면 전 과목. */
+export function misconceptionStats(days = 60, { all = false } = {}) {
   const st = getState();
   const from = addDays(today(), -(days - 1));
   const acc = {};
-  for (const L of LESSONS) {
+  for (const L of all ? LESSONS : activeLessons()) {
     const rec = st.lessons[L.id];
     if (!rec || !rec.cq) continue;
     for (const q of L.cq || []) {
@@ -851,7 +890,7 @@ export function weakSignals(lesson) {
 
 /** 먼저 다지면 좋은 개념: 약한 개념을 그 위에 쌓이는 개념이 많은 순으로 */
 export function rootWeaknesses(n = 3) {
-  return LESSONS.map((l) => ({ l, sig: weakSignals(l), above: descendantsOf(l.id).length }))
+  return activeLessons().map((l) => ({ l, sig: weakSignals(l), above: descendantsOf(l.id).length }))
     .filter((x) => x.sig.length)
     .sort((a, b) => b.above - a.above || LESSON_INDEX[a.l.id] - LESSON_INDEX[b.l.id])
     .slice(0, n);

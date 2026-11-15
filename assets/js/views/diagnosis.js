@@ -1,5 +1,5 @@
 import { DIAGNOSIS } from '../content/diagnosis.js';
-import { UNIT_BY_ID, UNITS, TRACKS, SKILLS, LEVELS, unitLabel } from '../content/units.js';
+import { UNIT_BY_ID, UNITS, TRACKS, SKILLS, LEVELS, unitLabel, courseTitle } from '../content/units.js';
 import { getState, update } from '../store.js';
 import { gradeDiagnosis, latestDiagnosis, isCorrect, normalizeAnswer, diagUnitReadiness, practiceTarget } from '../model.js';
 import { LESSON_BY_ID } from '../content/lessons/index.js';
@@ -72,7 +72,7 @@ function renderQuestion(view) {
     <header class="diag-head">
       <p class="diag-progress"><span>${run.i + 1}</span> / ${DIAGNOSIS.length}</p>
       <div class="meter wide" role="progressbar" aria-valuemin="0" aria-valuemax="${DIAGNOSIS.length}" aria-valuenow="${run.i + 1}"><span style="--v:${((run.i + 1) / DIAGNOSIS.length) * 100}%"></span></div>
-      <p class="meta">${unit.course} · ${esc(unit.title)}</p>
+      <p class="meta">${esc(courseTitle(unit))} · ${esc(unit.title)}</p>
     </header>
     <article class="paper">
       <div class="q-row"><span class="q-num">${run.i + 1}</span><div class="q-text">${tex(q.q)}</div></div>

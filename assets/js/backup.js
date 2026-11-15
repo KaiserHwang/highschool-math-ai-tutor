@@ -4,6 +4,7 @@
 // 관대 모드: 잘못된 항목만 버리고 나머지를 살린다(저장된 기록이 일부 망가져도 앱이 열리도록).
 // 두 모드 모두 지금 앱에 없는 문제·생성기의 기록은 조용히 버린다(문제 은행이 바뀌어도 백업을 쓸 수 있게).
 import { TRACKS, SKILLS, UNIT_BY_ID, REASONS, REVIEW_GAPS } from './content/units.js';
+import { COURSES } from './content/courses.js';
 import { PROBLEM_BY_ID } from './content/problems.js';
 import { DIAGNOSIS } from './content/diagnosis.js';
 import { GENERATORS } from './content/generators.js';
@@ -27,7 +28,7 @@ export function blankState() {
   return {
     version: STATE_VERSION,
     createdAt: new Date().toISOString(),
-    profile: { name: '', track: null, dailyGoal: 5 },
+    profile: { name: '', track: null, dailyGoal: 5, courses: null }, // courses: 공부하는 과목 id들. null이면 고른 적 없음(기본 과목)
     diagnoses: [], // 최신이 마지막
     attempts: {}, // pid → 시도 기록
     wrong: {}, // pid → 오답노트 항목
@@ -83,6 +84,13 @@ export function checkState(raw, { strict }) {
   if ('name' in pf) { if (typeof pf.name === 'string' && pf.name.length <= 40) out.profile.name = pf.name.slice(0, 20); else bad('profile.name', '문자열이 아님'); }
   if ('track' in pf) { if (pf.track === null || Object.hasOwn(TRACKS, pf.track)) out.profile.track = pf.track; else bad('profile.track', '알 수 없는 트랙'); }
   if ('dailyGoal' in pf) { if (isInt(pf.dailyGoal, 1, 30)) out.profile.dailyGoal = pf.dailyGoal; else bad('profile.dailyGoal', '1~30 정수가 아님'); }
+  // 공부하는 과목: 형식이 틀리면 거절한다. 형식은 맞지만 지금 앱에 없는 과목은 조용히 빼고, 남는 것이 없으면 고른 적 없음(null)으로 둔다.
+  if ('courses' in pf && pf.courses !== null) {
+    if (Array.isArray(pf.courses) && pf.courses.length <= 30 && pf.courses.every((c) => typeof c === 'string' && c.length <= 20)) {
+      const known = COURSES.map((c) => c.id).filter((id) => pf.courses.includes(id));
+      out.profile.courses = known.length ? known : null;
+    } else bad('profile.courses', '과목 id 배열이 아님');
+  }
 
   // 진단 기록
   (Array.isArray(raw.diagnoses) ? raw.diagnoses : []).forEach((d, i) => {

@@ -47,6 +47,7 @@ Windows, macOS, Linux에서 같은 명령을 쓴다. 파이썬 실행 파일 이
 ## 코드를 고칠 때
 
 - **id를 잘라서 단원을 알아내지 않는다.** 어느 단원인지는 항목의 `unit` 필드나 `content/registry.js`의 `unitOf`로 찾는다. 특정 단원 id(`'u8'` 등)를 코드에서 직접 비교하지 않고 단원의 속성(`kind: 'fusion'`, `isFusion`, `REGULAR_UNITS`)을 쓴다.
+- **"오늘 할 일"을 만드는 계산은 공부하는 과목 안에서만 한다.** 추천, 약한 단원, 복습 목록, 집계에는 `UNITS`·`LESSONS`·`PROBLEMS` 전체가 아니라 `activeUnits()`·`activeLessons()`·`activeProblems()`를 쓴다. 소단원·문제 화면, 개념 지도, 선수 개념 역추적은 과목을 가리지 않는다. 화면 문구에 과목 이름을 직접 쓰지 않고 `activeCourseTitles()`나 `courseTitle(unit)`에서 가져온다.
 - 학습 판정 로직(채점, 숙련도, 간격 복습, 추천)은 `assets/js/model.js`에 두고 `tests/unit.mjs`에 회귀 검사를 추가한다. 화면 파일(`views/`)에만 있는 로직은 Node 검사로 잡히지 않는다.
 - 사용자 입력과 URL 매개변수는 신뢰하지 않는다. 화면에 넣을 때 `esc()`/`texUser()`를 쓰고, URL에서 온 id는 실제 존재하는 값일 때만 받는다. `tex()`는 앱이 작성한 콘텐츠에만 쓴다.
 - 저장 형식(`assets/js/backup.js`의 `blankState`, `checkState`)을 바꾸면 예전 기록·백업을 계속 읽을 수 있어야 하고, 내보내기→가져오기 왕복 검사(`tests/unit.mjs`)를 함께 고친다.
