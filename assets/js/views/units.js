@@ -1,7 +1,7 @@
 import { UNITS, UNIT_BY_ID, LEVELS, TRACKS, NEXT_SUBJECTS_NOTE, isFusion, courseTitle } from '../content/units.js';
 import { COURSES } from '../content/courses.js';
 import { problemsOfUnit } from '../content/problems.js';
-import { unitMastery, statusOf, activeTrack, latestDiagnosis, unitLessonStats, lessonProgress, LESSON_STATE, diagUnitReadiness, activeCourses, activeCourseTitles, isActiveUnit } from '../model.js';
+import { unitMastery, statusOf, activeTrack, latestDiagnosis, unitLessonStats, lessonProgress, LESSON_STATE, unitReadiness, activeCourses, activeCourseTitles, isActiveUnit } from '../model.js';
 import { tex, esc, statusGlyph } from '../lib/ui.js';
 import { lessonsOfUnit } from '../content/lessons/index.js';
 import { generatorsOfUnit, newSeed } from '../content/generators.js';
@@ -19,7 +19,7 @@ export function renderUnits(view) {
   const block = (g) => {
     const list = g.units.map((u) => {
       const m = unitMastery(u.id);
-      const dr = diag ? diagUnitReadiness(diag)[u.id] : null;
+      const dr = unitReadiness(u.id); // 그 단원이 속한 과목 진단의 준비도
       const ready = dr ? `진단 ${dr.pct}(${dr.n}문항)` : '';
       const ls = unitLessonStats(u.id);
       return `<li class="toc-row">

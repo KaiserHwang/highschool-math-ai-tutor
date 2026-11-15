@@ -336,12 +336,24 @@ for (const L of LESSONS) {
 // 진단: 문항마다 먼저 볼 소단원이 있고, 공통수학 단원(Ⅰ~Ⅶ)마다 2문항 이상(#8)
 const { LESSON_BY_ID } = await import('../assets/js/content/lessons/index.js');
 for (const q of DIAGNOSIS) if (!LESSON_BY_ID[q.lesson] || LESSON_BY_ID[q.lesson].unit !== q.unit) fail(`${q.id}: lesson이 없거나 다른 단원의 소단원`);
-// 진단은 아직 공통수학 통합 진단 하나다(#24 3단계에서 과목별로 나눈다). 기본 과목의 단원만 진단 문항 수를 본다.
-{ const { STARTER_COURSES } = await import('../assets/js/content/courses.js');
-for (const u of REGULAR_UNITS.filter((x) => STARTER_COURSES.includes(x.course))) {
-  const n = DIAGNOSIS.filter((q) => q.unit === u.id).length;
-  if (n < 2) fail(`${u.id}: 진단 문항이 ${n}개뿐(2개 이상 필요)`);
-}
+// 진단 묶음(#24 3단계): 모든 진단 문항이 어느 묶음에 들고, 묶음마다 문항이 있고, 교과서 단원마다 2문항 이상
+{
+  const { DIAG_SETS, diagSetOfUnit, diagItems } = await import('../assets/js/content/diagnosis.js');
+  const { isCourseId } = await import('../assets/js/content/courses.js');
+  if (new Set(DIAG_SETS.map((s) => s.id)).size !== DIAG_SETS.length) fail('진단 묶음 id 중복');
+  const seenCourse = new Set();
+  for (const s of DIAG_SETS) {
+    if (!s.courses.length || !s.courses.every(isCourseId)) fail(`진단 묶음 ${s.id}: 과목이 없거나 등록되지 않은 과목`);
+    for (const c of s.courses) { if (seenCourse.has(c)) fail(`과목 ${c}이 진단 묶음 두 곳에 들어 있음`); seenCourse.add(c); }
+    if (!diagItems(s.id).length) fail(`진단 묶음 ${s.id}: 문항이 없음`);
+    if (!(s.minutes > 0)) fail(`진단 묶음 ${s.id}: 예상 시간(minutes)`);
+  }
+  for (const q of DIAGNOSIS) if (!diagSetOfUnit(q.unit)) fail(`${q.id}: 어느 진단 묶음에도 들지 않는 단원 ${q.unit}`);
+  for (const u of REGULAR_UNITS) {
+    if (!diagSetOfUnit(u.id)) { fail(`${u.id}: 진단 묶음이 없는 과목의 단원`); continue; }
+    const n = DIAGNOSIS.filter((q) => q.unit === u.id).length;
+    if (n < 2) fail(`${u.id}: 진단 문항이 ${n}개뿐(2개 이상 필요)`);
+  }
 }
 
 // 단원마다 모든 난이도가 있는지(u8 제외)

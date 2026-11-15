@@ -6,7 +6,7 @@
 import { TRACKS, SKILLS, UNIT_BY_ID, REASONS, REVIEW_GAPS } from './content/units.js';
 import { COURSES } from './content/courses.js';
 import { PROBLEM_BY_ID } from './content/problems.js';
-import { DIAGNOSIS } from './content/diagnosis.js';
+import { DIAGNOSIS, isDiagSetId, diagSetOfUnit } from './content/diagnosis.js';
 import { GENERATORS } from './content/generators.js';
 import { LESSON_BY_ID, CHECK_BY_ID, CQ_BY_ID } from './content/lessons/index.js';
 
@@ -15,6 +15,7 @@ export const AI_KEYS = ['claude', 'chatgpt', 'gemini'];
 const THEMES = ['auto', 'light', 'dark'];
 const CONFS = ['sure', 'unsure', 'guess'];
 const DIAG_IDS = new Set(DIAGNOSIS.map((q) => q.id));
+const DIAG_UNIT = Object.fromEntries(DIAGNOSIS.map((q) => [q.id, q.unit])); // 진단 문항 id → 단원(모르는 id는 undefined)
 
 export class BackupError extends Error {
   constructor(problems) {
@@ -102,17 +103,25 @@ export function checkState(raw, { strict }) {
       if (!isNum(d.overall, 0, 100)) errs.push('overall');
       if (!isInt(d.correctCount, 0, 1000) || !isInt(d.total, 1, 1000) || d.correctCount > d.total) errs.push('정답 수');
       if (!Object.hasOwn(TRACKS, d.track)) errs.push('track');
-      if (!isObj(d.skills) || !SKILLS.every((s) => isNum(d.skills[s.key], 0, 100))) errs.push('skills');
+      // 진단 묶음(#24): 없으면 예전 공통수학 진단. 그 진단이 다루지 않은 역량은 null일 수 있다
+      if (d.set !== undefined && !isDiagSetId(d.set)) errs.push('set');
+      if (!isObj(d.skills) || !SKILLS.every((s) => d.skills[s.key] === null || isNum(d.skills[s.key], 0, 100))) errs.push('skills');
       if (!isObj(d.units) || !Object.entries(d.units).every(([u, v]) => UNIT_BY_ID[u] && isNum(v, 0, 100))) errs.push('units');
       if (!Array.isArray(d.confidentWrong) || !d.confidentWrong.every((x) => typeof x === 'string')) errs.push('confidentWrong');
       if (!Array.isArray(d.items) || !d.items.every((it) => isObj(it) && typeof it.id === 'string' && isBool(it.correct)
         && (it.conf === null || it.conf === undefined || CONFS.includes(it.conf))
         && (it.response === null || it.response === undefined || typeof it.response === 'number' || (typeof it.response === 'string' && it.response.length <= 40)))) errs.push('items');
       if (d.advCorrect !== undefined && !isInt(d.advCorrect, 0, 100)) errs.push('advCorrect');
+      // 묶음과 내용이 맞는지: 지금 앱이 아는 문항·단원은 모두 그 묶음 소속이어야 한다(다른 묶음의 기록에 이름만 바꾼 것을 받지 않는다)
+      const ds = d.set === undefined ? 'common' : isDiagSetId(d.set) ? d.set : null;
+      const other = (unitId) => !!unitId && diagSetOfUnit(unitId) !== ds;
+      if (ds && Array.isArray(d.items) && d.items.some((it) => isObj(it) && other(DIAG_UNIT[it.id]))) errs.push('items가 다른 묶음의 문항');
+      if (ds && Array.isArray(d.confidentWrong) && d.confidentWrong.some((x) => other(DIAG_UNIT[x]))) errs.push('confidentWrong이 다른 묶음의 문항');
+      if (ds && isObj(d.units) && Object.keys(d.units).some((u) => UNIT_BY_ID[u] && diagSetOfUnit(u) !== ds)) errs.push('units가 다른 묶음의 단원');
     }
     if (errs.length) { bad(w, errs.join(', ')); return; }
     out.diagnoses.push({
-      date: d.date, overall: d.overall, correctCount: d.correctCount, total: d.total, track: d.track,
+      date: d.date, set: d.set ?? 'common', overall: d.overall, correctCount: d.correctCount, total: d.total, track: d.track,
       skills: Object.fromEntries(SKILLS.map((s) => [s.key, d.skills[s.key]])),
       units: { ...d.units },
       confidentWrong: d.confidentWrong.filter((x) => DIAG_IDS.has(x)),

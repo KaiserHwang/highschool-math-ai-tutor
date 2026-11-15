@@ -556,6 +556,67 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   store.resetAll();
 }
 
+// ── #24 3단계: 과목별 진단 ───────────────────────────
+{
+  const store = await import('../assets/js/store.js');
+  const model = await import('../assets/js/model.js');
+  const { DIAGNOSIS, DIAG_SETS, diagItems, diagSetOfUnit } = await import('../assets/js/content/diagnosis.js');
+  const right = (qs) => Object.fromEntries(qs.map((q) => [q.id, { response: q.answer, conf: 'sure', hint: false, sec: 30 }]));
+  const common = diagItems('common'), alg = diagItems('algebra');
+  ok(common.length === 17 && alg.length >= 3 && common.length + alg.length === DIAGNOSIS.length && diagSetOfUnit('u8') === null && diagSetOfUnit('a1') === 'algebra' && diagSetOfUnit('__proto__') === null,
+    `진단 문항은 공통수학 ${common.length}개, 대수 ${alg.length}개로 나뉘고 융합 단원은 어느 진단에도 들지 않는다`);
+  const gc = model.gradeDiagnosis(right(DIAGNOSIS)); // 다른 묶음의 응답이 섞여 있어도 그 묶음 문항만 채점
+  const ga = model.gradeDiagnosis(right(DIAGNOSIS), 'algebra');
+  ok(gc.set === 'common' && gc.total === 17 && gc.items.every((it) => common.some((q) => q.id === it.id)) && ga.set === 'algebra' && ga.total === alg.length && Object.keys(ga.units).join() === 'a1' && ga.overall === 100,
+    '진단은 묶음 문항만 채점하고 기록에 묶음을 남긴다');
+  ok(Object.values(gc.skills).every((v) => typeof v === 'number') && Object.values(ga.skills).some((v) => v === null) && ga.track === 'killer',
+    '진단이 다루지 않은 역량은 0점이 아니라 근거 없음(null)으로 남기고, 트랙 기준은 묶음의 심화 문항 수에 맞춘다');
+  store.resetAll();
+  store.update((s) => { s.profile.courses = ['common1', 'common2', 'algebra']; });
+  ok(model.missingDiagSets().map((x) => x.id).join() === 'common,algebra' && model.latestDiagnosis() === null && model.unitReadiness('u1') === null, '진단을 보지 않았으면 기준 진단과 준비도가 없다');
+  const low = model.gradeDiagnosis({}); // 공통수학 진단: 모두 건너뜀
+  store.update((s) => { s.diagnoses.push(low); s.diagnoses.push(ga); });
+  ok(model.latestDiagnosis().set === 'common' && model.activeTrack() === low.track && low.track === 'foundation' && ga.track === 'killer' && model.missingDiagSets().length === 0,
+    '나중에 본 대수 진단이 공통수학 진단으로 정한 트랙을 덮어쓰지 않는다');
+  ok(model.unitReadiness('a1').pct > 50 && model.unitReadiness('u1').pct < 50 && model.unitReadiness('u8') === null,
+    '단원 준비도는 그 단원이 속한 과목 진단에서 가져온다');
+  store.update((s) => { s.profile.courses = ['algebra']; });
+  ok(model.latestDiagnosis().set === 'algebra' && model.activeTrack() === 'killer' && model.activeDiagSets().map((x) => x.id).join() === 'algebra', '대수만 공부하면 대수 진단이 기준 진단이 된다');
+  // 백업: 묶음이 남고, 예전 진단(set 없음)은 공통수학 진단으로 읽고, 모르는 묶음은 거절한다
+  const exp = JSON.parse(store.exportData());
+  delete exp.data.diagnoses[0].set;
+  store.importData(JSON.stringify(exp));
+  ok(store.getState().diagnoses.map((d) => d.set).join() === 'common,algebra' && store.getState().diagnoses[1].skills.insight === ga.skills.insight, '예전 진단은 공통수학 진단으로 읽고, 근거 없는 역량(null)도 그대로 옮긴다');
+  exp.data.diagnoses[1].set = 'calculus';
+  let threw = false;
+  try { store.importData(JSON.stringify(exp)); } catch (e) { threw = /백업 파일/.test(e.message); }
+  ok(threw, '모르는 진단 묶음이 든 백업은 거절한다');
+  // 묶음 이름만 바꾼 기록(공통수학 문항인데 set이 대수)은 거절한다
+  const { checkState } = await import('../assets/js/backup.js');
+  const relabeled = { ...model.gradeDiagnosis({}), set: 'algebra' };
+  let rej = false;
+  try { checkState({ attempts: {}, wrong: {}, activity: {}, diagnoses: [relabeled] }, { strict: true }); } catch (e) { rej = /다른 묶음/.test(e.message); }
+  const lenient = checkState({ attempts: {}, wrong: {}, activity: {}, diagnoses: [relabeled, model.gradeDiagnosis({}, 'algebra')] }, { strict: false }).state;
+  ok(rej && lenient.diagnoses.length === 1 && lenient.diagnoses[0].items.every((it) => it.id >= 'd18'), '진단 묶음과 문항·단원이 맞지 않는 기록은 거절하고(저장된 기록이면 그 진단만 버린다)');
+  // 트랙: 기준 진단이 아닌 결과에서 그 결과의 추천을 골라도 실제 트랙이 그렇게 바뀐다
+  store.resetAll();
+  store.update((s) => { s.profile.courses = ['common1', 'common2', 'algebra']; model.saveDiagnosis(s, model.gradeDiagnosis({})); model.saveDiagnosis(s, ga); });
+  ok(model.activeTrack() === 'foundation', '기준 진단(공통수학)의 추천은 개념 완성이다');
+  store.update((s) => model.chooseTrack(s, 'killer'));
+  ok(model.activeTrack() === 'killer' && store.getState().profile.track === 'killer', '대수 결과의 추천(최상위)을 골라도 실제로 최상위 트랙이 된다');
+  store.update((s) => model.chooseTrack(s, 'foundation'));
+  ok(store.getState().profile.track === null && model.activeTrack() === 'foundation', '기준 진단의 추천을 고르면 추천 따르기로 돌아간다');
+  // 앞쪽 묶음을 보지 않은 상태에서 뒤 묶음부터 보면 그 결과가 기준 진단이 되어 수동 트랙을 푼다
+  store.resetAll();
+  store.update((s) => { s.profile.courses = ['common1', 'common2', 'algebra']; s.profile.track = 'killer'; model.saveDiagnosis(s, model.gradeDiagnosis({}, 'algebra')); });
+  ok(store.getState().profile.track === null && model.activeTrack() === 'foundation' && model.latestDiagnosis().set === 'algebra', '공통수학 진단이 없을 때 대수 진단을 먼저 보면 대수 진단이 기준이 되고 수동 트랙이 풀린다');
+  store.update((s) => { s.profile.track = 'standard'; model.saveDiagnosis(s, ga); });
+  store.update((s) => { model.saveDiagnosis(s, model.gradeDiagnosis({})); });
+  ok(store.getState().profile.track === null && model.latestDiagnosis().set === 'common', '기준이 아니던 묶음(공통수학)의 진단을 처음 보면 그것이 기준이 되어 수동 트랙이 풀린다');
+  ok(DIAG_SETS.every((s) => s.minutes > 0), '진단 묶음마다 예상 시간이 있다');
+  store.resetAll();
+}
+
 // ── #22 소단원 활동 기록과 하루 학습량 ───────────────
 {
   const store = await import('../assets/js/store.js');
