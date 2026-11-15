@@ -627,6 +627,21 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
     '밑이 1일 때는 점근선을 그리지 않고, "점근선이 y=-1이고 원점을 지나는" 과제도 통과하지 않는다');
 }
 
+// ── 대수 a1-l7 탐구: 보이는 로그값·범위·자릿수가 정확한 거듭제곱의 자릿수와 맞는다(PR #30 검토)
+{
+  const { LESSON_BY_ID } = await import('../assets/js/content/lessons/index.js');
+  const x = LESSON_BY_ID['a1-l7'].explore[0];
+  const bad = [];
+  for (let b = 2; b <= 9; b++) for (let n = 1; n <= 60; n++) {
+    const digits = (BigInt(b) ** BigInt(n)).toString().length;
+    const r = x.read({ b, n });
+    const shown = Number(r[0][1].replace(/[^0-9.]/g, ''));
+    const range = r[1][1].match(/\$(\d+)<.*<(\d+)\$/);
+    if (Math.floor(shown) + 1 !== digits || !range || Number(range[1]) + 1 !== digits || !r[2][1].endsWith(`${digits}$`)) bad.push(`${b}^${n}`);
+  }
+  ok(bad.length === 0 && x.read({ b: 8, n: 31 })[0][1].includes('27.99'), `탐구의 로그값(버림)·범위·자릿수가 480개 조합 모두 정확한 자릿수와 맞는다(8^31은 27.99…로 보인다)${bad.length ? ': ' + bad.slice(0, 3) : ''}`);
+}
+
 // ── #22 소단원 활동 기록과 하루 학습량 ───────────────
 {
   const store = await import('../assets/js/store.js');

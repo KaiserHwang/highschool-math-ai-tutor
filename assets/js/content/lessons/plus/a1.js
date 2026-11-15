@@ -307,7 +307,7 @@ export default {
         return {
           x: [0, 62], y: [-2, 58], w: 300, h: 260, equal: false,
           xt: [[10, '10'], [30, '30'], [50, '50']], yt: [[10, '10'], [30, '30'], [50, '50']],
-          alt: `y=n log ${b} 직선 위의 점 (${n}, ${num(L)}). ${b}^${n}은 ${Math.floor(L) + 1}자리`,
+          alt: `y=n log ${b} 직선 위의 점. ${Math.floor(L)} < ${n} log ${b} < ${Math.floor(L) + 1}이므로 ${b}^${n}은 ${Math.floor(L) + 1}자리`,
           items: [
             { t: 'fn', f: { pl: [[0, 0], [62, 62 * Math.log10(b)]] }, style: 'faint' },
             { t: 'hl', y: Math.floor(L) },
@@ -317,7 +317,9 @@ export default {
       },
       read: ({ b, n }) => {
         const L = n * Math.log10(b);
-        return [[`$\\log ${b}^{${n}}$`, `$${num(L)}$`], ['자릿수', `$${Math.floor(L) + 1}$`]];
+        // 반올림하면 정수 경계를 넘어 보일 수 있으므로(예: 31 log 8 = 27.9957…) 값은 버림으로 보이고, 정수 부분은 부등식으로 따로 보인다
+        const fl = Math.floor(L);
+        return [[`$\\log ${b}^{${n}}$`, `$\\approx${(Math.floor(L * 1e4) / 1e4).toFixed(4)}$`], ['범위', `$${fl}<\\log ${b}^{${n}}<${fl + 1}$`], ['자릿수', `$${fl}+1=${fl + 1}$`]];
       },
       goals: [
         { text: t`$b^n$이 정확히 $10$자리가 되게 해 보세요.`, test: ({ b, n }) => Math.floor(n * Math.log10(b)) + 1 === 10 },
@@ -356,7 +358,7 @@ export default {
           title: '로그로 정의된 양의 비교',
           body: t`<p>지진의 규모, 소리의 크기(데시벨), $\mathrm{pH}$는 모두 원래 양의 <strong>상용로그</strong>로 정의됩니다. 그래서 규모나 데시벨의 <strong>차</strong>가 원래 양의 <strong>비</strong>가 됩니다.</p>`,
           example: {
-            q: t`지진이 방출하는 에너지 $E$와 규모 $M$ 사이에 $M=\dfrac23\log\dfrac{E}{E_0}$ ($E_0$은 상수)인 관계가 있다. 규모가 $2$만큼 큰 지진이 방출하는 에너지는 몇 배인지 구하시오.`,
+            q: t`지진이 방출하는 에너지 $E$와 규모 $M$ 사이에 $M=\dfrac23\log\dfrac{E}{E_0}$ ($E_0$은 양의 상수)인 관계가 있다. 규모가 $2$만큼 큰 지진이 방출하는 에너지는 몇 배인지 구하시오.`,
             think: [t`두 지진의 규모의 차를 식으로 쓰면 $\log$의 차, 곧 에너지의 비의 $\log$가 나옵니다.`],
             steps: [t`$M_1-M_2=\dfrac23\left(\log\dfrac{E_1}{E_0}-\log\dfrac{E_2}{E_0}\right)=\dfrac23\log\dfrac{E_1}{E_2}$`, t`$2=\dfrac23\log\dfrac{E_1}{E_2}$에서 $\log\dfrac{E_1}{E_2}=3$`, t`$\dfrac{E_1}{E_2}=10^3=1000$배`],
             answer: '1000',
@@ -365,7 +367,7 @@ export default {
       ],
       checks: [
         { id: 'a1-l7-d1', type: 'short', q: t`$\log2=0.3010$, $\log3=0.4771$로 계산할 때, $6^{20}$은 몇 자리 정수인지 구하시오.`, answer: '16', solution: t`$\log6^{20}=20(\log2+\log3)=15.562$이므로 $16$자리` },
-        { id: 'a1-l7-d2', type: 'short', q: t`소리의 세기 $I$에 대하여 소리의 크기 $L$(데시벨)은 $L=10\log\dfrac{I}{I_0}$ ($I_0$은 상수)이다. 소리의 크기가 $40$데시벨 커지면 소리의 세기는 몇 배가 되는지 구하시오.`, answer: '10000', solution: t`$40=10\log\dfrac{I_1}{I_2}$에서 $\log\dfrac{I_1}{I_2}=4$이므로 $10^4=10000$배` },
+        { id: 'a1-l7-d2', type: 'short', q: t`소리의 세기 $I$에 대하여 소리의 크기 $L$(데시벨)은 $L=10\log\dfrac{I}{I_0}$ ($I_0$은 양의 상수)이다. 소리의 크기가 $40$데시벨 커지면 소리의 세기는 몇 배가 되는지 구하시오.`, answer: '10000', solution: t`$40=10\log\dfrac{I_1}{I_2}$에서 $\log\dfrac{I_1}{I_2}=4$이므로 $10^4=10000$배` },
       ],
     },
     explain: {
