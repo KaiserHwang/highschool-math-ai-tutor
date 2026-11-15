@@ -106,7 +106,7 @@ export default {
     {
       id: 'a3-l4-q2', q: t`$\displaystyle\sum_{k=1}^{n}\left(\dfrac1k-\dfrac1{k+1}\right)$을 풀어 쓰고 지울 때 남는 것은?`,
       options: [t`$1$과 $-\dfrac1{n+1}$`, '모든 항이 남는다', t`$\dfrac1n$만 남는다`], answer: 0,
-      reasons: ['이웃한 괄호끼리 지워지고 처음과 끝만 짝이 없다', '부호가 다른 항은 서로 지워지지 않는다', '첫째항도 다음 항과 지워진다', '모든 항이 지워져 합은 0이 된다'],
+      reasons: ['이웃한 괄호끼리 지워지고 처음과 끝만 짝이 없다', '부호가 다른 항은 서로 지워지지 않는다', '첫째항도 다음 항과 지워진다', t`모든 항이 지워져 합은 $0$이 된다`],
       reason: 0, mis: [null, 'method', 'count', 'overgen'],
       note: t`그래서 합은 $1-\dfrac1{n+1}=\dfrac{n}{n+1}$입니다. 직접 $n=3$으로 써서 확인해 보세요.`,
     },
