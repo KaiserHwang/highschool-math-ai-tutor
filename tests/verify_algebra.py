@@ -3,6 +3,7 @@
 풀이에 적힌 계산을 그대로 옮기지 않고, 정의(방정식의 실근, 지수·로그의 값)로 다시 구한다.
 """
 import sympy as sp
+from sympy.calculus.util import maximum, minimum
 
 x = sp.Symbol('x', real=True)
 S = sp.Rational
@@ -18,6 +19,20 @@ def val(e):
     r = sp.nsimplify(n, tolerance=1e-40)
     assert r.is_Rational and abs(sp.N(r - n, 60)) < 1e-40, f'유리수가 아님: {e} = {n}'
     return r
+
+
+def single(sols):
+    """해가 정확히 하나인지 확인하고 그 해"""
+    sols = list(sols)
+    assert len(sols) == 1, sols
+    return sols[0]
+
+
+def only_true(preds):
+    """참인 보기가 정확히 하나이면 그 번호"""
+    hits = [i for i, f in enumerate(preds) if f()]
+    assert len(hits) == 1, hits
+    return hits[0]
 
 
 def real_roots(n, a):
@@ -64,6 +79,20 @@ def expected_algebra_bank(P=None):
     sol = sp.solve([sp.log(Xs, 2) + sp.log(Ys, 4) - 4, sp.log(Xs, 2) - sp.log(Ys, 4) - 2], [Xs, Ys], dict=True)
     assert len(sol) == 1, sol
     E['d20'] = val(sol[0][Xs] + sol[0][Ys])
+    # ── 지수함수·로그함수(은행 a1-09~a1-16)
+    E['a1-09'] = val(sp.limit(2 ** (x - 1) + 3, x, -sp.oo))  # 점근선: x → -∞ 일 때 다가가는 값
+    f10 = S(1, 2) ** x + 1
+    E['a1-10'] = val(maximum(f10, x, sp.Interval(-1, 2)) + minimum(f10, x, sp.Interval(-1, 2)))
+    E['a1-11'] = val(sp.log(11 - 2, 3) + 1)
+    # y=log2(x-a)+b 가 y=log2(4x-8) 과 같은 함수가 되는 정수 (a, b)를 여러 x에서 확인해 찾는다
+    ab = [(av, bv) for av in range(-6, 7) for bv in range(-6, 7)
+          if all(abs(sp.N(sp.log(xv - av, 2) + bv - sp.log(4 * xv - 8, 2), 30)) < 1e-20 for xv in (S(7), S(9), S(11), S(15, 2)))]
+    assert len(ab) == 1, ab
+    E['a1-12'] = ab[0][0] + ab[0][1]
+    E['a1-13'] = val(single(sp.solve(sp.Eq(3 ** (x + 1), 27), x)))
+    E['a1-14'] = sum(1 for n in range(-30, 60) if n - 2 > 0 and sp.N(sp.log(n - 2, 3)) < 2)
+    E['a1-15'] = val(minimum(4 ** x - 2 ** (x + 2) + 5, x, sp.Interval(0, 2)))
+    E['a1-16'] = val(sum(sp.solve(sp.Eq(4 ** x - 3 * 2 ** (x + 1) + 8, 0), x)))
     return E
 
 
@@ -105,6 +134,47 @@ def expected_algebra_lessons():
     E['a1-l3-de2'] = val(3 ** sp.log(5, 3) + sp.log(2 ** 7, 2))
     E['a1-l3-d1'] = val(sp.log(4, 3) * sp.log(5, 4) * sp.log(9, 5))
     E['a1-l3-d2'] = val(4 ** sp.log(3, 2))
+    # ── a1-l4 지수함수
+    E['a1-l4-e1'] = val(sp.limit(2 ** (x + 1) - 4, x, -sp.oo) + (2 ** (x + 1) - 4).subs(x, 0))
+    E['a1-l4-e2'] = val(maximum(3 ** x, x, sp.Interval(-1, 1)) * minimum(3 ** x, x, sp.Interval(-1, 1)))
+    E['a1-l4-c1'] = val((S(1, 3) ** (x - 2) + 1).subs(x, 1))
+    E['a1-l4-c2'] = val(maximum(S(1, 2) ** x, x, sp.Interval(0, 2)) - minimum(S(1, 2) ** x, x, sp.Interval(0, 2)))
+    # 보기: 커진다, 작아진다, 변하지 않는다, 커졌다가 작아진다
+    E['a1-l4-p'] = 1 if all(S(1, 2) ** (v + 1) < S(1, 2) ** v for v in range(-5, 6)) else 0
+    cands = [sp.sqrt(2), sp.root(4, 3), S(8) ** S(1, 5)]
+    E['a1-l4-de1'] = val(sp.log(max(cands, key=lambda c: sp.N(c, 40)), 2))
+    E['a1-l4-de2'] = val(minimum(4 ** x - 2 ** (x + 1) + 3, x, sp.Interval(-1, 1)))
+    E['a1-l4-d1'] = val(minimum(9 ** x - 2 * 3 ** (x + 1) + 10, x, sp.Interval(0, 1)))
+    # y=2^x 를 y축 대칭(x → -x) 한 뒤 x축 방향으로 1만큼 이동(x → x-1)
+    E['a1-l4-d2'] = val((2 ** (-x)).subs(x, x - 1).subs(x, 3))
+    # ── a1-l5 로그함수
+    E['a1-l5-e1'] = val(single(sp.solve(sp.Eq(sp.log(x + 3, 2) - 1, 0), x)))
+    E['a1-l5-e2'] = val(maximum(sp.log(x, 2), x, sp.Interval(2, 8)) + minimum(sp.log(x, 2), x, sp.Interval(2, 8)))
+    E['a1-l5-c1'] = val(single(sp.solve(sp.Eq(sp.log(x - 1, 3) + 2, 4), x)))
+    lh = sp.log(x) / sp.log(S(1, 2))
+    E['a1-l5-c2'] = val(maximum(lh, x, sp.Interval(S(1, 4), 4)) - minimum(lh, x, sp.Interval(S(1, 4), 4)))
+    # y=2^x 위의 점 (p, 2^p) 을 각 보기의 대칭으로 옮긴 점이 y=log2 x 위에 있는지 확인
+    pts = [(S(v), S(2) ** v) for v in (-1, 0, 1, 2, 3)]
+    on_log = lambda X, Y: X > 0 and sp.simplify(sp.log(X, 2) - Y) == 0
+    maps = [lambda X, Y: (X, -Y), lambda X, Y: (-X, Y), lambda X, Y: (Y, X), lambda X, Y: (-X, -Y)]
+    E['a1-l5-p'] = only_true([lambda f=f: all(on_log(*f(X, Y)) for X, Y in pts) for f in maps])
+    tq = sp.Symbol('tq', real=True)  # log2 x = tq. x>0 이면 tq는 실수 전체
+    E['a1-l5-de1'] = val(minimum(tq ** 2 - 4 * tq + 5, tq, sp.S.Reals))
+    E['a1-l5-d1'] = val(maximum(tq ** 2 - 2 * tq + 3, tq, sp.Interval(0, 3)))
+    E['a1-l5-d2'] = val((2 ** x - 3).subs(x, 2))
+    # ── a1-l6 방정식과 부등식
+    E['a1-l6-e1'] = val(single(sp.solve(sp.Eq(2 ** (x + 1), 8 ** (x - 1)), x)))
+    E['a1-l6-e2'] = max(n for n in range(-30, 30) if S(1, 3) ** n > 9)
+    E['a1-l6-e3'] = val(single([r for r in sp.solve(sp.Eq((x - 1) * (x + 1), 8), x) if r - 1 > 0 and r + 1 > 0]))
+    E['a1-l6-c1'] = val(sum(sp.solve(sp.Eq(9 ** x - 4 * 3 ** x + 3, 0), x)))
+    E['a1-l6-c2'] = sum(1 for n in range(-30, 30) if n + 2 > 0 and sp.N(sp.log(n + 2) / sp.log(S(1, 2)), 30) >= -1 - S(1, 10 ** 20))
+    # 보기: x>3, x<3, x=3, 알 수 없다. 여러 값을 넣어 부등식이 성립하는 범위를 확인
+    holds = lambda v: S(1, 2) ** v > S(1, 2) ** 3
+    E['a1-l6-p'] = only_true([lambda: all(holds(v) for v in (4, 5, 7)), lambda: all(holds(v) for v in (-2, 0, 2, S(29, 10))) and not any(holds(v) for v in (3, S(31, 10), 5)), lambda: False, lambda: False])
+    E['a1-l6-de1'] = val(single([r for r in sp.solve(sp.Eq(x * (x - 2), 8), x) if r > 0 and r - 2 > 0]))
+    E['a1-l6-de2'] = sum(1 for n in range(-30, 30) if S(4) ** n - 5 * S(2) ** n + 4 < 0)
+    E['a1-l6-d1'] = val(single([r for r in sp.solve(sp.Eq((x + 1) * (x - 1), 3), x) if r + 1 > 0 and r - 1 > 0]))
+    E['a1-l6-d2'] = sum(1 for n in range(-30, 30) if S(9) ** n - 10 * S(3) ** n + 9 <= 0)
     return E
 
 
@@ -132,6 +202,15 @@ def expected_algebra_cq():
     C['a1-l3-q1'] = 0 if not sp.solve(sp.Eq(2 ** x, -4), x) else 1
     C['a1-l3-q2'] = 0 if val(sp.log(1 + 1, 2)) != val(sp.log(1, 2) + sp.log(1, 2)) else 1
     C['a1-l3-q4'] = pick([S(1, 2), S(2), S(-2)], val(sp.log(2, 4)))
+    # ── 지수함수·로그함수
+    C['a1-l4-q1'] = 0 if all(sp.Integer(av) ** 0 == 1 for av in (2, 3, 5)) and len({sp.Integer(av) ** 1 for av in (2, 3, 5)}) > 1 else None
+    C['a1-l4-q2'] = 0 if all(S(1, 2) ** (v + 1) < S(1, 2) ** v for v in range(-5, 6)) else 1
+    C['a1-l4-q4'] = 0 if all((S(3) ** p < S(3) ** q) == (p < q) for p in range(-3, 4) for q in range(-3, 4)) else None
+    C['a1-l5-q4'] = 0 if sp.limit(sp.log(x - 3, 2), x, 3, '+') == -sp.oo else None
+    C['a1-l6-q1'] = 0 if all((S(1, 2) ** v < S(1, 2) ** 5) == (v > 5) for v in range(-3, 10)) else 1
+    good = [r for r in sp.solve(sp.Eq(x * (x + 2), 3), x) if r > 0 and r + 2 > 0]
+    C['a1-l6-q2'] = 0 if good == [1] else None
+    C['a1-l6-q4'] = 0 if all((sp.log(v) / sp.log(S(1, 3)) > sp.log(2) / sp.log(S(1, 3))) == (0 < v < 2) for v in (S(1, 2), 1, S(3, 2), 3, 5)) else None
     return {k: v for k, v in C.items() if v is not None}
 
 

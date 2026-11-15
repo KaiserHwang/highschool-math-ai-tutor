@@ -617,6 +617,16 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   store.resetAll();
 }
 
+// ── 대수 a1-l4 탐구: 밑이 1이면 상수함수라 점근선이 없고, 점근선 과제를 통과시키지 않는다(PR #29 검토)
+{
+  const { LESSON_BY_ID } = await import('../assets/js/content/lessons/index.js');
+  const x = LESSON_BY_ID['a1-l4'].explore[0];
+  const p1 = { a: 1, m: 0, n: -1 };
+  const fig = x.fig(p1);
+  ok(!x.goals[1].test(p1) && x.goals[2].test(p1) && !fig.items.some((it) => it.t === 'hl') && x.read(p1)[0][1].includes('없음') && x.goals[1].test({ a: 2, m: 0, n: -1 }),
+    '밑이 1일 때는 점근선을 그리지 않고, "점근선이 y=-1이고 원점을 지나는" 과제도 통과하지 않는다');
+}
+
 // ── #22 소단원 활동 기록과 하루 학습량 ───────────────
 {
   const store = await import('../assets/js/store.js');
