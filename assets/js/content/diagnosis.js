@@ -174,9 +174,32 @@ export const DIAGNOSIS = [
     id: 'd20', unit: 'a1', level: 'adv', type: 'short', sec: 150, lesson: 'a1-l3',
     q: t`$\log_2 x+\log_4 y=4$, $\log_2 x-\log_4 y=2$를 만족하는 양수 $x,\ y$에 대하여 $x+y$의 값을 구하시오.`,
     answer: '12',
-    skills: { reason: 1, calc: 0.5 },
-    hint: t`두 식을 더하고 빼면 $\log_2 x$와 $\log_4 y$가 각각 나옵니다.`,
+    skills: { reason: 1, calc: 0.5 },    hint: t`두 식을 더하고 빼면 $\log_2 x$와 $\log_4 y$가 각각 나옵니다.`,
     solution: t`두 식을 더하면 $2\log_2 x=6$이므로 $\log_2 x=3$, $x=8$. 빼면 $2\log_4 y=2$이므로 $\log_4 y=1$, $y=4$. 따라서 $x+y=12$`,
+  },
+  {
+    id: 'd21', unit: 'a2', level: 'basic', type: 'short', sec: 60, lesson: 'a2-l1',
+    q: t`$-750^\circ$를 $360^\circ\times n+\alpha^\circ$ ($n$은 정수, $0\le\alpha<360$) 꼴로 나타낼 때, $\alpha$의 값을 구하시오.`,
+    answer: '330',
+    skills: { concept: 1 },
+    hint: t`$-750^\circ$에 $360^\circ$의 정수배를 더해 $0^\circ$ 이상 $360^\circ$ 미만이 되게 합니다.`,
+    solution: t`$-750^\circ=360^\circ\times(-3)+330^\circ$이므로 $\alpha=330$`,
+  },
+  {
+    id: 'd22', unit: 'a2', level: 'core', type: 'short', sec: 90, lesson: 'a2-l2',
+    q: t`$\theta$가 제$2$사분면의 각이고 $\sin\theta=\dfrac35$일 때, $5\cos\theta+4\tan\theta$의 값을 구하시오.`,
+    answer: '-7',
+    skills: { calc: 1, concept: 0.5 },
+    hint: t`$\cos^2\theta=1-\sin^2\theta$이고, 제$2$사분면에서 $\cos\theta<0$입니다.`,
+    solution: t`$\cos\theta=-\dfrac45$, $\tan\theta=\dfrac{\sin\theta}{\cos\theta}=-\dfrac34$이므로 $5\cos\theta+4\tan\theta=-4-3=-7$`,
+  },
+  {
+    id: 'd23', unit: 'a2', level: 'adv', type: 'short', sec: 120, lesson: 'a2-l3',
+    q: t`함수 $y=2\cos\dfrac{\pi x}{3}-1$의 주기를 $p$, 최솟값을 $m$이라 할 때, $p+m$의 값을 구하시오.`,
+    answer: '3',
+    skills: { concept: 1, reason: 0.5 },
+    hint: t`$y=a\cos bx+c$의 주기는 $\dfrac{2\pi}{|b|}$, 최솟값은 $-|a|+c$입니다.`,
+    solution: t`주기는 $\dfrac{2\pi}{\pi/3}=6$, 최솟값은 $-2-1=-3$이므로 $p+m=3$`,
   },];
 
 // ── 진단 묶음 ─────────────────────────────────────
@@ -185,7 +208,7 @@ export const DIAGNOSIS = [
 // 묶음 id는 기록의 키이므로 바꾸지 않는다.
 export const DIAG_SETS = [
   { id: 'common', title: '공통수학1·2', courses: ['common1', 'common2'], minutes: 35 },
-  { id: 'algebra', title: '대수', courses: ['algebra'], minutes: 8 },
+  { id: 'algebra', title: '대수', courses: ['algebra'], minutes: 15 },
 ];
 export const DIAG_SET_BY_ID = Object.fromEntries(DIAG_SETS.map((s) => [s.id, s]));
 export const isDiagSetId = (id) => typeof id === 'string' && Object.hasOwn(DIAG_SET_BY_ID, id);

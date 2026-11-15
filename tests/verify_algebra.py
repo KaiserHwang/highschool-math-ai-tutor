@@ -116,7 +116,50 @@ def expected_algebra_bank(P=None):
     E['a1-17'] = digits(2 ** 50)
     E['a1-18'] = first_nonzero_place(F(3, 10) ** 10)
     E['a1-19'] = sum(1 for n in range(1, 200) if digits(n ** 10) == 15)
+    # ── 삼각함수(은행 a2-01~a2-08): 각을 방정식의 해로 직접 찾고, 최대·최소·주기는 sympy로 구한다
+    E['a2-01'] = val(2 * sp.pi * 8 * (sp.pi / 4) / (2 * sp.pi) / sp.pi)  # 원 둘레 × (중심각 / 한 바퀴)
+    E['a2-02'] = val(sp.cos(sp.atan2(sp.sqrt(3), -1)))
+    E['a2-03'] = val(sp.periodicity(4 * sp.sin(x / 2), x) / sp.pi)
+    E['a2-04'] = same_for(angle_with(sp.tan, -2, 4), lambda v: sp.sin(v) * sp.cos(v))
+    E['a2-05'] = same_for(angles([lambda v: sp.tan(v) - 3], 0, 2 * sp.pi), lambda v: (sp.sin(v) + sp.cos(v)) / (sp.sin(v) - sp.cos(v)))
+    I02 = sp.Interval(0, 2 * sp.pi)
+    abc = [(a, b, c) for b in range(1, 7) if sp.periodicity(sp.sin(b * x), x) == sp.pi / 2 for a in range(1, 7) for c in range(-5, 6)
+           if maximum(a * sp.sin(b * x) + c, x, I02) == 4 and minimum(a * sp.sin(b * x) + c, x, I02) == -2]
+    assert len(abc) == 1, abc
+    E['a2-06'] = sum(abc[0])
+    f07 = -sp.sin(x) ** 2 + 2 * sp.cos(x) + 1
+    E['a2-07'] = val(maximum(f07, x, I02) - minimum(f07, x, I02))
+    # y축 대칭: 두 점의 y좌표는 같고 x좌표는 부호만 반대
+    E['a2-08'] = len(angles([lambda v: sp.sin(7 * v) - sp.sin(v), lambda v: sp.cos(7 * v) + sp.cos(v)], 0, sp.pi))
+    # ── 대수 진단(삼각함수)
+    E['d21'] = (-750) % 360
+    th = single(angle_with(sp.sin, S(3, 5), 2))
+    E['d22'] = val(5 * sp.cos(th) + 4 * sp.tan(th))
+    f23 = 2 * sp.cos(sp.pi * x / 3) - 1
+    E['d23'] = val(sp.periodicity(f23, x) + minimum(f23, x, sp.Interval(0, 6)))
     return E
+
+
+def angles(eqs, lo, hi):
+    """열린구간 (lo, hi)에서 eqs의 식이 모두 0이 되는 각(정확한 값)"""
+    t = sp.Symbol('t', real=True)
+    sol = sp.solveset(eqs[0](t), t, sp.Interval.open(lo, hi))
+    assert isinstance(sol, sp.FiniteSet), sol
+    # 나머지 식은 해마다 고정밀 수치로 확인한다(같은 각이 다른 모양의 식으로 나와 기호 교집합이 정리되지 않는다)
+    keep = [v for v in sol if all(abs(sp.N(e(v), 60)) < 1e-40 for e in eqs[1:])]
+    return sorted(keep, key=lambda v: float(v))
+
+
+def angle_with(fn, value, quadrant):
+    """제 quadrant 사분면에서 fn(각) = value 인 각"""
+    lo = (quadrant - 1) * sp.pi / 2
+    return angles([lambda v: fn(v) - value], lo, lo + sp.pi / 2)
+
+
+def quadrant_of(deg):
+    """도 단위 각의 동경이 있는 사분면(축 위면 None)"""
+    d = deg % 360
+    return None if d % 90 == 0 else int(d // 90) + 1
 
 
 def expected_algebra_lessons():
@@ -211,6 +254,55 @@ def expected_algebra_lessons():
     E['a1-l6-de2'] = sum(1 for n in range(-30, 30) if S(4) ** n - 5 * S(2) ** n + 4 < 0)
     E['a1-l6-d1'] = val(single([r for r in sp.solve(sp.Eq((x + 1) * (x - 1), 3), x) if r + 1 > 0 and r - 1 > 0]))
     E['a1-l6-d2'] = sum(1 for n in range(-30, 30) if S(9) ** n - 10 * S(3) ** n + 9 <= 0)
+    # ── a2-l1 일반각과 호도법
+    E['a2-l1-e1'] = quadrant_of(-1000)
+    E['a2-l1-e2'] = val(sp.pi * 6 ** 2 * (sp.pi / 3) / (2 * sp.pi) / sp.pi)  # 원 넓이 × (중심각 / 한 바퀴)
+    E['a2-l1-c1'] = val(150 * (2 * sp.pi / 360) / sp.pi)
+    rr = sp.Symbol('rr', positive=True)
+    E['a2-l1-c2'] = val((sp.pi * 6 ** 2) * ((20 - 2 * 6) / (2 * sp.pi * 6)))  # 넓이 = 원 넓이 × (호 / 원 둘레)
+    # 보기: 반지름과 같다, π배, 1/π배, 2배. 1 라디안: 중심각 1인 부채꼴의 호 = 원 둘레 × 1/(2π)
+    E['a2-l1-p'] = pick([S(1), sp.pi, 1 / sp.pi, S(2)], 2 * sp.pi * 1 / (2 * sp.pi))
+    E['a2-l1-de1'] = val(single(angles([lambda v: sp.sin(5 * v) - sp.sin(v), lambda v: sp.cos(5 * v) - sp.cos(v)], 0, sp.pi)) / sp.pi)
+    sector = lambda P: maximum(sp.pi * rr ** 2 * ((P - 2 * rr) / (2 * sp.pi * rr)), rr, sp.Interval.open(P / (2 * sp.pi + 2), P / 2))  # 0 < 중심각 < 2π
+    E['a2-l1-de2'] = val(sector(20))
+    E['a2-l1-d1'] = val(single(angles([lambda v: sp.sin(4 * v) + sp.sin(v), lambda v: sp.cos(4 * v) - sp.cos(v)], 0, sp.pi / 2)) / sp.pi)
+    E['a2-l1-d2'] = val(sector(16))
+    # ── a2-l2 삼각함수의 뜻과 관계
+    E['a2-l2-e1'] = val(sp.sin(sp.atan2(4, -3)) + sp.cos(sp.atan2(4, -3)))
+    E['a2-l2-e2'] = val(sp.tan(single(angle_with(sp.sin, S(-3, 5), 3))))
+    half = angles([lambda v: sp.sin(v) + sp.cos(v) - S(1, 2)], 0, 2 * sp.pi)
+    E['a2-l2-e3'] = same_for(half, lambda v: sp.sin(v) * sp.cos(v))
+    E['a2-l2-c1'] = val(sp.tan(sp.atan2(-12, 5)))
+    E['a2-l2-c2'] = same_for(angle_with(sp.cos, S(-1, 3), 2), lambda v: sp.sin(v) * sp.tan(v))
+    E['a2-l2-p'] = 1 if sp.sin(sp.pi * 210 / 180) < 0 else (2 if sp.sin(sp.pi * 210 / 180) == 0 else 0)  # 보기: 양수, 음수, 0
+    E['a2-l2-de1'] = same_for(angles([lambda v: sp.sin(v) - sp.cos(v) - S(1, 2)], 0, 2 * sp.pi), lambda v: sp.sin(v) ** 3 - sp.cos(v) ** 3)
+    # 두 근이 sinθ, cosθ 이면 다항식 2x²-x+k 가 (x - sinθ)(x - cosθ)의 2배: 상수항 비교
+    # 일차항 계수가 맞는 θ마다 상수항(= k)을 구해, k가 하나로 정해지는지 본다
+    def k_of(a, b, roots_sum):
+        out = set()
+        for v in angles([lambda v: sp.sin(v) + sp.cos(v) - roots_sum], 0, 2 * sp.pi):
+            poly = sp.expand(a * (x - sp.sin(v)) * (x - sp.cos(v)))
+            assert sp.simplify(poly.coeff(x, 1) - b) == 0
+            out.add(val(poly.coeff(x, 0)))
+        assert len(out) == 1, out
+        return out.pop()
+    E['a2-l2-de2'] = k_of(2, -1, S(1, 2))
+    E['a2-l2-d1'] = same_for(angles([lambda v: sp.sin(v) + sp.cos(v) - S(1, 3)], 0, 2 * sp.pi), lambda v: sp.sin(v) ** 4 + sp.cos(v) ** 4)
+    E['a2-l2-d2'] = k_of(3, 1, S(-1, 3))
+    # ── a2-l3 삼각함수의 그래프
+    I02 = sp.Interval(0, 2 * sp.pi)
+    f = 3 * sp.sin(2 * x) + 1
+    E['a2-l3-e1'] = val(maximum(f, x, I02) * minimum(f, x, I02))
+    E['a2-l3-e2'] = val(sp.periodicity(sp.tan(x / 2), x) / sp.pi)
+    ab = [(a, b) for a in range(1, 8) for b in range(-6, 7) if maximum(a * sp.cos(x) + b, x, I02) == 5 and minimum(a * sp.cos(x) + b, x, I02) == -1]
+    assert len(ab) == 1, ab
+    E['a2-l3-c1'] = ab[0][0] * ab[0][1]
+    E['a2-l3-c2'] = val(sp.periodicity(2 * sp.sin(sp.pi * x), x))
+    E['a2-l3-p'] = 0 if maximum(sp.sin(x), x, sp.S.Reals) == 1 else 1  # 보기: 커질 수 없다, 큰 x에서 커진다, π/2에서 커진다
+    E['a2-l3-de1'] = val(sp.sin(7 * sp.pi / 6) + sp.cos(5 * sp.pi / 3))
+    E['a2-l3-de2'] = val(maximum(sp.sin(x) ** 2 - 2 * sp.sin(x) + 3, x, I02))
+    E['a2-l3-d1'] = val(sp.cos(2 * sp.pi / 3) + sp.tan(5 * sp.pi / 4))
+    E['a2-l3-d2'] = val(maximum(sp.cos(x) ** 2 + 2 * sp.sin(x), x, I02))
     return E
 
 
@@ -252,6 +344,22 @@ def expected_algebra_cq():
     C['a1-l6-q1'] = 0 if all((S(1, 2) ** v < S(1, 2) ** 5) == (v > 5) for v in range(-3, 10)) else 1
     good = [r for r in sp.solve(sp.Eq(x * (x + 2), 3), x) if r > 0 and r + 2 > 0]
     C['a1-l6-q2'] = 0 if good == [1] else None
+    # ── 삼각함수
+    C['a2-l1-q1'] = pick([S(180), S(360), sp.pi], val(sp.pi * 360 / (2 * sp.pi)))
+    hits = [i for i, o in enumerate([330, 30, -330]) if (o - (-30)) % 360 == 0]
+    C['a2-l1-q2'] = single(hits)
+    halves = {quadrant_of(S(d, 4) + 180 * n) for d in range(182, 360, 7) for n in range(-4, 5)}  # θ = d/2 + 360n (90<d/2<180) 의 절반
+    C['a2-l1-q4'] = 0 if halves == {1, 3} else None
+    q_sc = {quadrant_of(d) for d in range(0, 360) if d % 90 and sp.sin(sp.pi * d / 180) < 0 and sp.cos(sp.pi * d / 180) > 0}
+    C['a2-l2-q1'] = [{4}, {2}, {3}].index(q_sc)
+    sins = {val(sp.sin(v)) for v in angles([lambda v: sp.cos(v) - S(4, 5)], 0, 2 * sp.pi)}
+    C['a2-l2-q2'] = [{S(3, 5), S(-3, 5)}, {S(3, 5)}, {S(-3, 5)}].index(sins)
+    C['a2-l2-q3'] = 0 if sp.tan(sp.pi / 2) == sp.zoo and sp.tan(0) == 0 else None
+    C['a2-l2-q4'] = 0 if sp.simplify(sp.sin(x) ** 2 + sp.cos(x) ** 2) == 1 else 1
+    C['a2-l3-q1'] = pick([sp.pi, 4 * sp.pi, 2 * sp.pi], sp.periodicity(sp.sin(2 * x), x))
+    C['a2-l3-q2'] = pick([S(-1), S(1), S(-2)], minimum(2 * sp.sin(x) + 1, x, sp.Interval(0, 2 * sp.pi)))
+    C['a2-l3-q3'] = 0 if sp.limit(sp.tan(x), x, sp.pi / 2, '-') == sp.oo and sp.tan(sp.pi) == 0 else None
+    C['a2-l3-q4'] = 0 if sp.simplify(sp.cos(-x) - sp.cos(x)) == 0 and sp.simplify(sp.cos(-x) + sp.cos(x)) != 0 else None
     C['a1-l6-q4'] = 0 if all((sp.log(v) / sp.log(S(1, 3)) > sp.log(2) / sp.log(S(1, 3))) == (0 < v < 2) for v in (S(1, 2), 1, S(3, 2), 3, 5)) else None
     return {k: v for k, v in C.items() if v is not None}
 
