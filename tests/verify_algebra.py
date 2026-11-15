@@ -2,6 +2,8 @@
 
 풀이에 적힌 계산을 그대로 옮기지 않고, 정의(방정식의 실근, 지수·로그의 값)로 다시 구한다.
 """
+from fractions import Fraction as F
+
 import sympy as sp
 from sympy.calculus.util import maximum, minimum
 
@@ -19,6 +21,23 @@ def val(e):
     r = sp.nsimplify(n, tolerance=1e-40)
     assert r.is_Rational and abs(sp.N(r - n, 60)) < 1e-40, f'유리수가 아님: {e} = {n}'
     return r
+
+
+def digits(n):
+    """자연수 n의 자릿수(문자열 길이로 정확히)"""
+    assert isinstance(n, int) and n >= 1
+    return len(str(n))
+
+
+def first_nonzero_place(q):
+    """0<q<1인 유리수를 소수로 나타낼 때 처음으로 0이 아닌 숫자가 나오는 소수점 아래 자리"""
+    q = F(q)
+    assert 0 < q < 1
+    k = 0
+    while q < 1:
+        q *= 10
+        k += 1
+    return k
 
 
 def single(sols):
@@ -93,6 +112,10 @@ def expected_algebra_bank(P=None):
     E['a1-14'] = sum(1 for n in range(-30, 60) if n - 2 > 0 and sp.N(sp.log(n - 2, 3)) < 2)
     E['a1-15'] = val(minimum(4 ** x - 2 ** (x + 2) + 5, x, sp.Interval(0, 2)))
     E['a1-16'] = val(sum(sp.solve(sp.Eq(4 ** x - 3 * 2 ** (x + 1) + 8, 0), x)))
+    # ── 상용로그(은행 a1-17~a1-19): 어림한 로그 값 대신 정수·분수를 정확히 계산해 자릿수를 센다
+    E['a1-17'] = digits(2 ** 50)
+    E['a1-18'] = first_nonzero_place(F(3, 10) ** 10)
+    E['a1-19'] = sum(1 for n in range(1, 200) if digits(n ** 10) == 15)
     return E
 
 
@@ -134,6 +157,19 @@ def expected_algebra_lessons():
     E['a1-l3-de2'] = val(3 ** sp.log(5, 3) + sp.log(2 ** 7, 2))
     E['a1-l3-d1'] = val(sp.log(4, 3) * sp.log(5, 4) * sp.log(9, 5))
     E['a1-l3-d2'] = val(4 ** sp.log(3, 2))
+    # ── a1-l7 상용로그: 정확한 정수·분수로 자릿수와 소수점 아래 자리를 센다
+    E['a1-l7-e1'] = digits(2 ** 20)
+    E['a1-l7-e2'] = first_nonzero_place(F(1, 3) ** 10)
+    E['a1-l7-e3'] = val(S(10) ** -3 / S(10) ** -5)
+    E['a1-l7-c1'] = digits(3 ** 30)
+    E['a1-l7-c2'] = sum(1 for n in range(1, 30000) if digits(n) - 1 == 3)  # log n 의 정수 부분 = 자릿수 - 1
+    E['a1-l7-p'] = [10, 30, 100, 1000].index(min([10, 30, 100, 1000], key=lambda c: abs(c - digits(2 ** 100))))  # 보기: 약 10, 30, 100, 1000자리
+    E['a1-l7-de1'] = int(str(2 ** 30)[0])
+    # 규모 차 2 → (2/3) log(E1/E2) = 2
+    r = sp.Symbol('r', positive=True)
+    E['a1-l7-de2'] = val(single(sp.solve(sp.Eq(S(2, 3) * sp.log(r, 10), 2), r)))
+    E['a1-l7-d1'] = digits(6 ** 20)
+    E['a1-l7-d2'] = val(single(sp.solve(sp.Eq(10 * sp.log(r, 10), 40), r)))
     # ── a1-l4 지수함수
     E['a1-l4-e1'] = val(sp.limit(2 ** (x + 1) - 4, x, -sp.oo) + (2 ** (x + 1) - 4).subs(x, 0))
     E['a1-l4-e2'] = val(maximum(3 ** x, x, sp.Interval(-1, 1)) * minimum(3 ** x, x, sp.Interval(-1, 1)))
@@ -202,6 +238,12 @@ def expected_algebra_cq():
     C['a1-l3-q1'] = 0 if not sp.solve(sp.Eq(2 ** x, -4), x) else 1
     C['a1-l3-q2'] = 0 if val(sp.log(1 + 1, 2)) != val(sp.log(1, 2) + sp.log(1, 2)) else 1
     C['a1-l3-q4'] = pick([S(1, 2), S(2), S(-2)], val(sp.log(2, 4)))
+    # ── 상용로그
+    C['a1-l7-q1'] = pick([S(3), S(100), S(1, 3)], val(sp.log(1000, 10)))
+    C['a1-l7-q2'] = [5, 4, 43].index(digits(int(sp.floor(sp.N(S(10) ** S(43, 10), 30)))))
+    C['a1-l7-q3'] = min(range(3), key=lambda i: abs([1.3010, 3.010, 0.6020][i] - float(sp.N(sp.log(20, 10)))))
+    ph = sp.Symbol('ph', real=True)
+    C['a1-l7-q4'] = 0 if sp.simplify(S(10) ** (-(ph - 1)) / S(10) ** (-ph)) == 10 else None
     # ── 지수함수·로그함수
     C['a1-l4-q1'] = 0 if all(sp.Integer(av) ** 0 == 1 for av in (2, 3, 5)) and len({sp.Integer(av) ** 1 for av in (2, 3, 5)}) > 1 else None
     C['a1-l4-q2'] = 0 if all(S(1, 2) ** (v + 1) < S(1, 2) ** v for v in range(-5, 6)) else 1
