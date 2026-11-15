@@ -307,13 +307,13 @@ export default {
         { text: t`해가 $\dfrac{\pi}{6}$과 $\dfrac{5\pi}{6}$이 되게 해 보세요.`, test: ({ k }) => (SIN_SOLS[String(k)] || []).join() === '1,5' },
         { text: t`두 해의 합이 $3\pi$가 되게 해 보세요.`, test: ({ k }) => { const s = SIN_SOLS[String(k)] || []; return s.length === 2 && s[0] + s[1] === 18; } },
       ],
-      note: t`두 해는 직선 $x=\dfrac{\pi}{2}$(또는 $x=\dfrac{3\pi}{2}$)에 대하여 대칭입니다. 그래서 $k>0$이면 두 해의 합이 $\pi$, $k<0$이면 $3\pi$입니다.`,
+      note: t`두 해는 직선 $x=\dfrac{\pi}{2}$(또는 $x=\dfrac{3\pi}{2}$)에 대하여 대칭입니다. 그래서 $0<k<1$이면 두 해의 합이 $\pi$, $-1<k<0$이면 $3\pi$입니다. $k=\pm1$이면 두 교점이 꼭짓점에서 하나로 합쳐져 해가 하나뿐입니다.`,
     }],
     derive: {
       title: t`$\sin x=\dfrac12$ ($0\le x<2\pi$)의 해를 단위원으로 찾기`,
       steps: [
         { ask: t`$\sin x$는 단위원 위의 점의 무엇일까요?`, line: t`$y$좌표` },
-        { ask: t`$y$좌표가 $\dfrac12$인 단위원 위의 점은?`, line: '가로선 y=1/2와 원이 만나는 두 점(제1, 제2사분면)' },
+        { ask: t`$y$좌표가 $\dfrac12$인 단위원 위의 점은?`, line: t`가로선 $y=\dfrac12$과 원이 만나는 두 점(제$1$, 제$2$사분면)` },
         { ask: '제1사분면의 점이 나타내는 각은?', line: t`$\sin\dfrac{\pi}{6}=\dfrac12$이므로 $\dfrac{\pi}{6}$` },
         { ask: '제2사분면의 점은?', line: t`$y$축 대칭이므로 $\pi-\dfrac{\pi}{6}=\dfrac{5\pi}{6}$. 해는 두 개입니다.` },
       ],

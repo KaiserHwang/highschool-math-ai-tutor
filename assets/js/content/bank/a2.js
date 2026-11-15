@@ -120,7 +120,7 @@ export default [
   },
   {
     id: 'a2-11', unit: 'a2', level: 'adv', topic: '해를 갖는 조건', type: 'short',
-    q: t`방정식 $\cos^2x+\sin x+k=0$이 실근을 갖도록 하는 실수 $k$의 최댓값을 $M$, 최솟값을 $m$이라 할 때, $M-m$의 값을 구하시오.`,
+    q: t`$0\le x<2\pi$에서 방정식 $\cos^2x+\sin x+k=0$이 실근을 갖도록 하는 실수 $k$의 최댓값을 $M$, 최솟값을 $m$이라 할 때, $M-m$의 값을 구하시오.`,
     answer: '9/4',
     skills: { insight: 1, reason: 0.5 },
     hints: [
