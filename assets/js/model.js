@@ -441,7 +441,7 @@ export function lessonActivity(lesson, rec = getState().lessons[lesson.id]) {
   return { predict, goals, derive, explain, done: parts.filter((x) => x === true).length, total: parts.filter((x) => x !== null).length };
 }
 
-/** 하루 학습량(#22): 개념 문항(확인 문제·개념 질문) 풀이 수 + 문제 은행에서 해결한 문제 수. 오늘 목표, 주간 막대, 4주 달력이 이 값을 쓴다. */
+/** 하루 학습량(#22): 개념 문항(확인 문제·개념 질문) 풀이 수 + 문제 해결 수(문제 은행, 숫자를 바꾼 연습, 오답 복습, 혼합 평가에서 맞힌 것). 오늘 목표, 주간 막대, 4주 달력이 이 값을 쓴다. */
 export const studyCount = (a) => (a ? (a.solved || 0) + (a.checks || 0) : 0);
 
 export function lessonProgress(lesson) {

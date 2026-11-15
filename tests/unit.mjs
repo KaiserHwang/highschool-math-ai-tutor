@@ -448,7 +448,7 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   // 내보내기 → 가져오기 왕복, 콘텐츠에 없는 과제·항목은 조용히 버린다
   const exp = JSON.parse(store.exportData());
   const before = JSON.stringify(store.getState().lessons[L.id]);
-  exp.data.lessons[L.id].goals.push('9-9');
+  exp.data.lessons[L.id].goals.push('9-9', '00-0', '0-00', '00-00'); // 없는 과제와, 이미 있는 과제 0-0의 다른 표기
   exp.data.lessons[L.id].keys.push(40);
   exp.data.lessons[L.id].derive = 80;
   const r = store.importData(JSON.stringify(exp));

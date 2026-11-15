@@ -232,8 +232,9 @@ export function checkState(raw, { strict }) {
     const LL = LESSON_BY_ID[lid];
     if (v.predict && LL.predict && v.predict.a < LL.predict.options.length) out.lessons[lid].predict = { a: v.predict.a, d: v.predict.d };
     if (v.goals) {
-      const has = (g) => { const [xi, gi] = g.split('-').map(Number); return gi < (((LL.explore || [])[xi] || {}).goals || []).length; };
-      const goals = [...new Set(v.goals)].filter(has);
+      // 숫자로 읽어 지금 있는 과제만 남기고, 표기를 '탐구 번호-과제 번호'로 맞춘 뒤 중복을 없앤다('00-0'과 '0-0'은 같은 과제)
+      const has = ([xi, gi]) => gi < (((LL.explore || [])[xi] || {}).goals || []).length;
+      const goals = [...new Set(v.goals.map((g) => g.split('-').map(Number)).filter(has).map(([xi, gi]) => `${xi}-${gi}`))];
       if (goals.length) out.lessons[lid].goals = goals;
     }
     if (v.derive && LL.derive) out.lessons[lid].derive = Math.min(v.derive, LL.derive.steps.length);

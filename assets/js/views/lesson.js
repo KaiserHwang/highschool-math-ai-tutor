@@ -226,7 +226,7 @@ export function renderLesson(view, { args: [lessonId] }) {
     if (e.target.matches('[data-note]')) {
       clearTimeout(noteTimer);
       const v = e.target.value;
-      noteTimer = setTimeout(() => update((s) => { (s.lessons[L.id] ||= blankLessonRec()).note = v.slice(0, 4000); }), 400);
+      noteTimer = setTimeout(() => { update((s) => { (s.lessons[L.id] ||= blankLessonRec()).note = v.slice(0, 4000); }); paintProgress(); }, 400); // 진행 표시의 "설명"도 바로 맞춘다
     }
   };
   let noteTimer;
