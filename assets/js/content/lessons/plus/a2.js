@@ -15,6 +15,8 @@ function piTex(p, q) {
   return b === 1 ? top : `\\dfrac{${top}}{${b}}`;
 }
 const RAD = Math.PI / 180;
+/** 0 ≤ x < 2π 에서 sin x = k 의 해를 π/6 단위로(탐구 슬라이더 값만) */
+const SIN_SOLS = { 1: [3], 0.5: [1, 5], 0: [0, 6], '-0.5': [7, 11], '-1': [9] };
 
 export default {
   'a2-l1': {
@@ -268,6 +270,270 @@ export default {
       prompt: t`$y=\sin x$의 치역이 $\{y\mid-1\le y\le1\}$이고 주기가 $2\pi$인 이유를 단위원으로 설명해 보세요.`,
       model: t`$\sin x$는 단위원 위에서 각 $x$를 나타내는 점의 $y$좌표입니다. 단위원 위의 점의 $y$좌표는 $-1$ 이상 $1$ 이하이므로 치역이 그 범위입니다. 또 각이 $2\pi$만큼 커지면 점이 한 바퀴 돌아 같은 자리로 오므로 $\sin(x+2\pi)=\sin x$이고, 이것이 주기 $2\pi$입니다.`,
       keys: [t`$\sin x$는 단위원 위의 점의 $y$좌표`, t`$y$좌표는 $-1$ 이상 $1$ 이하`, t`$2\pi$만큼 돌면 같은 점이 된다`],
+    },
+  },
+
+  'a2-l4': {
+    pre: ['a2-l3', 'a2-l2'],
+    predict: {
+      q: t`$0\le x<2\pi$에서 방정식 $\sin x=\dfrac12$의 해는 몇 개일까요?`,
+      options: ['1개', '2개', '무수히 많다', '없다'],
+      answer: 1,
+      explain: t`단위원에서 높이가 $\dfrac12$인 가로선은 원과 두 점에서 만납니다. 제$1$사분면의 $\dfrac{\pi}{6}$과 제$2$사분면의 $\pi-\dfrac{\pi}{6}=\dfrac{5\pi}{6}$입니다. 실수 전체에서는 해가 무수히 많지만, 범위를 $0\le x<2\pi$로 정하면 두 개입니다.`,
+    },
+    explore: [{
+      title: t`$y=\sin x$와 직선 $y=k$의 교점`,
+      intro: t`직선 $y=k$를 위아래로 움직이며 $0\le x<2\pi$에서 방정식 $\sin x=k$의 해가 몇 개, 어디에 생기는지 봅니다.`,
+      params: [{ k: 'k', label: t`$k$`, min: -1, max: 1, step: 0.5, value: 0 }],
+      fig: ({ k }) => {
+        const sols = SIN_SOLS[String(k)] || [];
+        return {
+          x: [-0.4, 6.9], y: [-1.6, 1.6], w: 320, h: 200, equal: false,
+          xt: [[Math.PI / 2, 'π/2'], [Math.PI, 'π'], [(3 * Math.PI) / 2, '3π/2'], [2 * Math.PI, '2π']],
+          alt: `y=sin x의 그래프와 직선 y=${k}. 0 이상 2π 미만에서 교점 ${sols.length}개`,
+          items: [
+            { t: 'fn', f: { pl: sample((x) => Math.sin(x), 0, 2 * Math.PI, 160) } },
+            { t: 'hl', y: k },
+            ...sols.map((p) => ({ t: 'pt', p: [(p * Math.PI) / 6, k] })),
+          ],
+        };
+      },
+      read: ({ k }) => {
+        const sols = SIN_SOLS[String(k)] || [];
+        return [['해의 개수', `$${sols.length}$`], ['해', sols.map((p) => `$${piTex(p, 6)}$`).join(', ')]];
+      },
+      goals: [
+        { text: '해가 하나뿐이 되게 해 보세요.', test: ({ k }) => (SIN_SOLS[String(k)] || []).length === 1 },
+        { text: t`해가 $\dfrac{\pi}{6}$과 $\dfrac{5\pi}{6}$이 되게 해 보세요.`, test: ({ k }) => (SIN_SOLS[String(k)] || []).join() === '1,5' },
+        { text: t`두 해의 합이 $3\pi$가 되게 해 보세요.`, test: ({ k }) => { const s = SIN_SOLS[String(k)] || []; return s.length === 2 && s[0] + s[1] === 18; } },
+      ],
+      note: t`두 해는 직선 $x=\dfrac{\pi}{2}$(또는 $x=\dfrac{3\pi}{2}$)에 대하여 대칭입니다. 그래서 $0<k<1$이면 두 해의 합이 $\pi$, $-1<k<0$이면 $3\pi$입니다. $k=\pm1$이면 두 교점이 꼭짓점에서 하나로 합쳐져 해가 하나뿐입니다.`,
+    }],
+    derive: {
+      title: t`$\sin x=\dfrac12$ ($0\le x<2\pi$)의 해를 단위원으로 찾기`,
+      steps: [
+        { ask: t`$\sin x$는 단위원 위의 점의 무엇일까요?`, line: t`$y$좌표` },
+        { ask: t`$y$좌표가 $\dfrac12$인 단위원 위의 점은?`, line: t`가로선 $y=\dfrac12$과 원이 만나는 두 점(제$1$, 제$2$사분면)` },
+        { ask: '제1사분면의 점이 나타내는 각은?', line: t`$\sin\dfrac{\pi}{6}=\dfrac12$이므로 $\dfrac{\pi}{6}$` },
+        { ask: '제2사분면의 점은?', line: t`$y$축 대칭이므로 $\pi-\dfrac{\pi}{6}=\dfrac{5\pi}{6}$. 해는 두 개입니다.` },
+      ],
+    },
+    traps: {
+      'a2-l4-c1': { '3/4': t`$0\le x<2\pi$에서 $\tan x=-1$의 해는 $\dfrac{3\pi}{4}$와 $\dfrac{7\pi}{4}$ 두 개입니다. $\tan x$의 주기는 $\pi$입니다.`, '7/4': t`$\dfrac{3\pi}{4}$도 해입니다. 두 해를 모두 더합니다.` },
+      'a2-l4-c2': { '4/3': t`$\sin x\le-\dfrac12$인 구간은 그래프가 직선 $y=-\dfrac12$보다 <strong>아래</strong>에 있는 곳, $\dfrac{7\pi}{6}\le x\le\dfrac{11\pi}{6}$입니다.` },
+    },
+    deep: {
+      intro: t`삼각방정식의 심화는 <strong>각을 치환할 때 범위도 바꾸기</strong>와 <strong>절댓값·제곱으로 해가 늘어나는 경우 세기</strong>입니다.`,
+      ideas: [
+        {
+          title: t`$\sin2x=k$: 범위도 두 배로`,
+          body: t`<p>$2x=X$로 치환하면 $0\le x<\pi$일 때 $0\le X<2\pi$입니다. $X$의 범위에서 해를 구한 뒤 $2$로 나눕니다. 범위를 바꾸지 않으면 해를 빠뜨립니다.</p>`,
+          example: {
+            q: t`$0\le x<\pi$일 때, 방정식 $\sin2x=\dfrac12$의 모든 해의 합을 $k\pi$라 하자. $k$의 값을 구하시오.`,
+            think: [t`$X=2x$이면 $0\le X<2\pi$입니다.`],
+            steps: [t`$\sin X=\dfrac12$에서 $X=\dfrac{\pi}{6},\ \dfrac{5\pi}{6}$`, t`$x=\dfrac{\pi}{12},\ \dfrac{5\pi}{12}$이고 합은 $\dfrac{\pi}{2}$`, t`$k=\dfrac12$`],
+            answer: '1/2',
+          },
+        },
+        {
+          title: '절댓값이 있는 삼각방정식',
+          body: t`<p>$|\sin x|=k$ ($0<k<1$)는 $\sin x=k$와 $\sin x=-k$를 합친 것입니다. 그래프로는 $y=\sin x$의 $x$축 아래 부분을 위로 접은 그래프와 직선 $y=k$의 교점입니다.</p>`,
+          example: {
+            q: t`$0\le x<2\pi$일 때, 방정식 $|\sin x|=\dfrac12$의 서로 다른 해의 개수를 구하시오.`,
+            think: [t`$\sin x=\dfrac12$ 또는 $\sin x=-\dfrac12$`],
+            steps: [t`$\sin x=\dfrac12$: $\dfrac{\pi}{6},\ \dfrac{5\pi}{6}$`, t`$\sin x=-\dfrac12$: $\dfrac{7\pi}{6},\ \dfrac{11\pi}{6}$`, t`모두 $4$개`],
+            answer: '4',
+          },
+        },
+      ],
+      checks: [
+        { id: 'a2-l4-d1', type: 'short', q: t`방정식 $\cos2x=-\dfrac12$의 해 중 $0\le x<\pi$인 것을 작은 것부터 $\alpha,\ \beta$라 할 때, $\beta-\alpha=k\pi$이다. $k$의 값을 구하시오.`, answer: '1/3', solution: t`$X=2x$이면 $0\le X<2\pi$이고 $X=\dfrac{2\pi}{3},\ \dfrac{4\pi}{3}$. $\alpha=\dfrac{\pi}{3}$, $\beta=\dfrac{2\pi}{3}$이므로 $\beta-\alpha=\dfrac{\pi}{3}$, $k=\dfrac13$` },
+        { id: 'a2-l4-d2', type: 'short', q: t`$0\le x<2\pi$일 때, 방정식 $2\sin^2x-3\sin x+1=0$의 서로 다른 해의 개수를 구하시오.`, answer: '3', solution: t`$(2\sin x-1)(\sin x-1)=0$에서 $\sin x=\dfrac12$ 또는 $1$. $x=\dfrac{\pi}{6},\ \dfrac{5\pi}{6},\ \dfrac{\pi}{2}$의 $3$개` },
+      ],
+    },
+    explain: {
+      prompt: t`$0\le x<2\pi$에서 부등식 $\sin x>\dfrac12$의 해를 그래프로 구하는 방법을 설명해 보세요.`,
+      model: t`먼저 경계가 되는 방정식 $\sin x=\dfrac12$을 풀면 $x=\dfrac{\pi}{6},\ \dfrac{5\pi}{6}$입니다. 그다음 $y=\sin x$의 그래프와 직선 $y=\dfrac12$을 함께 그려, 그래프가 직선보다 위에 있는 부분을 찾습니다. 두 교점 사이에서 그래프가 위에 있으므로 해는 $\dfrac{\pi}{6}<x<\dfrac{5\pi}{6}$입니다. 부등호에 등호가 없으므로 경계는 포함하지 않습니다.`,
+      keys: ['경계인 방정식의 해를 먼저 구한다', '그래프가 직선보다 위에 있는 구간을 고른다', '등호 여부로 경계 포함을 정한다'],
+    },
+  },
+
+  'a2-l5': {
+    pre: ['a2-l2'],
+    predict: {
+      q: t`삼각형 $ABC$에서 $A=90^\circ$이면 변 $BC$의 길이는 외접원과 어떤 관계일까요?`,
+      options: ['외접원의 지름과 같다', '외접원의 반지름과 같다', '외접원의 둘레와 같다', '관계없다'],
+      answer: 0,
+      explain: t`지름에 대한 원주각은 $90^\circ$이므로, 꼭짓점 $A$의 각이 직각이면 마주 보는 변 $BC$가 외접원의 지름입니다. 사인법칙 $\dfrac{a}{\sin A}=2R$에서 $\sin90^\circ=1$을 넣은 경우가 바로 이것입니다.`,
+    },
+    explore: [{
+      title: '외접원과 사인법칙',
+      intro: t`외접원의 반지름 $R$와 각 $A$를 바꿔도 $\dfrac{a}{\sin A}$는 언제나 $2R$인지 확인합니다.`,
+      params: [
+        { k: 'R', label: t`외접원의 반지름 $R$`, min: 1, max: 3, step: 1, value: 2 },
+        { k: 'A', label: t`$A$(도)`, min: 30, max: 150, step: 15, value: 60 },
+      ],
+      fig: ({ R, A }) => {
+        const at = (d) => [R * Math.cos(d * RAD), R * Math.sin(d * RAD)];
+        const pA = at(90), pB = at(270 - A), pC = at(270 + A);
+        return {
+          x: [-3.6, 3.6], y: [-3.6, 3.6], w: 260, equal: true,
+          alt: `반지름 ${R}인 원에 내접하는 삼각형 ABC, 각 A는 ${A}도`,
+          items: [
+            { t: 'circle', c: [0, 0], r: R, style: 'faint' },
+            { t: 'poly', pts: [pA, pB, pC] },
+            { t: 'pt', p: pA, label: 'A', pos: 'n' },
+            { t: 'pt', p: pB, label: 'B', pos: 'sw' },
+            { t: 'pt', p: pC, label: 'C', pos: 'se' },
+          ],
+        };
+      },
+      read: ({ R, A }) => {
+        const a = 2 * R * Math.sin(A * RAD);
+        return [[t`$a=\overline{BC}$`, `$\\approx${num(a)}$`], [t`$\sin A$`, `$\\approx${num(Math.sin(A * RAD))}$`], [t`$\dfrac{a}{\sin A}$`, `$${2 * R}=2R$`]];
+      },
+      goals: [
+        { text: t`변 $BC$가 외접원의 지름이 되게 해 보세요.`, test: ({ A }) => A === 90 },
+        { text: t`변 $BC$의 길이가 반지름 $R$와 같게 해 보세요.`, test: ({ R, A }) => near(2 * R * Math.sin(A * RAD), R) },
+        { text: t`$\dfrac{a}{\sin A}=6$이 되게 해 보세요.`, test: ({ R }) => R === 3 },
+      ],
+      note: t`$A=30^\circ$와 $A=150^\circ$에서 변 $BC$의 길이가 같습니다. $\sin150^\circ=\sin30^\circ$이기 때문입니다. 그래서 사인값만으로는 각이 예각인지 둔각인지 정해지지 않을 수 있습니다.`,
+    }],
+    derive: {
+      title: t`사인법칙 $\dfrac{a}{\sin A}=2R$ ($A$가 예각일 때)`,
+      steps: [
+        { ask: t`꼭짓점 $B$에서 외접원의 지름 $BA'$을 그으면 $\angle BCA'$은?`, line: t`지름에 대한 원주각이므로 $90^\circ$` },
+        { ask: t`$\angle BA'C$와 $\angle A$의 관계는?`, line: t`같은 호 $BC$에 대한 원주각이므로 $\angle A'=\angle A$` },
+        { ask: t`직각삼각형 $A'BC$에서 $\sin A'$은?`, line: t`$\sin A'=\dfrac{\overline{BC}}{\overline{BA'}}=\dfrac{a}{2R}$` },
+        { ask: '결론은?', line: t`$\sin A=\dfrac{a}{2R}$, 곧 $\dfrac{a}{\sin A}=2R$. 다른 변도 같은 방법으로 $2R$입니다.` },
+      ],
+    },
+    traps: {
+      'a2-l5-c1': { 10: t`$a=2R\sin A$에서 $\sin A$를 빠뜨렸습니다. $\sin150^\circ=\dfrac12$입니다.`, '5/2': t`사인법칙의 값은 반지름 $R$가 아니라 지름 $2R=10$입니다.` },
+      'a2-l5-c2': { 54: t`비를 뒤집었습니다. $\dfrac{a}{\sin A}=\dfrac{b}{\sin B}$이므로 $b=\dfrac{a\sin B}{\sin A}$입니다.` },
+    },
+    deep: {
+      intro: t`사인법칙의 심화는 <strong>각의 비를 변의 비로 바꾸기</strong>와 <strong>사인의 관계식을 변의 관계식으로 바꿔 삼각형의 모양 알아내기</strong>입니다.`,
+      ideas: [
+        {
+          title: '각의 비 → 변의 비',
+          body: t`<p>세 각의 비가 주어지면 합이 $180^\circ$인 것으로 각을 구하고, 사인법칙으로 변의 비 $a:b:c=\sin A:\sin B:\sin C$를 얻습니다. 각의 비와 변의 비는 같지 않습니다.</p>`,
+          example: {
+            q: t`삼각형 $ABC$에서 $A:B:C=1:1:4$일 때, $\left(\dfrac ca\right)^2$의 값을 구하시오.`,
+            think: [t`$A=B=30^\circ$, $C=120^\circ$`],
+            steps: [t`$\dfrac ca=\dfrac{\sin120^\circ}{\sin30^\circ}=\dfrac{\frac{\sqrt3}{2}}{\frac12}=\sqrt3$`, t`$\left(\dfrac ca\right)^2=3$`],
+            answer: '3',
+          },
+        },
+        {
+          title: '사인의 관계식 → 변의 관계식',
+          body: t`<p>$\sin A=\dfrac{a}{2R}$ 등을 넣으면 사인 사이의 식이 변 사이의 식이 됩니다. 예를 들어 $\sin^2A=\sin^2B+\sin^2C$는 $a^2=b^2+c^2$이 되어 직각삼각형임을 알 수 있습니다.</p>`,
+          example: {
+            q: t`삼각형 $ABC$에서 $\sin^2A=\sin^2B+\sin^2C$일 때, $A=\theta^\circ$이다. $\theta$의 값을 구하시오.`,
+            think: [t`양변에 $(2R)^2$을 곱합니다.`],
+            steps: [t`$a^2=b^2+c^2$`, t`피타고라스 정리의 역에서 $A=90^\circ$, $\theta=90$`],
+            answer: '90',
+          },
+        },
+      ],
+      checks: [
+        { id: 'a2-l5-d1', type: 'short', q: t`삼각형 $ABC$에서 $A:B:C=1:2:3$일 때, $\dfrac ca$의 값을 구하시오.`, answer: '2', solution: t`$A=30^\circ$, $C=90^\circ$이므로 $\dfrac ca=\dfrac{\sin90^\circ}{\sin30^\circ}=2$` },
+        { id: 'a2-l5-d2', type: 'short', q: t`외접원의 반지름의 길이가 $4$인 삼각형 $ABC$에서 $\sin A+\sin B+\sin C=2$일 때, 삼각형 $ABC$의 둘레의 길이를 구하시오.`, answer: '16', solution: t`$a+b+c=2R(\sin A+\sin B+\sin C)=8\times2=16$` },
+      ],
+    },
+    explain: {
+      prompt: t`삼각형 $ABC$에서 $\sin A:\sin B:\sin C=a:b:c$인 이유를 설명해 보세요.`,
+      model: t`사인법칙에 따르면 $\dfrac{a}{\sin A}=\dfrac{b}{\sin B}=\dfrac{c}{\sin C}=2R$이므로 $a=2R\sin A$, $b=2R\sin B$, $c=2R\sin C$입니다. 세 변이 모두 같은 수 $2R$에 각 사인값을 곱한 것이므로, 변의 비는 사인값의 비와 같습니다.`,
+      keys: [t`사인법칙의 값은 모두 $2R$`, t`$a=2R\sin A$ 꼴로 바꾼다`, t`공통인 $2R$이 비에서 약분된다`],
+    },
+  },
+
+  'a2-l6': {
+    pre: ['a2-l5', 'a2-l2'],
+    predict: {
+      q: t`두 변의 길이가 $3$, $4$로 정해진 삼각형에서 끼인각을 $90^\circ$보다 크게 하면 나머지 한 변의 길이는?`,
+      options: [t`$5$보다 길어진다`, t`$5$보다 짧아진다`, t`항상 $5$이다`],
+      answer: 0,
+      explain: t`끼인각이 $90^\circ$이면 나머지 변은 $5$입니다(피타고라스 정리). 끼인각을 벌리면 두 변의 끝이 멀어지므로 더 길어집니다. 코사인법칙 $a^2=b^2+c^2-2bc\cos A$에서 $\cos A<0$이면 $a^2>b^2+c^2$이 되는 것과 같습니다.`,
+    },
+    explore: [{
+      title: '끼인각과 마주 보는 변',
+      intro: t`두 변 $b,\ c$와 끼인각 $A$를 바꾸며 $a^2$과 $b^2+c^2$을 비교합니다.`,
+      params: [
+        { k: 'b', label: t`$b=\overline{CA}$`, min: 1, max: 4, step: 1, value: 3 },
+        { k: 'c', label: t`$c=\overline{AB}$`, min: 1, max: 4, step: 1, value: 4 },
+        { k: 'A', label: t`$A$(도)`, min: 30, max: 150, step: 30, value: 60 },
+      ],
+      fig: ({ b, c, A }) => {
+        const pC = [b * Math.cos(A * RAD), b * Math.sin(A * RAD)];
+        return {
+          x: [-4.2, 4.6], y: [-0.8, 4.4], w: 300, equal: true,
+          alt: `두 변 ${b}, ${c}와 끼인각 ${A}도인 삼각형 ABC`,
+          items: [
+            { t: 'poly', pts: [[0, 0], [c, 0], pC] },
+            { t: 'pt', p: [0, 0], label: 'A', pos: 'sw' },
+            { t: 'pt', p: [c, 0], label: 'B', pos: 'se' },
+            { t: 'pt', p: pC, label: 'C', pos: 'n' },
+          ],
+        };
+      },
+      read: ({ b, c, A }) => {
+        const a2 = b * b + c * c - 2 * b * c * Math.cos(A * RAD);
+        return [[t`$a^2$`, `$\\approx${num(a2)}$`], [t`$b^2+c^2$`, `$${b * b + c * c}$`], [t`각 $A$`, A < 90 ? '예각' : A === 90 ? '직각' : '둔각']];
+      },
+      goals: [
+        { text: t`$a^2=b^2+c^2$이 되게 해 보세요.`, test: ({ A }) => A === 90 },
+        { text: t`$a^2>b^2+c^2$이 되게 해 보세요.`, test: ({ A }) => A > 90 },
+        { text: t`$a^2=7$이 되게 해 보세요.`, test: ({ b, c, A }) => near(b * b + c * c - 2 * b * c * Math.cos(A * RAD), 7) },
+      ],
+      note: t`$-2bc\cos A$는 피타고라스 정리에서 벗어난 만큼을 고쳐 주는 항입니다. 예각이면 빼고(짧아짐), 둔각이면 더합니다(길어짐).`,
+    }],
+    derive: {
+      title: t`코사인법칙 $a^2=b^2+c^2-2bc\cos A$`,
+      steps: [
+        { ask: t`$A$를 원점, $B$를 $x$축 위에 두면 $B$의 좌표는?`, line: t`$B(c,\ 0)$` },
+        { ask: t`$\overline{AC}=b$이고 동경이 각 $A$를 나타내면 $C$의 좌표는?`, line: t`$C(b\cos A,\ b\sin A)$` },
+        { ask: t`$a^2=\overline{BC}^2$을 계산하면?`, line: t`$(b\cos A-c)^2+(b\sin A)^2=b^2(\cos^2A+\sin^2A)-2bc\cos A+c^2$` },
+        { ask: '정리하면?', line: t`$\sin^2A+\cos^2A=1$이므로 $a^2=b^2+c^2-2bc\cos A$. $A$가 둔각이어도 같은 계산입니다.` },
+      ],
+    },
+    traps: {
+      'a2-l6-c1': { 13: t`$-2ab\cos C$ 항을 빠뜨렸습니다. 피타고라스 정리는 $C=90^\circ$일 때만 성립합니다.`, 19: t`부호가 바뀌었습니다. $c^2=a^2+b^2-2ab\cos C$이고 $\cos60^\circ=\dfrac12>0$이므로 빼야 합니다.` },
+      'a2-l6-c2': { 60: t`$\cos\theta=-\dfrac12<0$이므로 $\theta$는 둔각입니다. $\cos\theta=\dfrac12$인 $60^\circ$가 아닙니다.` },
+    },
+    deep: {
+      intro: t`코사인법칙의 심화는 <strong>세 변으로 둔각삼각형 판별하기</strong>와 <strong>세 변만으로 넓이 구하기</strong>입니다.`,
+      ideas: [
+        {
+          title: '둔각삼각형이 되는 조건',
+          body: t`<p>가장 긴 변을 $l$, 나머지를 $m,\ n$이라 하면 $l^2>m^2+n^2$일 때 둔각삼각형입니다. 어느 변이 가장 긴지 경우를 나누고, 삼각형이 될 조건(가장 긴 변 $<$ 나머지 두 변의 합)도 함께 확인합니다.</p>`,
+          example: {
+            q: t`세 변의 길이가 $4$, $5$, $x$인 삼각형이 둔각삼각형이 되도록 하는 자연수 $x$의 개수를 구하시오.`,
+            think: [t`삼각형 조건: $1<x<9$`, t`$x$가 가장 긴 변일 때와 $5$가 가장 긴 변일 때로 나눕니다.`],
+            steps: [t`$x>5$: $x^2>41$에서 $x=7,\ 8$`, t`$x\le5$: $25>16+x^2$에서 $x^2<9$, $x=2$`, t`모두 $3$개`],
+            answer: '3',
+          },
+        },
+        {
+          title: '세 변으로 넓이 구하기',
+          body: t`<p>코사인법칙으로 한 각의 코사인을 구하고, $\sin^2A+\cos^2A=1$로 사인을 구해 $S=\dfrac12bc\sin A$에 넣습니다.</p>`,
+          example: {
+            q: t`세 변의 길이가 $5$, $7$, $8$인 삼각형의 넓이를 $S$라 할 때, $S^2$의 값을 구하시오.`,
+            think: [t`길이 $7$인 변의 대각을 $\theta$라 합니다.`],
+            steps: [t`$\cos\theta=\dfrac{25+64-49}{80}=\dfrac12$, $\sin\theta=\dfrac{\sqrt3}{2}$`, t`$S=\dfrac12\times5\times8\times\dfrac{\sqrt3}{2}=10\sqrt3$`, t`$S^2=300$`],
+            answer: '300',
+          },
+        },
+      ],
+      checks: [
+        { id: 'a2-l6-d1', type: 'short', q: t`세 변의 길이가 $3$, $4$, $x$인 삼각형이 둔각삼각형이 되도록 하는 자연수 $x$의 개수를 구하시오.`, answer: '2', solution: t`삼각형 조건 $1<x<7$. $x>4$이면 $x^2>25$에서 $x=6$. $x\le4$이면 $16>9+x^2$에서 $x=2$. 모두 $2$개` },
+        { id: 'a2-l6-d2', type: 'short', q: t`세 변의 길이가 $3$, $5$, $7$인 삼각형의 넓이를 $S$라 할 때, $S^2$의 값을 구하시오.`, answer: '675/16', solution: t`길이 $7$인 변의 대각을 $\theta$라 하면 $\cos\theta=-\dfrac12$, $\sin\theta=\dfrac{\sqrt3}{2}$. $S=\dfrac12\times3\times5\times\dfrac{\sqrt3}{2}=\dfrac{15\sqrt3}{4}$이므로 $S^2=\dfrac{675}{16}$` },
+      ],
+    },
+    explain: {
+      prompt: '코사인법칙이 피타고라스 정리를 넓힌 것이라고 하는 이유를 설명해 보세요.',
+      model: t`코사인법칙 $a^2=b^2+c^2-2bc\cos A$에서 $A=90^\circ$이면 $\cos A=0$이라 $a^2=b^2+c^2$, 곧 피타고라스 정리가 됩니다. $A$가 예각이면 $\cos A>0$이라 $a^2$이 $b^2+c^2$보다 작고, 둔각이면 더 큽니다. 직각삼각형에서만 쓰던 관계를 마지막 항으로 고쳐 모든 삼각형에 쓸 수 있게 한 것입니다.`,
+      keys: [t`$A=90^\circ$이면 $\cos A=0$`, '그때 피타고라스 정리가 된다', t`$-2bc\cos A$가 예각·둔각에 따른 차이를 보정한다`],
     },
   },
 };

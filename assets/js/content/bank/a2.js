@@ -1,4 +1,4 @@
-// 대수 Ⅱ. 삼각함수 (일반각과 호도법, 삼각함수의 뜻과 관계, 삼각함수의 그래프)
+// 대수 Ⅱ. 삼각함수 (일반각과 호도법, 삼각함수의 뜻과 관계, 삼각함수의 그래프, 방정식과 부등식, 사인법칙, 코사인법칙)
 // 모든 정답은 tests/verify_algebra.py 에서 독립 계산으로 검증한다.
 const t = String.raw;
 
@@ -94,5 +94,98 @@ export default [
     ],
     solution: t`$8\theta=(2n+1)\pi$에서 $\theta=\dfrac{(2n+1)\pi}{8}$. $0<\theta<\pi$이므로 $n=0,\ 1,\ 2,\ 3$이고 $\theta=\dfrac{\pi}{8},\ \dfrac{3\pi}{8},\ \dfrac{5\pi}{8},\ \dfrac{7\pi}{8}$의 $4$개`,
     trap: t`일반각에서 $2n\pi$를 빼먹으면 $\theta=\dfrac{\pi}{8}$ 하나만 나옵니다.`,
+  },
+  {
+    id: 'a2-09', unit: 'a2', level: 'basic', topic: '삼각함수를 포함한 방정식', type: 'short',
+    q: t`$0\le x<2\pi$일 때, 방정식 $2\cos x=1$의 모든 해의 합을 $k\pi$라 하자. $k$의 값을 구하시오.`,
+    answer: '2',
+    skills: { concept: 1 },
+    hints: [
+      t`$\cos x=\dfrac12$이 되는 $x$를 $y=\cos x$의 그래프에서 찾습니다.`,
+      t`$x=\dfrac{\pi}{3}$과 그래프의 대칭으로 나오는 또 하나의 해`,
+    ],
+    solution: t`$x=\dfrac{\pi}{3},\ \dfrac{5\pi}{3}$이므로 합은 $2\pi$, $k=2$`,
+    trap: t`$\cos x=\dfrac12$의 해는 $0\le x<2\pi$에서 두 개입니다. $\dfrac{\pi}{3}$ 하나만 쓰면 $k=\dfrac13$이 됩니다.`,
+  },
+  {
+    id: 'a2-10', unit: 'a2', level: 'core', topic: '치환으로 푸는 삼각부등식', type: 'short',
+    q: t`$0\le x<2\pi$일 때, 부등식 $2\cos^2x+3\sin x-3\ge0$의 해가 $\alpha\le x\le\beta$이다. $\beta-\alpha=k\pi$일 때 $k$의 값을 구하시오.`,
+    answer: '2/3',
+    skills: { calc: 1, concept: 0.5 },
+    hints: [
+      t`$\cos^2x=1-\sin^2x$로 바꾸고 $\sin x=t$로 놓습니다.`,
+      t`$2t^2-3t+1\le0$, 곧 $\dfrac12\le t\le1$`,
+    ],
+    solution: t`$-2\sin^2x+3\sin x-1\ge0$에서 $(2\sin x-1)(\sin x-1)\le0$, $\dfrac12\le\sin x\le1$. 따라서 $\dfrac{\pi}{6}\le x\le\dfrac{5\pi}{6}$이고 $k=\dfrac23$`,
+  },
+  {
+    id: 'a2-11', unit: 'a2', level: 'adv', topic: '해를 갖는 조건', type: 'short',
+    q: t`$0\le x<2\pi$에서 방정식 $\cos^2x+\sin x+k=0$이 실근을 갖도록 하는 실수 $k$의 최댓값을 $M$, 최솟값을 $m$이라 할 때, $M-m$의 값을 구하시오.`,
+    answer: '9/4',
+    skills: { insight: 1, reason: 0.5 },
+    hints: [
+      t`$k=-\cos^2x-\sin x$로 놓으면, $k$는 이 함수가 가질 수 있는 값이어야 합니다.`,
+      t`$\sin x=t\ (-1\le t\le1)$로 놓으면 $k=t^2-t-1$`,
+    ],
+    solution: t`$k=t^2-t-1=\left(t-\dfrac12\right)^2-\dfrac54$ ($-1\le t\le1$). $t=\dfrac12$일 때 $m=-\dfrac54$, $t=-1$일 때 $M=1$이므로 $M-m=\dfrac94$`,
+    trap: t`$t$의 범위 $-1\le t\le1$을 빼먹으면 $k$의 최댓값이 없다고 판단하게 됩니다.`,
+  },
+  {
+    id: 'a2-12', unit: 'a2', level: 'basic', topic: '사인법칙', type: 'short',
+    q: t`외접원의 반지름의 길이가 $3$인 삼각형 $ABC$에서 $\sin A=\dfrac13$일 때, 변 $BC$의 길이를 구하시오.`,
+    answer: '2',
+    skills: { concept: 1 },
+    hints: [
+      t`변 $BC$는 꼭짓점 $A$와 마주 보는 변 $a$입니다.`,
+      t`$a=2R\sin A$`,
+    ],
+    solution: t`$a=2\times3\times\dfrac13=2$`,
+    trap: t`사인법칙의 값은 반지름 $R$가 아니라 지름 $2R$입니다.`,
+  },
+  {
+    id: 'a2-13', unit: 'a2', level: 'basic', topic: '코사인법칙으로 각 구하기', type: 'short',
+    q: t`세 변의 길이가 $5$, $6$, $7$인 삼각형에서 가장 작은 각의 크기를 $\theta$라 할 때, $\cos\theta$의 값을 구하시오.`,
+    answer: '5/7',
+    skills: { concept: 1, calc: 0.5 },
+    hints: [
+      t`가장 작은 각은 가장 짧은 변의 대각입니다.`,
+      t`$\cos\theta=\dfrac{6^2+7^2-5^2}{2\times6\times7}$`,
+    ],
+    solution: t`$\cos\theta=\dfrac{36+49-25}{84}=\dfrac{60}{84}=\dfrac57$`,
+    trap: t`가장 작은 각은 가장 짧은 변 $5$와 마주 봅니다. 분자에서 빼는 것은 $5^2$입니다.`,
+  },
+  {
+    id: 'a2-14', unit: 'a2', level: 'core', topic: '사인의 비와 코사인법칙', type: 'short',
+    q: t`삼각형 $ABC$에서 $\sin A:\sin B:\sin C=3:5:7$일 때, 가장 큰 각의 크기를 $\theta^\circ$라 하자. $\theta$의 값을 구하시오.`,
+    answer: '120',
+    skills: { concept: 1, reason: 0.5 },
+    hints: [
+      t`사인법칙으로 $a:b:c=3:5:7$입니다. $a=3k,\ b=5k,\ c=7k$로 놓습니다.`,
+      t`가장 큰 각은 $C$이고 $\cos C=\dfrac{a^2+b^2-c^2}{2ab}$`,
+    ],
+    solution: t`$\cos C=\dfrac{9k^2+25k^2-49k^2}{30k^2}=-\dfrac12$이므로 $C=120^\circ$, $\theta=120$`,
+  },
+  {
+    id: 'a2-15', unit: 'a2', level: 'adv', topic: '코사인법칙과 사인법칙 함께 쓰기', type: 'short',
+    q: t`삼각형 $ABC$에서 $b=2$, $c=3$, $A=60^\circ$일 때, 외접원의 반지름의 길이를 $R$라 하자. $R^2$의 값을 구하시오.`,
+    answer: '7/3',
+    skills: { calc: 1, insight: 0.5 },
+    hints: [
+      t`먼저 코사인법칙으로 $a$를 구합니다.`,
+      t`$a^2=7$이고 $2R=\dfrac{a}{\sin A}$`,
+    ],
+    solution: t`$a^2=4+9-2\times2\times3\times\dfrac12=7$. $R=\dfrac{a}{2\sin A}=\dfrac{\sqrt7}{\sqrt3}$이므로 $R^2=\dfrac73$`,
+  },
+  {
+    id: 'a2-16', unit: 'a2', level: 'killer', topic: '원에 내접하는 사각형', type: 'short',
+    q: t`원에 내접하는 사각형 $ABCD$에서 $\overline{AB}=3$, $\overline{BC}=5$, $\overline{CD}=3$, $\overline{DA}=8$일 때, 대각선 $AC$의 길이를 구하시오.`,
+    answer: '7',
+    skills: { insight: 1, reason: 1 },
+    hints: [
+      t`원에 내접하는 사각형의 마주 보는 두 각의 합은 $180^\circ$이므로 $\cos D=-\cos B$입니다.`,
+      t`삼각형 $ABC$와 $ACD$에서 각각 코사인법칙으로 $\overline{AC}^2$을 나타냅니다.`,
+    ],
+    solution: t`$\overline{AC}^2=9+25-30\cos B=9+64+48\cos B$에서 $\cos B=-\dfrac12$. 따라서 $\overline{AC}^2=34+15=49$, $\overline{AC}=7$`,
+    trap: t`$\cos D=\cos B$로 두면 $\cos B$가 맞지 않게 나옵니다. $D=180^\circ-B$이므로 $\cos D=-\cos B$입니다.`,
   },
 ];
