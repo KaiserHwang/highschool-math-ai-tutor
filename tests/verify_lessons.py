@@ -604,6 +604,10 @@ def main():
     plus = expected_plus()
     assert not set(plus) & set(computed), f'중복 계산: {set(plus) & set(computed)}'
     computed.update(plus)
+    from verify_algebra import expected_algebra_lessons, expected_algebra_cq
+    alg = expected_algebra_lessons()
+    assert not set(alg) & set(computed), f'중복 계산: {set(alg) & set(computed)}'
+    computed.update(alg)
     fails = 0
     seen = 0
     manual = {'u6-l5-c1', 'u6-l5-c2'}  # 논리 형식(대우, 증명 방법)을 묻는 문항: 계산 대신 정의로 판정
@@ -647,6 +651,9 @@ def main():
     # 이유 보기는 정의·논리로 판정하므로 콘텐츠 검사(정답 이유가 하나뿐인지, 오개념 분류가 붙었는지)에 맡긴다.
     from verify_plus import expected_cq
     cqcalc = expected_cq()
+    algcq = expected_algebra_cq()
+    assert not set(algcq) & set(cqcalc), f'중복 계산: {set(algcq) & set(cqcalc)}'
+    cqcalc.update(algcq)
     # 화면에서는 보기 순서를 섞으므로, 작성한 그대로의 데이터(CQ_RAW)로 대조한다.
     CQ_RAW = data['CQ_RAW']
     cq_ids = {q['id'] for qs in CQ_RAW.values() for q in qs}

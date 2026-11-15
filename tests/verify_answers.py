@@ -347,6 +347,10 @@ def main():
     ladder = expected_ladder(P)
     assert not set(ladder) & set(E), f'중복 계산: {set(ladder) & set(E)}'
     E.update(ladder)
+    from verify_algebra import expected_algebra_bank
+    alg = expected_algebra_bank(P)
+    assert not set(alg) & set(E), f'중복 계산: {set(alg) & set(E)}'
+    E.update(alg)
     items = data['PROBLEMS'] + data['DIAGNOSIS']
     unit_ids = {u['id'] for u in data['UNITS']}
     skill_keys = {s['key'] for s in data['SKILLS']}

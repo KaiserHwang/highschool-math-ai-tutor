@@ -336,9 +336,12 @@ for (const L of LESSONS) {
 // 진단: 문항마다 먼저 볼 소단원이 있고, 공통수학 단원(Ⅰ~Ⅶ)마다 2문항 이상(#8)
 const { LESSON_BY_ID } = await import('../assets/js/content/lessons/index.js');
 for (const q of DIAGNOSIS) if (!LESSON_BY_ID[q.lesson] || LESSON_BY_ID[q.lesson].unit !== q.unit) fail(`${q.id}: lesson이 없거나 다른 단원의 소단원`);
-for (const u of REGULAR_UNITS) {
+// 진단은 아직 공통수학 통합 진단 하나다(#24 3단계에서 과목별로 나눈다). 기본 과목의 단원만 진단 문항 수를 본다.
+{ const { STARTER_COURSES } = await import('../assets/js/content/courses.js');
+for (const u of REGULAR_UNITS.filter((x) => STARTER_COURSES.includes(x.course))) {
   const n = DIAGNOSIS.filter((q) => q.unit === u.id).length;
   if (n < 2) fail(`${u.id}: 진단 문항이 ${n}개뿐(2개 이상 필요)`);
+}
 }
 
 // 단원마다 모든 난이도가 있는지(u8 제외)
