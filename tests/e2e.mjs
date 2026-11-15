@@ -605,6 +605,17 @@ async function run(viewport, tag) {
     await page.goto(BASE + '#/');
     await page.waitForSelector('.unit-minis');
     ok((await page.locator('.unit-minis .unit-mini').count()) === 8, `[${tag}] 과목을 다시 켜면 전 단원이 돌아온다`);
+    // 대수(시험 단원)는 기본으로 꺼져 있고, 켜면 오늘 화면에 단원이 더해진다
+    ok((await page.locator('.unit-minis a[href="#/u/a1"]').count()) === 0, `[${tag}] 대수는 고르기 전에는 오늘 화면에 나오지 않는다`);
+    await page.goto(BASE + '#/settings');
+    await page.waitForSelector('[data-course="algebra"]');
+    await page.check('[data-course="algebra"]');
+    await page.goto(BASE + '#/');
+    await page.waitForSelector('.unit-minis');
+    ok((await page.locator('.unit-minis a[href="#/u/a1"]').count()) === 1 && (await page.textContent('.scope-note')).includes('대수'), `[${tag}] 대수를 켜면 오늘 화면에 대수 단원이 나온다`);
+    await page.goto(BASE + '#/settings');
+    await page.waitForSelector('[data-course="algebra"]');
+    await page.uncheck('[data-course="algebra"]');
   }
 
   // ── 다크 모드
