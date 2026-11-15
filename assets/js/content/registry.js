@@ -18,7 +18,9 @@ export function unitOf(x) {
   if (own(PROBLEM_BY_ID, x)) return PROBLEM_BY_ID[x].unit;
   if (own(LESSON_BY_ID, x)) return LESSON_BY_ID[x].unit;
   if (own(LESSON_OF_ITEM, x)) return LESSON_OF_ITEM[x].unit;
-  const gen = x.split(':')[0];
-  if (own(GENERATORS, gen)) return GENERATORS[gen].unit;
+  if (own(GENERATORS, x)) return GENERATORS[x].unit;
+  // 생성된 문제 표시는 '생성기 id:seed' 꼴만 받는다(콜론 하나, seed는 숫자). 'g-sym:', 'g-sym:nope', 'g-sym:1:2'는 모르는 id다.
+  const m = x.match(/^([^:]+):(\d{1,10})$/);
+  if (m && own(GENERATORS, m[1])) return GENERATORS[m[1]].unit;
   return null;
 }

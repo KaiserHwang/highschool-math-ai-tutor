@@ -157,4 +157,4 @@ export const REGULAR_UNITS = UNITS.filter((u) => !isFusion(u));
 
 /** 화면에 보일 짧은 단원 이름. 공통수학1·2의 단원 번호가 겹치므로 과목을 붙인다. */
 export const COURSE_SHORT = { 공통수학1: '공수1', 공통수학2: '공수2', 융합: '융합' };
-export const unitLabel = (u) => (u.course === '융합' ? u.title : `${COURSE_SHORT[u.course]} ${u.no}. ${u.title}`);
+export const unitLabel = (u) => (isFusion(u) ? u.title : `${COURSE_SHORT[u.course]} ${u.no}. ${u.title}`);

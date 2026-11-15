@@ -67,7 +67,13 @@ for (const p of [...PROBLEMS, ...DIAGNOSIS]) {
     if (pids.has(p.id)) fail(`${p.id}: 문제 id 중복`);
     pids.add(p.id);
   }
-  for (const q of DIAGNOSIS) if (!unitIds.has(q.unit)) fail(`${q.id}: 없는 단원 ${q.unit}`);
+  const dids = new Set();
+  for (const q of DIAGNOSIS) {
+    if (!/^d\d\d$/.test(q.id)) fail(`${q.id}: 진단 문항 id 형식(d + 두 자리 번호)`);
+    if (dids.has(q.id)) fail(`${q.id}: 진단 문항 id 중복`);
+    dids.add(q.id);
+    if (!unitIds.has(q.unit)) fail(`${q.id}: 없는 단원 ${q.unit}`);
+  }
   const { GENERATORS } = await import('../assets/js/content/generators.js');
   for (const [k, g] of Object.entries(GENERATORS)) {
     if (!isGeneratorId(k)) fail(`${k}: 생성기 id 형식(g-이름)`);

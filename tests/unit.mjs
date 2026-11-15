@@ -438,7 +438,7 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   ok(items.length > 600 && diff.length === 0, `기존 문제·소단원·확인 문제·개념 질문 ${items.length}개에서 단원 찾기가 예전 방식(id 앞 두 글자)과 같다${diff.length ? ': ' + diff.slice(0, 3).join() : ''}`);
   ok(Object.entries(GENERATORS).every(([k, g]) => unitOf(k) === g.unit && unitOf(`${k}:42`) === g.unit && unitOf(makeVariant(k, 42)) === g.unit) && unitOf(PROBLEMS[0]) === PROBLEMS[0].unit,
     '생성기 id, 생성된 문제 표시(g-sym:42), 항목 객체에서도 단원을 찾는다');
-  ok(['u9-01', 'u1-99', 'u1', 'u10-l1', 'a1-l1', '__proto__', 'constructor', 'toString', 'g-nope', 'g-nope:1', '', null, undefined, 7].every((x) => unitOf(x) === null),
+  ok(['u9-01', 'u1-99', 'u1', 'u10-l1', 'a1-l1', '__proto__', 'constructor', 'toString', 'g-nope', 'g-nope:1', 'g-sym:', 'g-sym:nope', 'g-sym:42:other', 'g-sym:-1', 'g-sym:1.5', ':42', '__proto__:1', '', null, undefined, 7].every((x) => unitOf(x) === null),
     '등록되지 않은 id는 형식이 그럴듯해도 단원으로 인정하지 않는다(객체의 기본 속성 이름 포함)');
   // 형식: 단원 번호가 두 자리가 되거나 과목별 접두어가 생겨도 받고, 생성기 접두어 g와 잘못된 모양은 거절한다
   const yes = (f, list) => list.every((x) => f(x)), no = (f, list) => list.every((x) => !f(x));
