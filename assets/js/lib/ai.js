@@ -2,7 +2,8 @@
 // API 키를 쓰지 않는다. 질문을 클립보드에 복사하고, 지원하는 서비스는 입력창에 미리 채워서 연다.
 import { getState } from '../store.js';
 import { plain, toast } from './ui.js';
-import { UNIT_BY_ID, LEVELS, unitLabel } from '../content/units.js';
+import { UNIT_BY_ID, LEVELS, unitLabel, unitCourses } from '../content/units.js';
+import { COURSE_BY_ID } from '../content/courses.js';
 
 export const AI_SERVICES = {
   claude: { name: 'Claude', home: 'https://claude.ai/new', prefill: (q) => `https://claude.ai/new?q=${encodeURIComponent(q)}` },
@@ -10,7 +11,11 @@ export const AI_SERVICES = {
   gemini: { name: 'Gemini', home: 'https://gemini.google.com/app', prefill: null },
 };
 
-export const TUTOR_RULES = `너는 고등학교 1학년 학생의 수학 과외 선생님이야. 2022 개정 교육과정 공통수학1·2 범위 안의 개념으로 설명해 줘.
+/** 단원이 속한 과목 이름(융합 단원은 걸친 과목 전부). AI에게 설명 범위로 알려 준다. */
+export const scopeOf = (unit) => unitCourses(unit).map((id) => COURSE_BY_ID[id].title).join('·');
+
+/** 튜터 지침. scope: 설명에 쓸 과목 범위(예: '공통수학1·공통수학2'). 묻는 문제의 과목에 맞춰 넣는다. */
+export const tutorRules = (scope) => `너는 고등학생의 수학 과외 선생님이야. 2022 개정 교육과정 ${scope} 범위 안의 개념으로 설명해 줘.
 규칙:
 1. 정답이나 전체 풀이를 먼저 말하지 마. 내가 어디서 막혔는지 확인하고, 다음 한 걸음만 질문이나 짧은 힌트로 알려 줘.
 2. 내가 쓴 풀이가 있으면 맞게 진행한 부분과 처음 틀린 지점을 정확히 짚어 줘.
@@ -21,7 +26,7 @@ const MAX_URL_PROMPT = 3500; // 너무 긴 주소는 일부 브라우저에서 �
 
 export function problemPrompt({ p, question, note, lastResponse, hintsSeen, solved }) {
   const unit = UNIT_BY_ID[p.unit];
-  const lines = [TUTOR_RULES, '', `[문제] ${unitLabel(unit)} · ${p.topic} · ${LEVELS[p.level].label}`, plain(p.q)];
+  const lines = [tutorRules(scopeOf(unit)), '', `[문제] ${unitLabel(unit)} · ${p.topic} · ${LEVELS[p.level].label}`, plain(p.q)];
   if (p.fig && p.fig.alt) lines.push('', `[그림 설명] ${p.fig.alt}`);
   if (p.type === 'mc') lines.push('', '[보기] ' + p.options.map((o, i) => `(${i + 1}) ${plain(o)}`).join('  '));
   lines.push('', '[내 상황]');
@@ -39,7 +44,7 @@ export function problemPrompt({ p, question, note, lastResponse, hintsSeen, solv
 export function lessonPrompt({ lesson, question }) {
   const unit = UNIT_BY_ID[lesson.unit];
   return [
-    `너는 고등학교 1학년 학생의 수학 과외 선생님이야. 2022 개정 교육과정 공통수학1·2 범위 안에서 설명해 줘. 수식은 LaTeX로 써 줘.`,
+    `너는 고등학생의 수학 과외 선생님이야. 2022 개정 교육과정 ${scopeOf(unit)} 범위 안에서 설명해 줘. 수식은 LaTeX로 써 줘.`,
     `지금 "${unitLabel(unit)} · ${lesson.title}" 개념을 공부하고 있어. 앱에 있는 개념 정리는 아래와 같아.`,
     '', '[개념 정리]', plain(lesson.core),
     '', '[내 질문]', question && question.trim() ? question.trim() : '이 개념을 교과서와 다른 예를 들어 쉽게 다시 설명해 줘. 설명이 끝나면 내가 이해했는지 확인할 짧은 질문을 하나 내 줘(답은 내가 말한 뒤에 알려 줘).',
@@ -51,7 +56,7 @@ export function explainPrompt({ lesson, text }) {
   const unit = UNIT_BY_ID[lesson.unit];
   const ex = lesson.explain;
   return [
-    `너는 고등학교 1학년 학생의 수학 과외 선생님이야. 2022 개정 교육과정 공통수학1·2 범위 안에서 답해 줘. 수식은 LaTeX로 써 줘.`,
+    `너는 고등학생의 수학 과외 선생님이야. 2022 개정 교육과정 ${scopeOf(unit)} 범위 안에서 답해 줘. 수식은 LaTeX로 써 줘.`,
     `내가 "${unitLabel(unit)} · ${lesson.title}" 개념을 내 말로 설명해 봤어. 아래 기준으로 점검해 줘.`,
     '1. 맞게 설명한 부분을 먼저 짧게 말해 줘.',
     '2. 빠졌거나 틀린 조건이 있으면 하나씩 짚어 줘. 정답 설명을 통째로 써 주지 말고, 무엇을 더 생각해 보면 되는지 질문으로 알려 줘.',
@@ -62,8 +67,8 @@ export function explainPrompt({ lesson, text }) {
   ].join('\n');
 }
 
-export function reportPrompt(summary) {
-  return `너는 고등학교 1학년 수학 학습 코치야. 아래는 우리 아이가 수학 앱에서 공부한 기록이야. 2022 개정 공통수학1·2 기준으로 강점과 약점을 짚고, 다음 1주일 학습 계획을 요일별로 짜 줘. 계획은 하루 40분 안쪽으로 현실적으로.\n\n${summary}`;
+export function reportPrompt(summary, scope) {
+  return `너는 고등학생의 수학 학습 코치야. 아래는 우리 아이가 수학 앱에서 공부한 기록이야. 2022 개정 교육과정 ${scope} 기준으로 강점과 약점을 짚고, 다음 1주일 학습 계획을 요일별로 짜 줘. 계획은 하루 40분 안쪽으로 현실적으로.\n\n${summary}`;
 }
 
 /** 버튼 클릭 핸들러 안에서 바로 호출해야 팝업 차단을 피할 수 있다. */

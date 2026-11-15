@@ -467,6 +467,70 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   store.resetAll();
 }
 
+// ── #24 2단계: 공부하는 과목 ─────────────────────────
+{
+  const store = await import('../assets/js/store.js');
+  const model = await import('../assets/js/model.js');
+  const { COURSES, normalizeCourses, STARTER_COURSES } = await import('../assets/js/content/courses.js');
+  const { UNITS, UNIT_BY_ID, unitCourses, unitLabel } = await import('../assets/js/content/units.js');
+  const { LESSON_BY_ID } = await import('../assets/js/content/lessons/index.js');
+  const { scopeOf, tutorRules, problemPrompt } = await import('../assets/js/lib/ai.js');
+  const { PROBLEM_BY_ID } = await import('../assets/js/content/problems.js');
+  const ids = (list) => list.map((u) => u.id).join();
+  store.resetAll();
+  ok(STARTER_COURSES.join() === 'common1,common2' && UNITS.every((u) => unitCourses(u).length && unitCourses(u).every((c) => COURSES.some((x) => x.id === c))), '모든 단원이 등록된 과목을 가리킨다');
+  ok(normalizeCourses(null).join() === 'common1,common2' && normalizeCourses([]).join() === 'common1,common2' && normalizeCourses(['zzz']).join() === 'common1,common2'
+    && normalizeCourses(['common2', 'zzz', 'common2']).join() === 'common2' && normalizeCourses(['common2', 'common1']).join() === 'common1,common2' && normalizeCourses('common1').join() === 'common1,common2',
+    '공부하는 과목이 없거나 비었거나 모르는 과목뿐이면 기본 과목으로 보고, 아는 과목만 과목 순서로 남긴다');
+  ok(ids(model.activeUnits()) === 'u1,u2,u3,u4,u5,u6,u7,u8' && ids(model.activeRegularUnits()) === 'u1,u2,u3,u4,u5,u6,u7' && model.activeLessons().length === 44 && model.totals().total === 185,
+    '과목을 고른 적이 없으면 지금까지와 같이 전 단원이 범위다');
+  // 두 과목에 기록을 만든다: 공통수학1(u2)과 공통수학2(u5)에 재확인·간격 복습·오답, 융합(u8)에 오답
+  const day = store.today();
+  const past = store.addDays(day, -10);
+  store.update((s) => {
+    for (const lid of ['u2-l1', 'u5-l1']) s.lessons[lid] = { ...model.blankLessonRec(), done: past };
+    for (const lid of ['u2-l2', 'u5-l2']) s.lessons[lid] = { ...model.blankLessonRec(), done: past, recheck: { due: day, since: past } };
+    for (const pid of ['u2-01', 'u5-01', 'u8-01']) { s.attempts[pid] = { tries: 1, solved: false, firstCorrect: false, hints: 0, sawSolution: false, lastAt: new Date().toISOString(), sec: 5, lastResponse: null }; s.wrong[pid] = { addedAt: past, reason: null, stage: 0, due: day, history: [], resolved: false }; }
+  });
+  const snap = () => ({ due: ids(model.dueReviews().map((w) => ({ id: w.pid }))), rc: ids(model.lessonRechecks().map((x) => x.l)), cq: ids(model.conceptsDue().map((x) => x.l)), hidden: model.hiddenReviews().total });
+  const all = snap();
+  ok(all.due === 'u2-01,u5-01,u8-01' && all.rc === 'u2-l2,u5-l2' && all.cq === 'u2-l1,u5-l1' && all.hidden === 0, '두 과목을 모두 공부하면 양쪽의 복습이 모두 오늘 할 일에 오른다');
+  const before = JSON.stringify({ l: store.getState().lessons, w: store.getState().wrong, a: store.getState().attempts });
+  store.update((s) => { s.profile.courses = ['common1']; });
+  const one = snap();
+  ok(ids(model.activeUnits()) === 'u1,u2,u3,u4' && one.due === 'u2-01' && one.rc === 'u2-l2' && one.cq === 'u2-l1' && model.studiedUnits().join() === 'u2'
+    && ['u1', 'u2', 'u3', 'u4'].includes(model.weakestUnit().id) && ['u1', 'u2', 'u3', 'u4'].includes(model.recommendNext().unit) && model.rootWeaknesses(9).every((x) => x.l.unit === 'u2')
+    && model.lessonTotals().total === model.activeLessons().length && model.activeLessons().every((l) => ['u1', 'u2', 'u3', 'u4'].includes(l.unit)) && model.totals().total < 185 && model.conceptMemory().learned === 2,
+    '공통수학1만 고르면 추천·약한 단원·복습·혼합 평가 범위·집계가 그 과목 안에서만 나온다');
+  ok(!model.isActiveUnit('u8') && !model.isActiveUnit('u5') && model.isActiveUnit('u1') && !model.isActiveUnit('__proto__') && !model.isActiveUnit('zz9'), '융합 단원은 걸친 과목을 모두 공부할 때만 범위에 든다');
+  ok(one.hidden === 4 && model.hiddenReviews().wrong === 2 && model.hiddenReviews().rechecks === 1 && model.hiddenReviews().concepts === 1
+    && JSON.stringify({ l: store.getState().lessons, w: store.getState().wrong, a: store.getState().attempts }) === before,
+    '꺼 둔 과목의 복습은 숨기기만 하고(개수는 알려 줌) 기록과 예정일은 건드리지 않는다');
+  ok(model.ancestorsOf('u5-l5').some((a) => a.l.unit === 'u2') && model.traceNext(model.traceStart('u5-l5')) !== null && model.freshCQ(LESSON_BY_ID['u5-l1']) !== null,
+    '선수 개념 역추적과 문항 선택은 과목을 가리지 않는다(꺼 둔 과목의 개념도 물을 수 있다)');
+  // 백업 왕복과 검증
+  const exp = store.exportData();
+  store.importData(exp);
+  ok(store.getState().profile.courses.join() === 'common1' && snap().due === 'u2-01', '공부하는 과목은 백업으로 옮겨진다');
+  const withUnknown = JSON.parse(exp); withUnknown.data.profile.courses = ['zzz', 'common2'];
+  store.importData(JSON.stringify(withUnknown));
+  const c1 = store.getState().profile.courses;
+  const onlyUnknown = JSON.parse(exp); onlyUnknown.data.profile.courses = ['zzz'];
+  store.importData(JSON.stringify(onlyUnknown));
+  ok(c1.join() === 'common2' && store.getState().profile.courses === null && ids(model.activeUnits()) === 'u1,u2,u3,u4,u5,u6,u7,u8', '백업에 지금 없는 과목이 섞여 있으면 빼고, 남는 것이 없으면 기본 과목으로 돌아간다');
+  let threw = false;
+  const badCourses = JSON.parse(exp); badCourses.data.profile.courses = 'common1';
+  try { store.importData(JSON.stringify(badCourses)); } catch (e) { threw = /백업 파일/.test(e.message); }
+  ok(threw, '공부하는 과목이 배열이 아닌 백업은 거절한다');
+  store.update((s) => { s.profile.courses = ['common1', 'common2']; });
+  ok(JSON.stringify(snap()) === JSON.stringify(all), '과목을 다시 켜면 복습이 원래대로 돌아온다');
+  // AI에게 보내는 설명 범위는 그 문제·개념의 과목을 따른다
+  ok(scopeOf(UNIT_BY_ID.u1) === '공통수학1' && scopeOf(UNIT_BY_ID.u6) === '공통수학2' && scopeOf(UNIT_BY_ID.u8) === '공통수학1·공통수학2' && tutorRules('대수').includes('대수 범위')
+    && problemPrompt({ p: PROBLEM_BY_ID['u6-01'], question: '', note: '', lastResponse: null, hintsSeen: 0, solved: false }).includes('공통수학2 범위') && unitLabel(UNIT_BY_ID.u6).startsWith('공수2 '),
+    'AI 질문의 설명 범위와 단원 이름은 그 단원의 과목에서 가져온다');
+  store.resetAll();
+}
+
 // ── #22 소단원 활동 기록과 하루 학습량 ───────────────
 {
   const store = await import('../assets/js/store.js');

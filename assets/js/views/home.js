@@ -1,8 +1,8 @@
 import { getState, today, addDays } from '../store.js';
-import { UNITS, TRACKS, UNIT_BY_ID, LEVELS, COURSE_SHORT, unitLabel } from '../content/units.js';
+import { TRACKS, UNIT_BY_ID, LEVELS, unitLabel, isFusion, courseShort } from '../content/units.js';
 import { generatorsOfUnit, newSeed } from '../content/generators.js';
-import { latestDiagnosis, recommendNext, dueReviews, unitMastery, streak, activeTrack, totals, weakestUnit, lessonTotals, lessonRechecks, conceptsDue, conceptQueue, conceptMemory, learnedOn, rootWeaknesses, studyCount } from '../model.js';
-import { lessonForProblem, LESSONS, lessonsOfUnit } from '../content/lessons/index.js';
+import { latestDiagnosis, recommendNext, dueReviews, unitMastery, streak, activeTrack, totals, weakestUnit, lessonTotals, lessonRechecks, conceptsDue, conceptQueue, conceptMemory, learnedOn, rootWeaknesses, studyCount, activeUnits, activeLessons, activeCourseTitles } from '../model.js';
+import { lessonForProblem, lessonsOfUnit } from '../content/lessons/index.js';
 import { CONCEPT_SET } from './concepts.js';
 import { tex, esc, fmtDate } from '../lib/ui.js';
 import { DIAGNOSIS } from '../content/diagnosis.js';
@@ -65,7 +65,7 @@ export function renderHome(view) {
   // ② 다음에 배울 개념
   const unlearned = (l) => !learnedOn(l, st.lessons[l.id]);
   const learnNext = (nextLesson && unlearned(nextLesson) ? nextLesson : null)
-    || lessonsOfUnit(weak.id).find(unlearned) || LESSONS.find(unlearned) || null;
+    || lessonsOfUnit(weak.id).find(unlearned) || activeLessons().find(unlearned) || null; // 공부하는 과목 안에서 고른다
   const rechecksDue = lessonRechecks().filter((x) => x.pr.recheckDue);
   if (rechecksDue.length) {
     steps.push(`<li class="plan-step"><div class="plan-body"><h2 class="h3">다시 확인할 개념 ${rechecksDue.length}개</h2><p class="hint-text">${rechecksDue.slice(0, 3).map((x) => esc(x.l.title)).join(', ')}${rechecksDue.length > 3 ? ' 등' : ''} · 아직 보지 않은 개념 질문으로 확인합니다.</p></div><a class="btn" href="#/review">확인하기</a></li>`);
@@ -93,9 +93,9 @@ export function renderHome(view) {
       <div class="gen-chips">${gens.map((g) => `<a class="chip" href="#/v/${g.key}?s=${newSeed()}">${esc(g.topic)}</a>`).join('')}</div></div></li>`);
   }
 
-  const units = UNITS.map((u) => {
+  const units = activeUnits().map((u) => {
     const m = unitMastery(u.id);
-    return `<li><a class="unit-mini" href="#/u/${u.id}"><span class="um-no">${u.course === '융합' ? '' : COURSE_SHORT[u.course] + ' '}${u.no}</span><span class="um-t">${esc(u.title)}</span><span class="meter" role="img" aria-label="숙련도 ${m.pct}%"><span style="--v:${m.pct}%"></span></span><span class="um-p">${m.pct}%</span></a></li>`;
+    return `<li><a class="unit-mini" href="#/u/${u.id}"><span class="um-no">${isFusion(u) ? '' : courseShort(u) + ' '}${u.no}</span><span class="um-t">${esc(u.title)}</span><span class="meter" role="img" aria-label="숙련도 ${m.pct}%"><span style="--v:${m.pct}%"></span></span><span class="um-p">${m.pct}%</span></a></li>`;
   }).join('');
 
   view.innerHTML = `
@@ -104,7 +104,7 @@ export function renderHome(view) {
       <div>
         <p class="meta">${now.getMonth() + 1}월 ${now.getDate()}일 ${DAYS[now.getDay()]}요일${streak() ? ` · ${streak()}일째 연속 공부` : ''}</p>
         <h1 class="page-title">${st.profile.name ? `${esc(st.profile.name)}, ` : ''}오늘도 개념 하나씩</h1>
-        <p class="scope-note">학습 범위: 고1 공통수학1·2 (2022 개정 교육과정)</p>
+        <p class="scope-note">공부하는 과목: ${esc(activeCourseTitles().join('·'))} (2022 개정 교육과정) · <a href="#/settings">바꾸기</a></p>
       </div>
       ${goalRing(studyCount(todayAct), goal, todayAct)}
     </header>

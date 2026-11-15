@@ -1,5 +1,7 @@
 // 2022 개정 교육과정 공통수학1·2 단원 정의와 개념 정리
 // 성취기준 코드는 교육과정 원문 기준(10공수1-xx-xx, 10공수2-xx-xx)
+import { COURSE_BY_ID } from './courses.js';
+
 const t = String.raw;
 
 export const SKILLS = [
@@ -45,7 +47,7 @@ export const NEXT_SUBJECTS_NOTE = '교육부 안내에 따르면 2028학년도 �
 export const UNITS = [
   {
     id: 'u1',
-    course: '공통수학1',
+    course: 'common1',
     no: 'Ⅰ',
     title: '다항식',
     sub: '다항식의 연산 · 항등식과 나머지정리 · 인수분해',
@@ -58,7 +60,7 @@ export const UNITS = [
   },
   {
     id: 'u2',
-    course: '공통수학1',
+    course: 'common1',
     no: 'Ⅱ',
     title: '방정식과 부등식',
     sub: '복소수 · 이차방정식과 이차함수 · 여러 가지 방정식과 부등식',
@@ -71,7 +73,7 @@ export const UNITS = [
   },
   {
     id: 'u3',
-    course: '공통수학1',
+    course: 'common1',
     no: 'Ⅲ',
     title: '경우의 수',
     sub: '합의 법칙과 곱의 법칙 · 순열 · 조합',
@@ -83,7 +85,7 @@ export const UNITS = [
   },
   {
     id: 'u4',
-    course: '공통수학1',
+    course: 'common1',
     no: 'Ⅳ',
     title: '행렬',
     sub: '행렬의 뜻 · 행렬의 연산',
@@ -95,7 +97,7 @@ export const UNITS = [
   },
   {
     id: 'u5',
-    course: '공통수학2',
+    course: 'common2',
     no: 'Ⅰ',
     title: '도형의 방정식',
     sub: '평면좌표 · 직선 · 원 · 도형의 이동',
@@ -108,7 +110,7 @@ export const UNITS = [
   },
   {
     id: 'u6',
-    course: '공통수학2',
+    course: 'common2',
     no: 'Ⅱ',
     title: '집합과 명제',
     sub: '집합의 연산 · 명제와 조건 · 절대부등식',
@@ -121,7 +123,7 @@ export const UNITS = [
   },
   {
     id: 'u7',
-    course: '공통수학2',
+    course: 'common2',
     no: 'Ⅲ',
     title: '함수와 그래프',
     sub: '함수 · 합성함수와 역함수 · 유리함수와 무리함수',
@@ -135,7 +137,7 @@ export const UNITS = [
   {
     id: 'u8',
     kind: 'fusion', // 여러 단원을 잇는 융합 단원. 진단·혼합 평가·약한 단원 계산에서 빼고, 최상위 트랙에서만 추천한다
-    course: '융합',
+    course: null, courses: ['common1', 'common2'], // 걸친 과목을 모두 공부할 때만 추천·목록에 나온다
     no: '★',
     title: '단원 융합 최상위',
     sub: '선행 학습자를 위한 단원 간 연결 문제',
@@ -155,6 +157,10 @@ export const isFusionUnit = (unitId) => Object.hasOwn(UNIT_BY_ID, unitId) && isF
 /** 교과서 단원(융합 단원 제외) */
 export const REGULAR_UNITS = UNITS.filter((u) => !isFusion(u));
 
-/** 화면에 보일 짧은 단원 이름. 공통수학1·2의 단원 번호가 겹치므로 과목을 붙인다. */
-export const COURSE_SHORT = { 공통수학1: '공수1', 공통수학2: '공수2', 융합: '융합' };
-export const unitLabel = (u) => (isFusion(u) ? u.title : `${COURSE_SHORT[u.course]} ${u.no}. ${u.title}`);
+/** 단원이 속한 과목 id들. 교과서 단원은 하나, 융합 단원은 걸친 과목 전부 */
+export const unitCourses = (u) => (isFusion(u) ? u.courses || [] : [u.course]);
+/** 화면에 보일 과목 이름. 융합 단원은 '융합' */
+export const courseTitle = (u) => (isFusion(u) ? '융합' : COURSE_BY_ID[u.course].title);
+export const courseShort = (u) => (isFusion(u) ? '융합' : COURSE_BY_ID[u.course].short);
+/** 화면에 보일 짧은 단원 이름. 과목마다 단원 번호가 Ⅰ부터 시작해 겹치므로 과목을 붙인다. */
+export const unitLabel = (u) => (isFusion(u) ? u.title : `${courseShort(u)} ${u.no}. ${u.title}`);

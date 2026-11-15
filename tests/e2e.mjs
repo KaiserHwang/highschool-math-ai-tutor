@@ -568,6 +568,33 @@ async function run(viewport, tag) {
     ok(!(await page.locator('.study-pad.is-full').count()), `[${tag}] 연습장을 닫는다`);
   }
 
+  // ── #24 공부하는 과목: 끈 과목은 오늘 할 일과 단원 목록에서 빠지고(접혀서 남음), 다시 켜면 돌아온다
+  {
+    await page.goto(BASE + '#/settings');
+    await page.waitForSelector('[data-course="common2"]');
+    await page.uncheck('[data-course="common2"]');
+    await page.goto(BASE + '#/');
+    await page.waitForSelector('.unit-minis');
+    const minis = await page.locator('.unit-minis .unit-mini').evaluateAll((as) => as.map((a) => a.getAttribute('href')));
+    ok(minis.join() === '#/u/u1,#/u/u2,#/u/u3,#/u/u4' && (await page.textContent('.scope-note')).includes('공통수학1') && !(await page.textContent('.scope-note')).includes('공통수학2'),
+      `[${tag}] 공통수학2를 끄면 오늘 화면의 단원과 범위 안내에서 빠진다`);
+    await page.goto(BASE + '#/units');
+    await page.waitForSelector('.toc-off');
+    ok((await page.locator('.toc-off a[href="#/u/u5"]').count()) === 1 && (await page.locator('.toc-off a[href="#/u/u8"]').count()) === 1 && (await page.locator('.page > .toc-group a[href="#/u/u1"]').count()) === 1,
+      `[${tag}] 끈 과목과 융합 단원은 단원 목록에 접혀서 남고 열어 볼 수 있다`);
+    await page.goto(BASE + '#/l/u5-l1');
+    await page.waitForSelector('.lesson-head h1');
+    ok((await page.locator('.lesson .l-sec').count()) > 3, `[${tag}] 끈 과목의 소단원도 그대로 열린다`);
+    await page.goto(BASE + '#/settings');
+    await page.waitForSelector('[data-course="common1"]');
+    await page.uncheck('[data-course="common1"]');
+    ok(await page.isChecked('[data-course="common1"]'), `[${tag}] 과목을 모두 끌 수는 없다`);
+    await page.check('[data-course="common2"]');
+    await page.goto(BASE + '#/');
+    await page.waitForSelector('.unit-minis');
+    ok((await page.locator('.unit-minis .unit-mini').count()) === 8, `[${tag}] 과목을 다시 켜면 전 단원이 돌아온다`);
+  }
+
   // ── 다크 모드
   await page.goto(BASE + '#/settings');
   await page.click('[data-theme="dark"]');

@@ -1,8 +1,9 @@
 import { getState, update, exportData, importData, resetAll, today } from '../store.js';
 import { TRACKS } from '../content/units.js';
-import { latestDiagnosis } from '../model.js';
+import { latestDiagnosis, activeCourses, activeCourseTitles } from '../model.js';
+import { COURSES } from '../content/courses.js';
 import { esc, toast } from '../lib/ui.js';
-import { AI_SERVICES, TUTOR_RULES, copyText } from '../lib/ai.js';
+import { AI_SERVICES, tutorRules, copyText } from '../lib/ai.js';
 
 const AI_HELP = {
   claude: 'Claude의 프로젝트(Projects)를 만들고 지침에 붙여넣은 뒤, 그 프로젝트 주소를 넣으세요.',
@@ -13,6 +14,8 @@ const AI_HELP = {
 export function renderSettings(view) {
   const st = getState();
   const diagTrack = latestDiagnosis()?.track;
+  const active = activeCourses();
+  const rules = () => tutorRules(activeCourseTitles().join('·')); // 전용 튜터 방의 지침은 공부하는 과목 범위로 만든다
   view.innerHTML = `
   <section class="page narrow settings">
     <header class="page-head">
@@ -24,6 +27,10 @@ export function renderSettings(view) {
       <h2 class="h3">학생</h2>
       <label class="field"><span class="field-l">이름(화면 인사에만 사용)</span><input data-k="name" value="${esc(st.profile.name)}" maxlength="20"></label>
       <label class="field"><span class="field-l">하루 목표 <span class="hint-text">개념 문항 풀이 + 문제 해결을 더한 수</span></span><input data-k="goal" type="number" min="1" max="30" value="${st.profile.dailyGoal}"></label>
+      <fieldset class="field"><legend class="field-l">공부하는 과목</legend>
+        <div class="row" role="group">${COURSES.map((c) => `<label class="chip-check"><input type="checkbox" data-course="${c.id}" ${active.includes(c.id) ? 'checked' : ''}> ${esc(c.title)}</label>`).join('')}</div>
+        <p class="hint-text">고른 과목만 오늘 할 일(추천 문제, 약한 단원, 개념 확인, 복습)과 혼합 평가, 리포트에 나옵니다. 과목을 꺼도 기록과 복습 예정일은 그대로 남고, 다시 켜면 이어집니다. 꺼 둔 과목의 단원도 개념 학습에서 언제든 열어 볼 수 있어요.</p>
+      </fieldset>
       <fieldset class="field"><legend class="field-l">학습 트랙</legend>
         <div class="row">
           <button type="button" class="chip" data-track="" aria-pressed="${!st.profile.track}">진단 추천 따르기${diagTrack ? ` (${TRACKS[diagTrack].label})` : ''}</button>
@@ -41,7 +48,7 @@ export function renderSettings(view) {
       <p>API 키는 필요 없습니다. "AI에게 묻기"를 누르면 질문을 복사해 해당 서비스를 엽니다. Claude와 ChatGPT는 입력창에 질문을 미리 채워 열고, Gemini는 붙여넣기만 하면 됩니다. 로그인은 각 서비스에서 평소처럼 하세요.</p>
       <p>매번 지침을 보내는 대신 학생 전용 튜터 방을 만들어 두면 대화가 이어집니다. 아래 지침을 복사해 각 서비스에 붙여넣고, 만든 방의 주소를 넣으세요. 주소를 넣으면 질문은 클립보드로만 전달됩니다.</p>
       <div class="row"><button type="button" class="btn" data-act="copy-rules">튜터 지침 복사</button></div>
-      <details class="prompt-preview"><summary>지침 내용 보기</summary><pre>${esc(TUTOR_RULES)}</pre></details>
+      <details class="prompt-preview"><summary>지침 내용 보기</summary><pre data-rules>${esc(rules())}</pre></details>
       ${Object.entries(AI_SERVICES).map(([k, s]) => `<label class="field"><span class="field-l">${s.name} 전용 방 주소 <span class="hint-text">선택</span></span><input data-ai="${k}" type="url" inputmode="url" placeholder="${s.home}…" value="${esc(st.settings.ai[k])}"><span class="hint-text">${AI_HELP[k]}</span></label>`).join('')}
     </section>
 
@@ -66,6 +73,13 @@ export function renderSettings(view) {
 
   function onChange(e) {
     const t = e.target;
+    if (t.dataset.course) {
+      const picked = [...view.querySelectorAll('[data-course]')].filter((c) => c.checked).map((c) => c.dataset.course);
+      if (!picked.length) { t.checked = true; toast('과목을 하나 이상 골라야 합니다.'); return; }
+      update((s) => (s.profile.courses = picked));
+      toast(`공부하는 과목: ${activeCourseTitles().join('·')}`);
+      return;
+    }
     if (t.dataset.k === 'name') update((s) => (s.profile.name = t.value.trim().slice(0, 20)));
     if (t.dataset.k === 'goal') update((s) => (s.profile.dailyGoal = Math.max(1, Math.min(30, parseInt(t.value, 10) || 5))));
     if (t.dataset.ai) {
@@ -103,7 +117,7 @@ export function renderSettings(view) {
     }
     const a = e.target.closest('[data-act]');
     if (!a) return;
-    if (a.dataset.act === 'copy-rules') copyText(TUTOR_RULES).then((ok) => toast(ok ? '튜터 지침을 복사했어요.' : '복사하지 못했습니다. 지침 내용을 직접 선택해 복사하세요.'));
+    if (a.dataset.act === 'copy-rules') copyText(rules()).then((ok) => toast(ok ? '튜터 지침을 복사했어요.' : '복사하지 못했습니다. 지침 내용을 직접 선택해 복사하세요.'));
     if (a.dataset.act === 'export') {
       const blob = new Blob([exportData()], { type: 'application/json' });
       const url = URL.createObjectURL(blob);

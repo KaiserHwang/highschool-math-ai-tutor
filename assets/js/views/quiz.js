@@ -1,11 +1,11 @@
 // 혼합 평가(#/quiz): 배운 범위에서 단원 이름을 숨기고 섞어 낸다. 힌트와 정답은 모두 제출한 뒤에 공개한다.
 // 학습용으로 이미 본 문제(예제, 확인 문제, 시도한 은행 문제)는 쓰지 않으므로 처음 보는 문제에 대한 실력을 본다.
-import { REGULAR_UNITS, UNIT_BY_ID, unitLabel } from '../content/units.js';
+import { UNIT_BY_ID, unitLabel } from '../content/units.js';
 import { PROBLEM_BY_ID } from '../content/problems.js';
 import { makeVariant, GENERATORS } from '../content/generators.js';
 import { lessonForProblem } from '../content/lessons/index.js';
 import { getState, update, logActivity } from '../store.js';
-import { isCorrect, normalizeAnswer, addWrong, makeQuiz, studiedUnits } from '../model.js';
+import { isCorrect, normalizeAnswer, addWrong, makeQuiz, studiedUnits, activeRegularUnits, activeCourseTitles } from '../model.js';
 import { tex, esc, CIRCLED, toast, gradeMark, fmtDate, fmtMinutes, optionsClass } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 
@@ -44,11 +44,11 @@ function renderIntro(view) {
         <li>힌트와 정답은 8문제를 모두 제출한 뒤에 공개합니다. 모르면 건너뛰세요.</li>
         <li>숫자를 바꾼 문제와 아직 풀지 않은 문제 은행 문제만 씁니다. 개념 학습의 예제나 확인 문제는 나오지 않습니다.</li>
         <li>문제 은행 문제는 첫 시도로 기록되어 숙련도에 반영되고, 틀리면 오답노트에 들어갑니다.</li>
-        <li>고1 공통수학 범위의 연습 평가입니다. 결과를 수능 점수로 환산하지 않습니다.</li>
+        <li>공부하는 과목(${esc(activeCourseTitles().join('·'))}) 범위의 연습 평가입니다. 결과를 수능 점수로 환산하지 않습니다.</li>
       </ul>
     </div>
     <fieldset class="field"><legend class="field-l">범위</legend>
-      <div class="row" role="group">${REGULAR_UNITS.map((u) => `<label class="chip-check"><input type="checkbox" value="${u.id}" ${studied.includes(u.id) ? 'checked' : ''}> ${esc(unitLabel(u))}</label>`).join('')}</div>
+      <div class="row" role="group">${activeRegularUnits().map((u) => `<label class="chip-check"><input type="checkbox" value="${u.id}" ${studied.includes(u.id) ? 'checked' : ''}> ${esc(unitLabel(u))}</label>`).join('')}</div>
       <p class="hint-text">공부한 흔적이 있는 단원을 미리 골라 두었습니다.</p>
     </fieldset>
     <p class="row"><button class="btn btn-primary" data-act="start">평가 시작</button></p>

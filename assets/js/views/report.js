@@ -1,6 +1,6 @@
 import { getState, today, addDays } from '../store.js';
-import { UNITS, UNIT_BY_ID, SKILLS, TRACKS, unitLabel, NEXT_SUBJECTS_NOTE } from '../content/units.js';
-import { latestDiagnosis, currentSkills, unitMastery, periodStats, wrongList, REASONS, streak, totals, activeTrack, lessonTotals, conceptMemory, rootWeaknesses, misconceptionStats, studyCount } from '../model.js';
+import { UNIT_BY_ID, SKILLS, TRACKS, unitLabel, NEXT_SUBJECTS_NOTE } from '../content/units.js';
+import { latestDiagnosis, currentSkills, unitMastery, periodStats, wrongList, REASONS, streak, totals, activeTrack, lessonTotals, conceptMemory, rootWeaknesses, misconceptionStats, studyCount, activeUnits, activeCourseTitles, hiddenReviews } from '../model.js';
 import { MISCONCEPTIONS } from '../content/misconceptions.js';
 import { LESSON_BY_ID } from '../content/lessons/index.js';
 import { radar } from '../lib/radar.js';
@@ -32,7 +32,9 @@ export function renderReport(view) {
   if (Object.values(now).every((v) => v != null)) series.push({ values: now, cls: 'now', name: '현재' });
   if (diag) series.push({ values: diag.skills, cls: 'diag', name: '진단' });
 
-  const unitRows = UNITS.map((u) => {
+  const scope = activeCourseTitles().join('·');
+  const hidden = hiddenReviews();
+  const unitRows = activeUnits().map((u) => {
     const m = unitMastery(u.id);
     return `<tr><th scope="row">${esc(unitLabel(u))}</th><td><span class="meter" role="img" aria-label="현재 숙련도 ${m.pct}%"><span style="--v:${m.pct}%"></span></span></td><td class="num">${m.pct}%</td><td class="num">${m.firstPct}%</td><td class="num">${m.triedPct == null ? '–' : m.triedPct + '%'}</td><td class="num">${m.solved}/${m.total}</td></tr>`;
   }).join('');
@@ -43,7 +45,7 @@ export function renderReport(view) {
   <section class="page report">
     <header class="page-head">
       <h1 class="page-title">학습 리포트</h1>
-      <p class="lead">${st.profile.name ? esc(st.profile.name) + ' · ' : ''}${fmtDate(today())} 기준 · ${TRACKS[activeTrack()].label} 트랙 · 고1 공통수학1·2 범위</p>
+      <p class="lead">${st.profile.name ? esc(st.profile.name) + ' · ' : ''}${fmtDate(today())} 기준 · ${TRACKS[activeTrack()].label} 트랙 · 공부하는 과목: ${esc(scope)}</p>
       <p class="hint-text">${esc(NEXT_SUBJECTS_NOTE)} 이 리포트의 숙련도는 그 기초 단계의 학습 기록이며, 수능 준비도 전체를 나타내지 않습니다.</p>
     </header>
     <dl class="stats">
@@ -98,7 +100,7 @@ export function renderReport(view) {
         <li><b>처음</b>: 처음 풀었을 때의 성과. 복습해도 바뀌지 않습니다.</li>
         <li><b>푼 문제만</b>: 아직 안 푼 문제를 빼고 계산한 현재 실력. 문제를 몇 개 안 풀었으면 근거가 적습니다.</li>
       </ul>
-      <p class="hint-text">이 수치는 이 앱의 공통수학 문제 기준 학습 지표이며, 내신 등급이나 수능 성적을 예측하지 않습니다.</p>
+      <p class="hint-text">이 수치는 이 앱의 문제 기준 학습 지표이며, 내신 등급이나 수능 성적을 예측하지 않습니다. 공부하는 과목의 단원만 보여 줍니다.${hidden.total ? ` 꺼 둔 과목에 남은 복습 ${hidden.total}개는 숨겨 두었습니다.` : ''}</p>
     </section>
     ${(st.quizzes || []).length ? `<section class="side-block"><h2 class="h3">혼합 평가</h2><table class="tbl"><thead><tr><th scope="col">날짜</th><th scope="col" class="num">정답</th><th scope="col">범위</th></tr></thead><tbody>${st.quizzes.slice(-6).reverse().map((q) => `<tr><th scope="row">${fmtDate(q.date)}</th><td class="num">${q.items.filter((i) => i.correct).length}/${q.items.length}</td><td>${[...new Set(q.items.map((i) => UNIT_BY_ID[i.unit].no))].join(', ')}</td></tr>`).join('')}</tbody></table><p class="hint-text">단원 이름 없이 처음 보는 문제로 본 결과입니다. 연습 문제보다 실제 실력에 가깝지만, 한 번에 8문제라 단원별 판단에는 여러 번의 결과를 보세요.</p></section>` : ''}
     <section class="side-block no-print">
@@ -111,7 +113,7 @@ export function renderReport(view) {
 
   view.onclick = (e) => {
     const ai = e.target.closest('[data-ai]');
-    if (ai) return sendToAI(ai.dataset.ai, reportPrompt(summary));
+    if (ai) return sendToAI(ai.dataset.ai, reportPrompt(summary, scope));
     if (e.target.closest('[data-act="print"]')) window.print();
   };
   return () => (view.onclick = null);
@@ -119,7 +121,7 @@ export function renderReport(view) {
 
 function buildSummary({ diag, now, w7, tt, wr }) {
   const lines = [];
-  lines.push('범위: 고1 공통수학1·2(2022 개정). 후속 과목(대수, 미적분Ⅰ, 확률과 통계)은 아직 이 앱에서 학습하지 않음');
+  lines.push(`범위: ${activeCourseTitles().join('·')}(2022 개정 교육과정). 이 앱에서 공부하는 과목만 포함`);
   lines.push(`트랙: ${TRACKS[activeTrack()].label}`);
   if (diag) {
     lines.push(`최근 진단(${fmtDate(diag.date)}): ${diag.total}문제 중 ${diag.correctCount}개 정답, 확신도 반영 점수 ${diag.overall}점`);
@@ -131,7 +133,7 @@ function buildSummary({ diag, now, w7, tt, wr }) {
   const prac = Object.values(getState().practice || {}).reduce((s, v) => s + v.solved, 0);
   if (prac) lines.push(`숫자를 바꾼 유형 연습: ${prac}문제 해결`);
   { const lt = lessonTotals(); lines.push(`개념 학습: 소단원 ${lt.total}개 중 혼자 확인한 것(확인 문제와 개념 질문을 모두 첫 시도에 혼자 맞힘) ${lt.verified}개, 이해했다고 표시한 것 ${lt.done}개, 다시 확인할 것 ${lt.recheck}개 (최근 7일 확인 문제 ${w7.checks}번 풀이)`); const ms = misconceptionStats(60).slice(0, 3); if (ms.length) lines.push(`자주 보인 오개념(최근 60일, 개념 질문의 틀린 이유 기준): ${ms.map((m) => `${MISCONCEPTIONS[m.tag].name} ${m.n}회(${m.lessons.slice(0, 2).map((id) => LESSON_BY_ID[id].title).join(', ')})`).join('; ')}`); const rw = rootWeaknesses(5); if (rw.length) lines.push(`먼저 다지면 좋은 개념(다시 볼 것이 있는 개념, 그 위에 쌓이는 개념 수 순): ${rw.map(({ l, above }) => `${l.title}(뒤 개념 ${above}개)`).join(', ')}`); const cm = conceptMemory(); lines.push(`개념 기억: 배운 개념 ${cm.learned}개 중 1주·3주·2개월 간격 확인을 모두 통과한 것 ${cm.kept}개, 오늘 확인할 것 ${cm.due}개`); }
-  lines.push('단원별 숙련도(현재/처음, 해결 문제 수): ' + UNITS.map((u) => { const m = unitMastery(u.id); return `${unitLabel(u)} ${m.pct}%/${m.firstPct}% (${m.solved}/${m.total})`; }).join(', '));
+  lines.push('단원별 숙련도(현재/처음, 해결 문제 수): ' + activeUnits().map((u) => { const m = unitMastery(u.id); return `${unitLabel(u)} ${m.pct}%/${m.firstPct}% (${m.solved}/${m.total})`; }).join(', '));
   if (wr.length) {
     const byReason = REASONS.map((r) => `${r} ${wr.filter((w) => w.reason === r).length}`).join(', ');
     lines.push(`남은 오답 ${wr.length}문제(원인: ${byReason})`);

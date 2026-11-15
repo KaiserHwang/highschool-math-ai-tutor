@@ -1,5 +1,5 @@
 import { UNIT_BY_ID, UNITS, unitLabel } from '../content/units.js';
-import { wrongList, REASONS, REVIEW_GAPS, lessonRechecks, conceptsDue } from '../model.js';
+import { wrongList, REASONS, REVIEW_GAPS, lessonRechecks, conceptsDue, hiddenReviews } from '../model.js';
 import { tex, esc, fmtDate } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 import { generatorFor, newSeed } from '../content/generators.js';
@@ -19,7 +19,8 @@ export function renderReview(view) {
 }
 
 function draw(view) {
-  const all = wrongList();
+  const all = wrongList(); // 공부하는 과목의 오답만
+  const hidden = hiddenReviews();
   const active = all.filter((w) => !w.resolved);
   const due = active.filter((w) => w.due <= today());
   const later = active.filter((w) => w.due > today()).sort((a, b) => a.due.localeCompare(b.due));
@@ -61,6 +62,7 @@ function draw(view) {
     <header class="page-head">
       <h1 class="page-title">복습</h1>
       <p class="lead">틀렸거나 풀이를 보고 푼 문제가 모입니다. 힌트 없이 맞힐 때마다 복습 간격이 ${REVIEW_GAPS.join('일, ')}일로 늘어나고, 네 번 통과하면 졸업합니다.</p>
+      ${hidden.total ? `<p class="hint-text" data-hidden-reviews>공부하지 않는 과목에 남은 복습 ${hidden.total}개(오답 ${hidden.wrong}, 재확인할 개념 ${hidden.rechecks}, 기억 관리 중인 개념 ${hidden.concepts})는 숨겨 두었어요. 예정일은 그대로이고, <a href="#/settings">설정</a>에서 과목을 켜면 다시 나옵니다.</p>` : ''}
     </header>
     ${conceptsDue().length ? `<section class="wn-sec"><h2 class="h3">오늘의 개념 확인 ${conceptsDue().length}</h2><p class="hint-text">배운 지 1주·3주·2개월이 된 개념을 두 문항씩 다시 확인합니다.</p><p class="row"><a class="btn btn-primary" href="#/cr">개념 확인 시작</a></p></section>` : ''}
     ${recheckSec}
