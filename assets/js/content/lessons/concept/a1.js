@@ -56,7 +56,7 @@ export default {
       note: t`$-8$의 세제곱근 중 실수는 $-2$인데, 위처럼 쓰면 $2$가 나옵니다. 같은 지수를 다르게 썼을 때 값이 달라지므로 유리수 지수에서는 밑을 양수로 제한합니다.`,
     },
     {
-      id: 'a1-l2-q4', q: t`$a>0$일 때, $\sqrt a\times\sqrt[3]{a}=a^k$이면 $k$는?`,
+      id: 'a1-l2-q4', q: t`$a>0,\ a\ne1$일 때, $\sqrt a\times\sqrt[3]{a}=a^k$이면 $k$는?`,
       options: [t`$\dfrac56$`, t`$\dfrac16$`, t`$\dfrac15$`], answer: 0,
       reasons: [t`유리수 지수로 바꾸면 $a^{\frac12}\times a^{\frac13}=a^{\frac12+\frac13}$이다`, '근의 지수끼리 곱한 것이 새 근의 지수다', '근의 지수끼리 더한 것이 새 근의 지수다', '곱셈이므로 지수끼리 곱한다'],
       reason: 0, mis: [null, 'formula', 'formula', 'formula'],

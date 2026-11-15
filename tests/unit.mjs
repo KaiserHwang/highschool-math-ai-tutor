@@ -452,7 +452,7 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
     '주소 규칙 조각은 문제 주소와 생성기 주소를 구분한다');
   // 융합 단원을 id가 아니라 단원의 종류로 구분해도 결과가 같다
   ok(UNITS.filter((u) => isFusionUnit(u.id)).map((u) => u.id).join() === 'u8' && REGULAR_UNITS.map((u) => u.id).join() === 'u1,u2,u3,u4,u5,u6,u7,a1' && !isFusionUnit('__proto__') && !isFusionUnit('u9'),
-    '융합 단원은 u8 하나이고 교과서 단원은 u1~u7이다');
+    '융합 단원은 u8 하나이고 교과서 단원은 u1~u7과 a1이다');
   store.resetAll();
   ok(model.studiedUnits().join() === 'u1,u2,u3,u4,u5,u6,u7', '공부한 흔적이 없으면 혼합 평가 범위는 교과서 단원 전체다');
   store.update((s) => {

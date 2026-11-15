@@ -9,7 +9,7 @@ export default [
 <ul>
 <li>$n$이 $2$ 이상의 자연수일 때, $x^n=a$를 만족하는 수 $x$를 $a$의 <em>$n$제곱근</em>이라 한다.</li>
 <li>$n$이 홀수: 실수인 $n$제곱근은 $\sqrt[n]{a}$ 하나 ($a$의 부호와 관계없음)</li>
-<li>$n$이 짝수: $a>0$이면 $\sqrt[n]{a},\ -\sqrt[n]{a}$ 두 개, $a=0$이면 $0$ 하나, $a<0$이면 없다.</li>
+<li>$n$이 짝수: 실수인 $n$제곱근은 $a>0$이면 $\sqrt[n]{a},\ -\sqrt[n]{a}$ 두 개, $a=0$이면 $0$ 하나, $a<0$이면 실수인 것은 없다.</li>
 </ul></div>
 <div class="box"><p class="box-t">거듭제곱근의 성질 ($a>0,\ b>0$이고 $m,\ n$은 $2$ 이상의 자연수)</p>
 <ul>
@@ -73,7 +73,7 @@ export default [
         answer: '4',
       },
       {
-        q: t`$a>0$일 때, $\sqrt[3]{a^2}\times\sqrt{a}\div\sqrt[6]{a}=a^k$을 만족하는 유리수 $k$의 값을 구하시오.`,
+        q: t`$a>0,\ a\ne1$일 때, $\sqrt[3]{a^2}\times\sqrt{a}\div\sqrt[6]{a}=a^k$을 만족하는 유리수 $k$의 값을 구하시오.`,
         steps: [
           t`거듭제곱근을 유리수 지수로 바꾼다: $a^{\frac23}\times a^{\frac12}\div a^{\frac16}$`,
           t`지수끼리 계산한다: $\dfrac23+\dfrac12-\dfrac16=1$`,

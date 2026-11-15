@@ -6,6 +6,7 @@ import sympy as sp
 
 x = sp.Symbol('x', real=True)
 S = sp.Rational
+BASES = [S(2), S(3), S(1, 2), S(7, 3)]  # 1이 아닌 양수 밑 여러 개
 
 
 def val(e):
@@ -72,8 +73,8 @@ def expected_algebra_lessons():
     E['a1-l1-d2'] = same_for([S(3, 2), S(2), S(5, 2), S(11, 10)], lambda a: max(real_roots(2, (a - 1) ** 2)) + max(real_roots(4, (a - 3) ** 4)))
     # ── a1-l2 지수의 확장
     E['a1-l2-e1'] = val(S(1, 8) ** S(-2, 3))
-    av = S(2)  # a = 2 에서 a^k 의 값으로 k를 구한다
-    E['a1-l2-e2'] = val(sp.log(sp.root(av ** 2, 3) * sp.sqrt(av) / sp.root(av, 6), av))
+    # a>0, a≠1 인 여러 a에서 a^k의 값으로 k를 구해, k가 a와 관계없이 하나로 정해지는지 본다(a=1이면 k가 정해지지 않아 문제에서 제외)
+    E['a1-l2-e2'] = same_for(BASES, lambda av: sp.log(sp.root(av ** 2, 3) * sp.sqrt(av) / sp.root(av, 6), av))
     E['a1-l2-c1'] = val(S(27) ** S(2, 3) * S(9) ** S(-1, 2))
     tt = sp.sqrt(5)  # a^x = t > 0, t^2 = 5
     E['a1-l2-c2'] = val((tt ** 3 + tt ** -3) / (tt + tt ** -1))
@@ -119,7 +120,7 @@ def expected_algebra_cq():
     C['a1-l2-q2'] = pick([S(1), S(0), S(5)], S(5) ** 0)  # a = 5 에서 보기 1, 0, a
     # (-8)^(1/3)의 실수 값(세제곱근)과 sqrt[6]{(-8)^2} 이 다르면 "안 된다"
     C['a1-l2-q3'] = 0 if real_roots(3, -8)[0] != max(real_roots(6, (-8) ** 2)) else 1
-    C['a1-l2-q4'] = pick([S(5, 6), S(1, 6), S(1, 5)], val(sp.log(sp.sqrt(2) * sp.root(2, 3), 2)))
+    C['a1-l2-q4'] = pick([S(5, 6), S(1, 6), S(1, 5)], same_for(BASES, lambda av: sp.log(sp.sqrt(av) * sp.root(av, 3), av)))
     C['a1-l3-q1'] = 0 if not sp.solve(sp.Eq(2 ** x, -4), x) else 1
     C['a1-l3-q2'] = 0 if val(sp.log(1 + 1, 2)) != val(sp.log(1, 2) + sp.log(1, 2)) else 1
     C['a1-l3-q4'] = pick([S(1, 2), S(2), S(-2)], val(sp.log(2, 4)))
