@@ -5,7 +5,7 @@ import { PROBLEM_BY_ID } from '../content/problems.js';
 import { makeVariant, GENERATORS } from '../content/generators.js';
 import { lessonForProblem } from '../content/lessons/index.js';
 import { getState, update, logActivity } from '../store.js';
-import { isCorrect, normalizeAnswer, addWrong, makeQuiz, studiedUnits, activeRegularUnits, activeCourseTitles } from '../model.js';
+import { isCorrect, normalizeAnswer, addWrong, makeQuiz, studiedUnits, activeRegularUnits, activeCourseTitles, activeCourses } from '../model.js';
 import { tex, esc, CIRCLED, toast, gradeMark, fmtDate, fmtMinutes, optionsClass } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 
@@ -22,7 +22,8 @@ function lessonOfItem(it, p) {
 
 export function renderQuiz(view, { params }) {
   const v = params.get('view');
-  if (v === 'intro') run = null;
+  // 평가를 시작한 뒤 공부하는 과목을 바꿨으면, 예전 범위의 평가를 이어 가지 않고 시작 화면으로 돌아간다
+  if (v === 'intro' || (run && run.scope !== activeCourses().join())) run = null;
   if (run && !run.done) return renderItem(view);
   if (run && run.done && v === 'result') return renderResult(view);
   if (run && run.done) run = null;
@@ -60,7 +61,7 @@ function renderIntro(view) {
     if (!units.length) return toast('범위를 하나 이상 고르세요.');
     const items = makeQuiz(units, 8).map((it) => ({ ...it, p: itemOf(it) })).filter((it) => it.p);
     if (items.length < 3) return toast('고른 범위에 아직 풀지 않은 문제가 부족합니다. 범위를 넓혀 보세요.');
-    run = { items, i: 0, responses: {}, sec: {}, shownAt: Date.now(), done: false, startedAt: Date.now() };
+    run = { items, i: 0, responses: {}, sec: {}, shownAt: Date.now(), done: false, startedAt: Date.now(), scope: activeCourses().join() };
     renderItem(view);
   };
   return () => (view.onclick = null);

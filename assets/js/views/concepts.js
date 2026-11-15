@@ -5,7 +5,7 @@ import { LESSON_BY_ID, CHECK_BY_ID, CQ_BY_ID } from '../content/lessons/index.js
 import { UNIT_BY_ID, unitLabel } from '../content/units.js';
 import { makeVariant, newSeed } from '../content/generators.js';
 import { update, today, logActivity } from '../store.js';
-import { isCorrect, normalizeAnswer, conceptsDue, conceptQueue, conceptMemory, conceptItems, conceptResult, CONCEPT_GAPS, gradeCQ, recordCQ } from '../model.js';
+import { isCorrect, normalizeAnswer, conceptsDue, conceptQueue, conceptMemory, conceptItems, conceptResult, CONCEPT_GAPS, gradeCQ, recordCQ, activeCourses } from '../model.js';
 import { cqHTML, cqClick, newCQSeed } from './cq.js';
 import { tex, esc, CIRCLED, gradeMark, optionsClass, toast, fmtDate } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
@@ -15,6 +15,7 @@ export const CONCEPT_SET = 3; // 한 번에 확인하는 개념 수(약 5분)
 let session = null; // { date, lessons:[{ id, items:[{ref, item}], answers:{}, outcome }] }
 
 const STAGE_TEXT = ['1주 뒤', '3주 뒤', '2개월 뒤'];
+const scopeKey = () => activeCourses().join();
 
 /** 문항 본문(채점에 필요한 type, answer, options 포함) */
 function itemOf(L, ref) {
@@ -27,6 +28,7 @@ function itemOf(L, ref) {
 function buildSession(list) {
   return {
     date: today(),
+    scope: scopeKey(), // 이 세트를 만들 때의 공부하는 과목. 과목을 바꾸면 세트를 새로 만든다
     lessons: list.map(({ l, sp }) => {
       const round = (sp.history || []).length + sp.stage;
       const items = conceptItems(l, round).map((ref) => ({ ref: ref.kind === 'variant' ? { ...ref, seed: newSeed() } : ref }));
@@ -83,7 +85,9 @@ function emptyHTML() {
 }
 
 export function renderConcepts(view) {
-  if (session && session.date !== today()) session = null;
+  // 날짜가 바뀌었거나 공부하는 과목을 바꿨으면 만들어 둔 세트를 버리고 지금 범위로 다시 만든다.
+  // 이미 답한 문항의 기록은 남아 있고, 버린 세트의 개념은 예정일이 그대로라 과목을 다시 켜면 다시 나온다.
+  if (session && (session.date !== today() || session.scope !== scopeKey())) session = null;
   if (!session) { const due = conceptsDue(); if (due.length) session = buildSession(due.slice(0, CONCEPT_SET)); }
   const draw = () => {
     const due = conceptsDue();

@@ -77,6 +77,8 @@ export function renderSettings(view) {
       const picked = [...view.querySelectorAll('[data-course]')].filter((c) => c.checked).map((c) => c.dataset.course);
       if (!picked.length) { t.checked = true; toast('과목을 하나 이상 골라야 합니다.'); return; }
       update((s) => (s.profile.courses = picked));
+      const pre = view.querySelector('[data-rules]');
+      if (pre) pre.textContent = rules(); // 지침 미리보기도 새 과목 범위로
       toast(`공부하는 과목: ${activeCourseTitles().join('·')}`);
       return;
     }

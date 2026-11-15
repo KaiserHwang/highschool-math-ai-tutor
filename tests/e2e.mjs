@@ -570,9 +570,20 @@ async function run(viewport, tag) {
 
   // ── #24 공부하는 과목: 끈 과목은 오늘 할 일과 단원 목록에서 빠지고(접혀서 남음), 다시 켜면 돌아온다
   {
+    // 혼합 평가를 시작해 둔 상태에서 과목을 바꾼다
+    await page.goto(BASE + '#/quiz?view=intro');
+    await page.click('[data-act="start"]');
+    await page.waitForSelector('.quiz .q-text');
     await page.goto(BASE + '#/settings');
     await page.waitForSelector('[data-course="common2"]');
+    await page.click('.settings details.prompt-preview > summary');
     await page.uncheck('[data-course="common2"]');
+    const rulesNow = await page.textContent('[data-rules]');
+    ok(rulesNow.includes('공통수학1 범위') && !rulesNow.includes('공통수학2'), `[${tag}] 과목을 바꾸면 튜터 지침 미리보기도 바로 바뀐다`);
+    await page.goto(BASE + '#/quiz');
+    await page.waitForSelector('[data-act="start"]');
+    ok((await page.locator('.quiz .q-text').count()) === 0 && (await page.locator('input[type="checkbox"][value="u5"]').count()) === 0 && (await page.locator('input[type="checkbox"][value="u1"]').count()) === 1,
+      `[${tag}] 과목을 바꾸면 하던 혼합 평가를 이어 가지 않고 새 범위의 시작 화면으로 간다`);
     await page.goto(BASE + '#/');
     await page.waitForSelector('.unit-minis');
     const minis = await page.locator('.unit-minis .unit-mini').evaluateAll((as) => as.map((a) => a.getAttribute('href')));

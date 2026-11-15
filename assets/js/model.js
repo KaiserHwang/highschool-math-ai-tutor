@@ -816,12 +816,12 @@ export function lastCQ(lessonId, qid) {
   return e && e.log.length ? e.log[e.log.length - 1] : null;
 }
 
-/** 최근 days일 동안 개념 질문에서 고른 틀린 이유를 오개념별로 센다(많은 순). */
-export function misconceptionStats(days = 60) {
+/** 최근 days일 동안 개념 질문에서 고른 틀린 이유를 오개념별로 센다(많은 순). 기본은 공부하는 과목의 소단원만, { all: true }면 전 과목. */
+export function misconceptionStats(days = 60, { all = false } = {}) {
   const st = getState();
   const from = addDays(today(), -(days - 1));
   const acc = {};
-  for (const L of LESSONS) {
+  for (const L of all ? LESSONS : activeLessons()) {
     const rec = st.lessons[L.id];
     if (!rec || !rec.cq) continue;
     for (const q of L.cq || []) {

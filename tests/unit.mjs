@@ -524,6 +524,31 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   ok(threw, '공부하는 과목이 배열이 아닌 백업은 거절한다');
   store.update((s) => { s.profile.courses = ['common1', 'common2']; });
   ok(JSON.stringify(snap()) === JSON.stringify(all), '과목을 다시 켜면 복습이 원래대로 돌아온다');
+  // 오개념 통계도 공부하는 과목 안에서만 센다(리포트와 AI 요약이 쓴다)
+  {
+    const q5 = LESSON_BY_ID['u5-l1'].cq[0], q2 = LESSON_BY_ID['u2-l1'].cq[0];
+    store.update((s) => { model.recordCQ(s, 'u5-l1', q5.id, q5.answer, q5.mis.findIndex((m) => m)); model.recordCQ(s, 'u5-l1', q5.id, q5.answer, q5.mis.findIndex((m) => m)); model.recordCQ(s, 'u2-l1', q2.id, q2.answer, q2.mis.findIndex((m) => m)); });
+    const lessonsIn = (ms) => [...new Set(ms.flatMap((m) => m.lessons))].sort().join();
+    const both = lessonsIn(model.misconceptionStats());
+    store.update((s) => { s.profile.courses = ['common1']; });
+    const only1 = lessonsIn(model.misconceptionStats()), everything = lessonsIn(model.misconceptionStats(60, { all: true }));
+    store.update((s) => { s.profile.courses = ['common1', 'common2']; });
+    ok(both === 'u2-l1,u5-l1' && only1 === 'u2-l1' && everything === 'u2-l1,u5-l1' && lessonsIn(model.misconceptionStats()) === both, '오개념 통계는 꺼 둔 과목의 오답을 빼고 세며, 과목을 다시 켜면 돌아온다');
+  }
+  // 만들어 둔 "오늘의 개념 확인" 세트는 공부하는 과목을 바꾸면 새 범위로 다시 만든다(끈 과목의 복습을 이어서 풀게 하지 않는다)
+  {
+    const { renderConcepts } = await import('../assets/js/views/concepts.js');
+    const view = { innerHTML: '', onclick: null, onsubmit: null };
+    renderConcepts(view);
+    const first = view.innerHTML;
+    store.update((s) => { s.profile.courses = ['common1']; });
+    renderConcepts(view);
+    const second = view.innerHTML;
+    store.update((s) => { s.profile.courses = ['common1', 'common2']; });
+    renderConcepts(view);
+    ok(first.includes('#/l/u2-l1') && first.includes('#/l/u5-l1') && second.includes('#/l/u2-l1') && !second.includes('#/l/u5-l1') && view.innerHTML.includes('#/l/u5-l1'),
+      '개념 확인 세트는 과목을 바꾸면 그 범위로 다시 만들어진다');
+  }
   // AI에게 보내는 설명 범위는 그 문제·개념의 과목을 따른다
   ok(scopeOf(UNIT_BY_ID.u1) === '공통수학1' && scopeOf(UNIT_BY_ID.u6) === '공통수학2' && scopeOf(UNIT_BY_ID.u8) === '공통수학1·공통수학2' && tutorRules('대수').includes('대수 범위')
     && problemPrompt({ p: PROBLEM_BY_ID['u6-01'], question: '', note: '', lastResponse: null, hintsSeen: 0, solved: false }).includes('공통수학2 범위') && unitLabel(UNIT_BY_ID.u6).startsWith('공수2 '),

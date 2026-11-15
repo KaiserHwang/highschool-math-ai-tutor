@@ -3,7 +3,7 @@
 import { LESSONS, LESSON_BY_ID, lessonsOfUnit } from '../content/lessons/index.js';
 import { UNITS, UNIT_BY_ID, unitLabel, courseTitle } from '../content/units.js';
 import { MISCONCEPTIONS } from '../content/misconceptions.js';
-import { lessonProgress, LESSON_STATE, weakSignals, ancestorsOf, dependentsOf, descendantsOf, rootWeaknesses, conceptMemory } from '../model.js';
+import { lessonProgress, LESSON_STATE, weakSignals, ancestorsOf, dependentsOf, descendantsOf, rootWeaknesses, conceptMemory, activeLessons } from '../model.js';
 import { esc } from '../lib/ui.js';
 
 const G = { colW: 134, gap: 38, pad: 10, head: 44, rowH: 50, nodeH: 40, bandGap: 26 };
@@ -109,7 +109,7 @@ export function renderMap(view, { args: [selArg] }) {
   let sel = selArg && LESSON_BY_ID[selArg] ? selArg : null;
   let cols = 0;
   const mem = conceptMemory();
-  const weakAll = LESSONS.filter((l) => weakSignals(l).length).length;
+  const weakAll = activeLessons().filter((l) => weakSignals(l).length).length; // 옆의 기억 현황·먼저 다질 개념과 같은 범위(공부하는 과목)
   const roots = rootWeaknesses(3);
   view.innerHTML = `
   <section class="page map-page">
