@@ -94,4 +94,97 @@ export default {
       note: t`예를 들어 $S_n=n^2+1$이면 식에 $n=0$을 넣은 값은 $1$이라 $S_1-1=1\ne a_1=2$입니다. 그래서 $n=1$은 따로 확인합니다.`,
     },
   ],
+
+  'a3-l4': [
+    {
+      id: 'a3-l4-q1', q: t`$\dfrac{1}{k(k+1)}$과 같은 것은?`,
+      options: [t`$\dfrac1k-\dfrac1{k+1}$`, t`$\dfrac1k+\dfrac1{k+1}$`, t`$\dfrac1{k+1}-\dfrac1k$`], answer: 0,
+      reasons: [t`통분하면 $\dfrac{(k+1)-k}{k(k+1)}=\dfrac{1}{k(k+1)}$이다`, '분모의 두 인수로 나누어 더한다', '큰 분모의 분수에서 작은 분모의 분수를 뺀다', '분수는 곱으로만 나눌 수 있다'],
+      reason: 0, mis: [null, 'formula', 'sign', 'def'],
+      note: t`$\dfrac1{k+1}-\dfrac1k=-\dfrac{1}{k(k+1)}$로 부호가 반대입니다. 작은 분모의 분수에서 큰 분모의 분수를 뺍니다.`,
+    },
+    {
+      id: 'a3-l4-q2', q: t`$\displaystyle\sum_{k=1}^{n}\left(\dfrac1k-\dfrac1{k+1}\right)$을 풀어 쓰고 지울 때 남는 것은?`,
+      options: [t`$1$과 $-\dfrac1{n+1}$`, '모든 항이 남는다', t`$\dfrac1n$만 남는다`], answer: 0,
+      reasons: ['이웃한 괄호끼리 지워지고 처음과 끝만 짝이 없다', '부호가 다른 항은 서로 지워지지 않는다', '첫째항도 다음 항과 지워진다', '모든 항이 지워져 합은 0이 된다'],
+      reason: 0, mis: [null, 'method', 'count', 'overgen'],
+      note: t`그래서 합은 $1-\dfrac1{n+1}=\dfrac{n}{n+1}$입니다. 직접 $n=3$으로 써서 확인해 보세요.`,
+    },
+    {
+      id: 'a3-l4-q3', q: t`$\dfrac{1}{k(k+2)}$과 같은 것은?`,
+      options: [t`$\dfrac12\left(\dfrac1k-\dfrac1{k+2}\right)$`, t`$\dfrac1k-\dfrac1{k+2}$`, t`$2\left(\dfrac1k-\dfrac1{k+2}\right)$`], answer: 0,
+      reasons: [t`$\dfrac1k-\dfrac1{k+2}=\dfrac{2}{k(k+2)}$이므로 $\dfrac12$을 곱한다`, '두 인수의 간격과 관계없이 그대로 뺀다', '두 인수의 간격만큼 곱한다', '두 인수가 이웃하지 않으면 쪼갤 수 없다'],
+      reason: 0, mis: [null, 'formula', 'formula', 'cond'],
+      note: t`일반적으로 $\dfrac{1}{AB}=\dfrac{1}{B-A}\left(\dfrac1A-\dfrac1B\right)$입니다. 간격으로 나눕니다.`,
+    },
+    {
+      id: 'a3-l4-q4', q: t`$\dfrac{1}{\sqrt{k+1}+\sqrt k}$와 같은 것은?`,
+      options: [t`$\sqrt{k+1}-\sqrt k$`, t`$\sqrt{k+1}+\sqrt k$`, t`$\dfrac1{\sqrt{k+1}}-\dfrac1{\sqrt k}$`], answer: 0,
+      reasons: [t`분모를 유리화하면 분모가 $(k+1)-k=1$이 된다`, '분자와 분모를 뒤집는다', '분수 꼴처럼 두 분수의 차로 쪼갠다', '무리식은 이웃한 항끼리 지워지지 않는다'],
+      reason: 0, mis: [null, 'formula', 'transfer', 'def'],
+      note: t`유리화한 뒤 더하면 $\left(\sqrt2-\sqrt1\right)+\left(\sqrt3-\sqrt2\right)+\cdots$처럼 이웃한 항이 지워집니다.`,
+    },
+  ],
+
+  'a3-l5': [
+    {
+      id: 'a3-l5-q1', q: t`$a_1=2$, $a_{n+1}=a_n+3$으로 정의된 수열은?`,
+      options: [t`공차가 $3$인 등차수열`, t`공비가 $3$인 등비수열`, '어떤 수열인지 정할 수 없다'], answer: 0,
+      reasons: [t`이웃한 두 항의 차 $a_{n+1}-a_n$이 $3$으로 일정하다`, t`관계식에 $3$이 있으면 공비이다`, t`첫째항 $2$가 공차이다`, '귀납적 정의로는 수열을 정할 수 없다'],
+      reason: 0, mis: [null, 'def', 'def', 'def'],
+      note: t`공비 $3$인 등비수열은 $a_{n+1}=3a_n$입니다. 더하는지 곱하는지를 봅니다.`,
+    },
+    {
+      id: 'a3-l5-q2', q: t`모든 자연수 $n$에 대하여 $2a_{n+1}=a_n+a_{n+2}$를 만족하는 수열은?`,
+      options: ['등차수열', '등비수열', '어떤 수열이든 될 수 있다'], answer: 0,
+      reasons: [t`$a_{n+2}-a_{n+1}=a_{n+1}-a_n$이므로 이웃한 항의 차가 일정하다`, '세 항 사이의 관계이므로 등비수열이다', '두 항이 주어지지 않으면 종류를 알 수 없다', t`$2$가 곱해져 있으므로 공비가 $2$이다`],
+      reason: 0, mis: [null, 'transfer', 'cond', 'def'],
+      note: t`$a_{n+1}$이 $a_n$과 $a_{n+2}$의 등차중항이라는 뜻입니다. 등비수열은 $a_{n+1}^2=a_na_{n+2}$입니다.`,
+    },
+    {
+      id: 'a3-l5-q3', q: '귀납적 정의로 수열이 하나로 정해지려면 무엇이 필요할까요?',
+      options: ['첫째항과 이웃한 항 사이의 관계식', '이웃한 항 사이의 관계식만', '일반항'], answer: 0,
+      reasons: ['첫째항이 있어야 관계식으로 다음 항을 차례로 구할 수 있다', '관계식에서 첫째항이 저절로 정해진다', '일반항이 없으면 수열을 정할 수 없다', '첫째항만 있으면 다음 항이 정해진다'],
+      reason: 0, mis: [null, 'cond', 'def', 'cond'],
+      note: t`같은 관계식 $a_{n+1}=2a_n-1$도 $a_1=2$이면 $2,\ 3,\ 5,\ \cdots$, $a_1=1$이면 $1,\ 1,\ 1,\ \cdots$로 다른 수열이 됩니다.`,
+    },
+    {
+      id: 'a3-l5-q4', q: t`$a_{n+1}=a_n+f(n)$일 때 $n\ge2$이면 $a_n$은?`,
+      options: [t`$a_1+\displaystyle\sum_{k=1}^{n-1}f(k)$`, t`$a_1+\displaystyle\sum_{k=1}^{n}f(k)$`, t`$a_1\times\displaystyle\sum_{k=1}^{n-1}f(k)$`], answer: 0,
+      reasons: [t`$a_2-a_1$부터 $a_n-a_{n-1}$까지 차 $n-1$개를 더한다`, t`$a_1$부터 $a_n$까지 차가 $n$개 있다`, '차가 곱으로 쌓인다', t`$f(n)$ 하나만 더하면 된다`],
+      reason: 0, mis: [null, 'count', 'formula', 'method'],
+      note: t`항이 $n$개이면 이웃한 항의 차는 $n-1$개입니다. 등차수열의 일반항 $a+(n-1)d$도 같은 이유입니다.`,
+    },
+  ],
+
+  'a3-l6': [
+    {
+      id: 'a3-l6-q1', q: '수학적 귀납법으로 증명할 때 보여야 하는 두 가지는?',
+      options: [t`$n=1$일 때 성립, $n=k$일 때 성립하면 $n=k+1$일 때도 성립`, t`$n=1,\ 2,\ 3$일 때 성립`, t`$n=k$일 때 성립`], answer: 0,
+      reasons: ['첫 경우가 참이고 참이 다음으로 이어지면 모든 자연수에서 참이 된다', '몇 개의 자연수에서 확인하면 모든 자연수에서 참이다', t`$n=k$일 때 성립을 가정하면 증명이 끝난다`, '반례가 보이지 않으면 참이다'],
+      reason: 0, mis: [null, 'overgen', 'converse', 'overgen'],
+      note: t`$2^n>n^2$은 $n=1$에서 참이지만 $n=2,\ 3,\ 4$에서 거짓입니다. 몇 개의 확인은 증명이 아닙니다.`,
+    },
+    {
+      id: 'a3-l6-q2', q: t`(ii) "$n=k$일 때 성립하면 $n=k+1$일 때도 성립"만 보이고 (i)을 빼면?`,
+      options: ['모든 자연수에서 참이라고 할 수 없다', '그래도 모든 자연수에서 참이다', t`$n\ge2$에서는 참이다`], answer: 0,
+      reasons: [t`$n>n+1$은 (ii)가 성립하지만 어떤 자연수에서도 거짓이다`, '(ii)만으로 충분하다', t`(ii)가 성립하면 $n=2$부터는 참이다`, '(i)은 형식일 뿐 증명에 영향이 없다'],
+      reason: 0, mis: [null, 'cond', 'cond', 'def'],
+      note: t`(ii)는 "참이면 다음도 참"이라는 연결입니다. 처음이 참이라는 (i)이 있어야 연결이 시작됩니다.`,
+    },
+    {
+      id: 'a3-l6-q3', q: t`$n\ge5$인 모든 자연수 $n$에 대한 명제를 수학적 귀납법으로 증명할 때 (i)에서 확인할 것은?`,
+      options: [t`$n=5$일 때 성립`, t`$n=1$일 때 성립`, t`$n=0$일 때 성립`], answer: 0,
+      reasons: ['시작하는 수에서 성립해야 그 뒤로 이어진다', t`(i)은 언제나 $n=1$에서 확인한다`, t`$0$부터 확인해야 모든 수가 포함된다`, t`아무 $n$이나 하나 확인하면 된다`],
+      reason: 0, mis: [null, 'overgen', 'range', 'method'],
+      note: t`(ii)도 $k\ge5$에서 보입니다. $n=1$에서는 명제가 거짓일 수도 있습니다.`,
+    },
+    {
+      id: 'a3-l6-q4', q: '(ii) 단계에서 가정하는 것은?',
+      options: [t`$n=k$일 때 명제가 성립한다`, '모든 자연수에서 명제가 성립한다', t`$n=k+1$일 때 명제가 성립한다`], answer: 0,
+      reasons: [t`$n=k$에서의 성립으로부터 $n=k+1$에서의 성립을 이끌어 낸다`, '증명할 결론 전체를 미리 가정한다', t`보여야 할 $n=k+1$의 경우를 가정한다`, '아무것도 가정하지 않는다'],
+      reason: 0, mis: [null, 'converse', 'converse', 'def'],
+      note: t`가정하는 것은 하나의 $k$에서의 성립이고, 보이는 것은 $k+1$에서의 성립입니다. 결론을 가정하면 순환 논증이 됩니다.`,
+    },
+  ],
 };

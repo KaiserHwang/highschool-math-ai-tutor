@@ -178,7 +178,50 @@ def expected_algebra_bank(P=None):
     a, r = find_ar(lambda s: all(v > 0 for v in s) and s[1] == 3 and s[3] == 27)
     E['d26'] = sum(geom(a, r, 5))
     E['d27'] = sum((k + 1) ** 2 for k in range(1, 11))
+    # ── 여러 가지 수열의 합, 귀납적 정의, 수학적 귀납법(은행 a3-09~a3-17): 분수 합은 Fraction으로 항별로 더하고,
+    #    무리식 합은 sympy로, 귀납적 정의는 관계식을 그대로 반복해 항을 만든다
+    E['a3-09'] = single([n for n in range(1, 200) if sum(F(1, k * (k + 1)) for k in range(1, n + 1)) == F(9, 10)])
+    E['a3-10'] = sum(F(1, (2 * k + 1) * (2 * (k + 1) + 1)) for k in range(1, 13))
+    E['a3-11'] = single([n for n in range(1, 120) if abs(sp.N(sum(1 / (sp.sqrt(2 * k - 1) + sp.sqrt(2 * k + 1)) for k in range(1, n + 1)) - 4, 50)) < 1e-40])
+    E['a3-12'] = rec(3, lambda n, a: 2 * a, 6)
+    E['a3-13'] = rec(1, lambda n, a: a + 3 * n, 10)
+    # 2a(n+1) = a(n) + a(n+2) 를 만족하는 수열을 첫 두 항(유리수 후보)으로 만들어 조건에 맞는 것을 찾는다
+    hits = []
+    for a1 in range(-20, 21):
+        for a2 in range(-20, 21):
+            s = [F(a1), F(a2)]
+            while len(s) < 10:
+                s.append(2 * s[-1] - s[-2])
+            if s[2] == 10 and s[5] == 19:
+                hits.append(s[9])
+    E['a3-14'] = single(hits)
+    E['a3-15'] = induction_fill(lambda n: sum(2 ** (i - 1) for i in range(1, n + 1)), 3)[0]
+    s16 = [5]
+    while len(s16) < 20:
+        s16.append(s16[-1] // 2 if s16[-1] % 2 == 0 else s16[-1] + 3)
+    E['a3-16'] = sum(s16)
+    E['a3-17'] = min_start(lambda n: 2 ** n > 3 * n)
+    E['d28'] = rec(2, lambda n, a: a + 2 * n + 1, 5)
     return E
+
+
+def rec(a1, step, n):
+    """a(1) = a1, a(k+1) = step(k, a(k)) 로 차례로 구한 a(n)"""
+    a = F(a1)
+    for k in range(1, n):
+        a = step(k, a)
+    return a
+
+
+def induction_fill(S, k):
+    """합 S(n)에 대한 등식의 귀납법 증명에서 (가) = 더하는 제(k+1)항 = S(k+1) - S(k), (나) = n=k+1일 때의 값 S(k+1)"""
+    return F(S(k + 1)) - F(S(k)), F(S(k + 1))
+
+
+def min_start(P, upto=200):
+    """n ≥ m 인 모든 자연수에서 P(n)이 성립하는 가장 작은 m (upto까지 확인)"""
+    bad = [n for n in range(1, upto) if not P(n)]
+    return (max(bad) + 1) if bad else 1
 
 
 def arith(a, d, n):
@@ -562,6 +605,50 @@ def expected_algebra_lessons():
     E['a3-l3-d1'] = sum(k * k for k in range(3, 9))
     S5 = lambda n: 2 ** n + 1
     E['a3-l3-d2'] = S5(1) + S5(4) - S5(3)
+    # ── a3-l4 여러 가지 수열의 합(항별로 정확히 더한다)
+    E['a3-l4-e1'] = sum(F(1, k * (k + 1)) for k in range(1, 11))
+    E['a3-l4-e2'] = val(sum(1 / (sp.sqrt(k + 1) + sp.sqrt(k)) for k in range(1, 9)))
+    E['a3-l4-e3'] = sum(k * (k + 1) for k in range(1, 11))
+    E['a3-l4-c1'] = sum(F(1, (2 * k - 1) * (2 * k + 1)) for k in range(1, 21))
+    E['a3-l4-c2'] = val(sum(1 / (sp.sqrt(k) + sp.sqrt(k + 1)) for k in range(1, 25)))
+    E['a3-l4-p'] = [F(99, 100), F(1), F(100, 99), F(1, 100)].index(sum(F(1, k * (k + 1)) for k in range(1, 100)))
+    E['a3-l4-de1'] = sum(F(1, k * (k + 2)) for k in range(1, 9))
+    E['a3-l4-de2'] = sum(sum(range(1, k + 1)) for k in range(1, 11))
+    E['a3-l4-d1'] = sum(F(1, k * (k + 2)) for k in range(1, 7))
+    E['a3-l4-d2'] = sum(sum(2 * i - 1 for i in range(1, k + 1)) for k in range(1, 11))
+    # ── a3-l5 수열의 귀납적 정의(관계식을 그대로 반복)
+    E['a3-l5-e1'] = rec(2, lambda n, a: 2 * a - 1, 5)
+    E['a3-l5-e2'] = rec(1, lambda n, a: a + 2 * n, 10)
+    E['a3-l5-e3'] = rec(3, lambda n, a: a + 4, 20)
+    E['a3-l5-c1'] = rec(1, lambda n, a: 3 * a + 1, 4)
+    E['a3-l5-c2'] = rec(2, lambda n, a: F(n + 1, n) * a, 10)
+    E['a3-l5-p'] = 0 if rec(1, lambda n, a: 2 * a, 10) > rec(1, lambda n, a: a + 2, 10) else 1  # 보기: 곱하는 쪽, 더하는 쪽, 같다
+    E['a3-l5-de1'] = rec(1, lambda n, a: F(n, n + 1) * a, 10)
+    E['a3-l5-de2'] = rec(2, lambda n, a: 1 / (1 - a), 100)
+    E['a3-l5-d1'] = rec(1, lambda n, a: F(n + 1, n + 3) * a, 10)
+    s = [1, 3]
+    while len(s) < 50:
+        s.append(s[-1] - s[-2])
+    E['a3-l5-d2'] = s[49]
+    # ── a3-l6 수학적 귀납법: (가)·(나)는 실제 합으로, 시작하는 수는 큰 n까지 전수 확인
+    f, g = induction_fill(lambda n: sum(range(1, n + 1)), 2)
+    E['a3-l6-e1'] = f + g
+    E['a3-l6-e2'] = min_start(lambda n: 2 ** n > n * n)
+    E['a3-l6-c1'] = induction_fill(lambda n: sum(2 * i - 1 for i in range(1, n + 1)), 4)[0]
+    E['a3-l6-c2'] = min_start(lambda n: 3 ** n > 2 * n + 5)
+    # (i) 1이 참, (ii) k가 참이면 k+1이 참 — 이 두 규칙만으로 참이 되는 수를 모으면 1~N 전체가 되는지
+    true_set, N = {1}, 200
+    for k in range(1, N):
+        if k in true_set:
+            true_set.add(k + 1)
+    E['a3-l6-p'] = 0 if true_set == set(range(1, N + 1)) else (1 if true_set == {1, 2} else 2)  # 보기: 모든 n, n=1·2만, 알 수 없다
+    fact = lambda n: 1 if n <= 1 else n * fact(n - 1)
+    E['a3-l6-de1'] = min_start(lambda n: fact(n) > 2 ** n)
+    f, g = induction_fill(lambda n: sum(i * (i + 1) for i in range(1, n + 1)), 1)
+    E['a3-l6-de2'] = f + g
+    E['a3-l6-d1'] = min_start(lambda n: 3 ** n > n ** 3)
+    f, g = induction_fill(lambda n: sum(F(1, i * (i + 1)) for i in range(1, n + 1)), 2)
+    E['a3-l6-d2'] = f + g
     return E
 
 
@@ -665,6 +752,20 @@ def expected_algebra_cq():
     C['a3-l3-q3'] = only_true([lambda f=f: all(sum(k * k for k in range(1, n + 1)) == f(n) for n in range(1, 15)) for f in (lambda n: F(n * (n + 1) * (2 * n + 1), 6), lambda n: F(n * (n + 1), 2) ** 2, lambda n: F(n * n * (n + 1), 2))])
     S0 = lambda n: n * n + 1
     C['a3-l3-q4'] = 0 if S0(1) - S0(0) != S0(1) and all(S0(n) - S0(n - 1) == (S0(n) - S0(n - 1)) for n in range(2, 10)) else None
+    ks = range(1, 20)
+    C['a3-l4-q1'] = only_true([lambda: all(F(1, k) - F(1, k + 1) == F(1, k * (k + 1)) for k in ks), lambda: all(F(1, k) + F(1, k + 1) == F(1, k * (k + 1)) for k in ks), lambda: all(F(1, k + 1) - F(1, k) == F(1, k * (k + 1)) for k in ks)])
+    C['a3-l4-q2'] = 0 if all(sum(F(1, k) - F(1, k + 1) for k in range(1, n + 1)) == 1 - F(1, n + 1) for n in ks) else None
+    C['a3-l4-q3'] = only_true([lambda c=c: all(c * (F(1, k) - F(1, k + 2)) == F(1, k * (k + 2)) for k in ks) for c in (F(1, 2), F(1), F(2))])
+    kk = sp.Symbol('kk', positive=True)
+    C['a3-l4-q4'] = only_true([lambda o=o: sp.simplify(sp.radsimp(1 / (sp.sqrt(kk + 1) + sp.sqrt(kk))) - o) == 0 for o in (sp.sqrt(kk + 1) - sp.sqrt(kk), sp.sqrt(kk + 1) + sp.sqrt(kk), 1 / sp.sqrt(kk + 1) - 1 / sp.sqrt(kk))])
+    sq = [rec(2, lambda n, a: a + 3, m) for m in range(1, 12)]
+    C['a3-l5-q1'] = 0 if len({b - a for a, b in zip(sq, sq[1:])}) == 1 and len({b / a for a, b in zip(sq, sq[1:])}) > 1 else None
+    C['a3-l5-q2'] = 0 if all((lambda s: len({b - a for a, b in zip(s, s[1:])}) == 1)(arith(a, d, 8)) for a in range(-3, 4) for d in range(-3, 4)) else None
+    C['a3-l5-q3'] = 0 if rec(2, lambda n, a: 2 * a - 1, 4) != rec(1, lambda n, a: 2 * a - 1, 4) else None  # 같은 관계식, 다른 첫째항 → 다른 수열
+    fn = lambda k: k * k + 1
+    C['a3-l5-q4'] = [0, 1].index(0 if all(rec(5, lambda n, a: a + fn(n), m) == 5 + sum(fn(k) for k in range(1, m)) for m in range(2, 12)) else 1)
+    C['a3-l6-q2'] = 0 if all((not (k > k + 1)) or (k + 1 > k + 2) for k in range(1, 50)) and not any(n > n + 1 for n in range(1, 50)) else None
+    C['a3-l6-q3'] = 0 if min_start(lambda n: 2 ** n > n * n) == 5 and not (2 ** 3 > 3 * 3) else None  # n ≥ 5 에서만 성립하는 명제는 n=1부터 시작할 수 없다
     C['a1-l6-q4'] = 0 if all((sp.log(v) / sp.log(S(1, 3)) > sp.log(2) / sp.log(S(1, 3))) == (0 < v < 2) for v in (S(1, 2), 1, S(3, 2), 3, 5)) else None
     return {k: v for k, v in C.items() if v is not None}
 
