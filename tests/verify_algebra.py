@@ -159,7 +159,73 @@ def expected_algebra_bank(P=None):
     cosD = ((64 + 9 - dd ** 2) / 6) / 8   # D(0,0), C(3,0), |DA|=8, |CA|=dd
     E['a2-16'] = val(single(sp.solve(cosB + cosD, dd)))
     E['d24'] = val(sp.Point(5, 0).distance(sp.Point(4 * sp.cos(deg(60)), 4 * sp.sin(deg(60)))) ** 2)
+    # ── 수열(은행 a3-01~a3-08): 항을 정의대로 더하거나 곱해 만들고, 조건에 맞는 첫째항·공차·공비를 전수 조사한다
+    E['a3-01'] = arith(-3, 4, 100).index(37) + 1
+    a, r = find_ar(lambda s: s[2] == 12 and s[3] == 24)
+    E['a3-02'] = a
+    E['a3-03'] = sum(k + 2 for k in range(1, 9))
+    E['a3-04'] = next(i + 1 for i, v in enumerate(arith(40, -3, 100)) if v < 0)
+    a, r = find_ar(lambda s: s[1] / s[0] > 0 and sum(s[:2]) == 3 and sum(s[:4]) == 15)
+    E['a3-05'] = geom(a, r, 5)[-1]
+    Sn = lambda n: 2 * n * n - n + 1
+    E['a3-06'] = Sn(1) + (Sn(10) - Sn(9))
+    a, d = find_ad(lambda s: s[1] - s[0] > 0 and sum(s[:3]) == 15 and s[0] * s[1] * s[2] == 80)
+    E['a3-07'] = arith(a, d, 10)[-1]
+    a, d = find_ad(lambda s: s[0] == 18 and s[4] + s[8] == 0)
+    E['a3-08'] = sum(argmax_all(partial_sums(arith(a, d, 60))))
+    a, d = find_ad(lambda s: s[3] == 10 and s[9] == 28)
+    E['d25'] = a
+    a, r = find_ar(lambda s: all(v > 0 for v in s) and s[1] == 3 and s[3] == 27)
+    E['d26'] = sum(geom(a, r, 5))
+    E['d27'] = sum((k + 1) ** 2 for k in range(1, 11))
     return E
+
+
+def arith(a, d, n):
+    """첫째항 a에 d를 차례로 더해 만든 앞 n개 항(정의 그대로, 일반항 공식을 쓰지 않는다)"""
+    out = [F(a)]
+    while len(out) < n:
+        out.append(out[-1] + d)
+    return out
+
+
+def geom(a, r, n):
+    """첫째항 a에 r를 차례로 곱해 만든 앞 n개 항"""
+    out = [F(a)]
+    while len(out) < n:
+        out.append(out[-1] * r)
+    return out
+
+
+def partial_sums(xs):
+    out, s = [], F(0)
+    for v in xs:
+        s += v
+        out.append(s)
+    return out
+
+
+def argmax_all(xs):
+    """최댓값을 갖는 모든 위치(1부터)"""
+    m = max(xs)
+    return [i + 1 for i, v in enumerate(xs) if v == m]
+
+
+RATS = sorted({F(p, q) for p in range(-12, 13) for q in range(1, 7)})  # 공차·공비 후보(유리수)
+
+
+def find_ad(cond, ds=RATS, a_range=range(-40, 41)):
+    """조건을 만족하는 (첫째항, 공차)가 하나뿐인지 찾는다"""
+    hits = [(a, d) for a in a_range for d in ds if cond(arith(a, d, 30))]
+    assert len(hits) == 1, hits
+    return hits[0]
+
+
+def find_ar(cond, rs=[r for r in RATS if r != 0], a_vals=sorted({F(p, q) for p in range(-30, 31) for q in (1, 2, 3, 7)})):
+    """조건을 만족하는 (첫째항, 공비)가 하나뿐인지 찾는다"""
+    hits = [(a, r) for a in a_vals if a != 0 for r in rs if cond(geom(a, r, 12))]
+    assert len(hits) == 1, hits
+    return hits[0]
 
 
 TWO_PI = sp.Interval.Ropen(0, 2 * sp.pi)
@@ -442,6 +508,60 @@ def expected_algebra_lessons():
     E['a2-l6-de2'] = val(sp.Triangle(*tri_sss(5, 7, 8)).area ** 2)
     E['a2-l6-d1'] = obtuse_count(3, 4)
     E['a2-l6-d2'] = val(sp.Triangle(*tri_sss(3, 5, 7)).area ** 2)
+    # ── a3-l1 등차수열
+    a, d = find_ad(lambda s: s[2] == 7 and s[6] == 19)
+    E['a3-l1-e1'] = arith(a, d, 10)[-1]
+    E['a3-l1-e2'] = sum(arith(2, 3, 10))
+    E['a3-l1-e3'] = single([v for v in range(-50, 51) if v - 3 == 11 - v])
+    a, d = find_ad(lambda s: s[1] == 5 and s[4] == 14)
+    E['a3-l1-c1'] = arith(a, d, 20)[-1]
+    seq = arith(1, 3, 11)
+    assert seq[-1] == 31
+    E['a3-l1-c2'] = sum(seq)
+    E['a3-l1-p'] = [5050, 10000, 5000, 10100].index(sum(range(1, 101)))
+    a0, d0 = sp.symbols('a0 d0', real=True)
+    def three(total, prod, pick_fn):
+        sols = sp.solve([3 * a0 + 3 * d0 - total, a0 * (a0 + d0) * (a0 + 2 * d0) - prod], [a0, d0], dict=True)
+        return same_for(sols, lambda s: pick_fn([s[a0], s[a0] + s[d0], s[a0] + 2 * s[d0]]))
+    E['a3-l1-de1'] = three(12, 28, max)
+    E['a3-l1-de2'] = max(partial_sums(arith(30, -4, 60)))
+    E['a3-l1-d1'] = three(15, 105, min)
+    E['a3-l1-d2'] = max(partial_sums(arith(25, -3, 60)))
+    # ── a3-l2 등비수열
+    a, r = find_ar(lambda s: s[1] == 6 and s[4] == 48)
+    E['a3-l2-e1'] = geom(a, r, 7)[-1]
+    E['a3-l2-e2'] = sum(geom(3, 2, 6))
+    E['a3-l2-e3'] = single([v for v in range(1, 100) if F(v, 2) == F(18, v)])
+    E['a3-l2-c1'] = geom(5, -2, 5)[-1]
+    E['a3-l2-c2'] = sum(3 ** k for k in range(0, 8))
+    E['a3-l2-p'] = [1024, 20, 100, 512].index(geom(1, 2, 11)[-1])
+    a, r = find_ar(lambda s: sum(s[:3]) == 7 and sum(s[3:6]) == 56)
+    E['a3-l2-de1'] = geom(a, r, 7)[-1]
+    X, Y = sp.symbols('X Y', positive=True)
+    xy = sp.solve([sp.Eq(6 - X, Y - 6), sp.Eq(4 / X, Y / 4)], [X, Y], dict=True)
+    E['a3-l2-de2'] = same_for(xy, lambda s: s[X] ** 2 + s[Y] ** 2)
+    a, r = find_ar(lambda s: sum(s[:3]) == 7 and sum(s[:6]) == 63)
+    E['a3-l2-d1'] = sum(geom(a, r, 9))
+    pq = sp.solve([sp.Eq(5 - X, Y - 5), sp.Eq(4 / X, Y / 4)], [X, Y], dict=True)
+    E['a3-l2-d2'] = same_for(pq, lambda s: abs(s[X] - s[Y]))
+    # ── a3-l3 수열의 합과 Σ
+    E['a3-l3-e1'] = sum(2 * k + 1 for k in range(1, 11))
+    E['a3-l3-e2'] = sum(k * k - k for k in range(1, 6))
+    S3 = lambda n: n * n + 2 * n
+    E['a3-l3-e3'] = S3(10) - S3(9)
+    # 합이 7, 3이 되는 여러 수열로 계산해도 값이 같은지(Σ의 성질을 쓰지 않고 항별로 더한다)
+    cand = [([F(7, 10)] * 10, [F(3, 10)] * 10), ([F(7)] + [F(0)] * 9, [F(0)] * 9 + [F(3)]), ([F(k) for k in range(1, 11)][:9] + [F(7 - 45)], [F(1)] * 9 + [F(-6)])]
+    vals = {sum(2 * p - q + 1 for p, q in zip(A, B)) for A, B in cand if sum(A) == 7 and sum(B) == 3}
+    assert len(vals) == 1 and len(cand) == 3
+    E['a3-l3-c1'] = vals.pop()
+    E['a3-l3-c2'] = sum(k ** 3 for k in range(1, 7))
+    E['a3-l3-p'] = 0 if (sum(k * k for k in range(1, 4)), sum(range(1, 4)) ** 2) == (14, 36) else 1
+    E['a3-l3-de1'] = sum(range(5, 11))
+    S4 = lambda n: n * n + 3 * n + 1
+    E['a3-l3-de2'] = S4(1) + S4(5) - S4(4)
+    E['a3-l3-d1'] = sum(k * k for k in range(3, 9))
+    S5 = lambda n: 2 ** n + 1
+    E['a3-l3-d2'] = S5(1) + S5(4) - S5(3)
     return E
 
 
@@ -523,6 +643,28 @@ def expected_algebra_cq():
     C['a2-l6-q2'] = 0 if ok else None
     C['a2-l6-q3'] = 0 if all(sp.simplify(abs(sp.Triangle(*tri_sas(p, q, deg(d))).area) - S(1, 2) * p * q * sp.sin(deg(d))) == 0 for p, q, d in ((3, 4, 30), (2, 5, 120), (4, 4, 60))) else None
     C['a2-l6-q4'] = 0 if max(range(3), key=lambda i: float(tri_angles(tri_sss(4, 2, 3))[i])) == 0 else None  # 꼭짓점 A가 길이 4인 변의 대각
+    # ── 수열
+    an = lambda n: 3 * n + 2
+    C['a3-l1-q1'] = [{3}, {2}, {5}].index({an(n + 1) - an(n) for n in range(1, 20)})
+    steps, cur = 0, 1
+    while cur < 10:  # 첫째항에서 제10항까지 다음 항으로 넘어가는 횟수
+        cur += 1
+        steps += 1
+    C['a3-l1-q2'] = [9, 10, 11].index(steps)
+    trip = [arith(a, d, 3) for a in range(-5, 6) for d in range(-4, 5)]
+    C['a3-l1-q3'] = only_true([lambda: all(2 * b == a + c for a, b, c in trip), lambda: all(b * b == a * c for a, b, c in trip), lambda: all(b == a + c for a, b, c in trip)])
+    C['a3-l1-q4'] = 0 if all(len({(p * (n + 1) + q) - (p * n + q) for n in range(1, 15)}) == 1 for p in range(-3, 4) for q in range(-3, 4)) else None
+    gn = lambda n: 2 * 3 ** n
+    C['a3-l2-q1'] = [{3}, {2}, {6}].index({F(gn(n + 1), gn(n)) for n in range(1, 15)})
+    gtrip = [geom(a, r, 3) for a in (1, 2, -3) for r in (2, F(1, 3), -2)]
+    C['a3-l2-q2'] = only_true([lambda: all(b * b == a * c for a, b, c in gtrip), lambda: all(2 * b == a + c for a, b, c in gtrip), lambda: all(b == a * c for a, b, c in gtrip)])
+    C['a3-l2-q3'] = 0 if all(sum(geom(a, 1, n)) == n * a for a in (2, -5, F(1, 3)) for n in (1, 4, 9)) else None
+    C['a3-l2-q4'] = [-1, 1, 0].index(geom(1, -1, 100)[-1])
+    C['a3-l3-q1'] = [10, 2, 30].index(sum(2 for k in range(1, 6)))
+    C['a3-l3-q2'] = 0 if sum(1 * 1 for _ in range(2)) != sum(1 for _ in range(2)) * sum(1 for _ in range(2)) else None
+    C['a3-l3-q3'] = only_true([lambda f=f: all(sum(k * k for k in range(1, n + 1)) == f(n) for n in range(1, 15)) for f in (lambda n: F(n * (n + 1) * (2 * n + 1), 6), lambda n: F(n * (n + 1), 2) ** 2, lambda n: F(n * n * (n + 1), 2))])
+    S0 = lambda n: n * n + 1
+    C['a3-l3-q4'] = 0 if S0(1) - S0(0) != S0(1) and all(S0(n) - S0(n - 1) == (S0(n) - S0(n - 1)) for n in range(2, 10)) else None
     C['a1-l6-q4'] = 0 if all((sp.log(v) / sp.log(S(1, 3)) > sp.log(2) / sp.log(S(1, 3))) == (0 < v < 2) for v in (S(1, 2), 1, S(3, 2), 3, 5)) else None
     return {k: v for k, v in C.items() if v is not None}
 

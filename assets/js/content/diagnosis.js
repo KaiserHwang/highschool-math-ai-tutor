@@ -208,6 +208,30 @@ export const DIAGNOSIS = [
     skills: { calc: 1, concept: 0.5 },
     hint: t`두 변과 끼인각을 알면 코사인법칙 $c^2=a^2+b^2-2ab\cos C$를 씁니다.`,
     solution: t`$c^2=16+25-2\times4\times5\times\dfrac12=21$`,
+  },
+  {
+    id: 'd25', unit: 'a3', level: 'basic', type: 'short', sec: 60, lesson: 'a3-l1',
+    q: t`등차수열 $\{a_n\}$에서 $a_4=10$, $a_{10}=28$일 때, 첫째항 $a_1$의 값을 구하시오.`,
+    answer: '1',
+    skills: { concept: 1, calc: 0.5 },
+    hint: t`$a_{10}-a_4=6d$입니다.`,
+    solution: t`$6d=18$에서 $d=3$, $a_1=a_4-3d=1$`,
+  },
+  {
+    id: 'd26', unit: 'a3', level: 'core', type: 'short', sec: 90, lesson: 'a3-l2',
+    q: t`모든 항이 양수인 등비수열 $\{a_n\}$에서 $a_2=3$, $a_4=27$일 때, 첫째항부터 제$5$항까지의 합을 구하시오.`,
+    answer: '121',
+    skills: { calc: 1, concept: 0.5 },
+    hint: t`$\dfrac{a_4}{a_2}=r^2$이고, 모든 항이 양수이므로 $r>0$입니다.`,
+    solution: t`$r^2=9$에서 $r=3$, $a_1=1$. 합은 $\dfrac{3^5-1}{3-1}=121$`,
+  },
+  {
+    id: 'd27', unit: 'a3', level: 'adv', type: 'short', sec: 120, lesson: 'a3-l3',
+    q: t`$\displaystyle\sum_{k=1}^{10}(k+1)^2$의 값을 구하시오.`,
+    answer: '505',
+    skills: { calc: 1, reason: 0.5 },
+    hint: t`전개해서 $\displaystyle\sum k^2+2\sum k+\sum1$로 나누거나, $2^2$부터 $11^2$까지의 합으로 봅니다.`,
+    solution: t`$\displaystyle\sum_{k=1}^{10}k^2+2\sum_{k=1}^{10}k+10=385+110+10=505$`,
   },];
 
 // ── 진단 묶음 ─────────────────────────────────────
@@ -216,7 +240,7 @@ export const DIAGNOSIS = [
 // 묶음 id는 기록의 키이므로 바꾸지 않는다.
 export const DIAG_SETS = [
   { id: 'common', title: '공통수학1·2', courses: ['common1', 'common2'], minutes: 35 },
-  { id: 'algebra', title: '대수', courses: ['algebra'], minutes: 17 },
+  { id: 'algebra', title: '대수', courses: ['algebra'], minutes: 25 },
 ];
 export const DIAG_SET_BY_ID = Object.fromEntries(DIAG_SETS.map((s) => [s.id, s]));
 export const isDiagSetId = (id) => typeof id === 'string' && Object.hasOwn(DIAG_SET_BY_ID, id);

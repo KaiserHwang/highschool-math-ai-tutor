@@ -451,8 +451,8 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   ok(routeRe(ids.ID_PART.problem).test('/p/u1-05') && routeRe(ids.ID_PART.problem).test('/p/a10-01') && !routeRe(ids.ID_PART.problem).test('/p/g-sym') && !routeRe(ids.ID_PART.problem).test('/p/u1-05/x'),
     '주소 규칙 조각은 문제 주소와 생성기 주소를 구분한다');
   // 융합 단원을 id가 아니라 단원의 종류로 구분해도 결과가 같다
-  ok(UNITS.filter((u) => isFusionUnit(u.id)).map((u) => u.id).join() === 'u8' && REGULAR_UNITS.map((u) => u.id).join() === 'u1,u2,u3,u4,u5,u6,u7,a1,a2' && !isFusionUnit('__proto__') && !isFusionUnit('u9'),
-    '융합 단원은 u8 하나이고 교과서 단원은 u1~u7과 a1, a2이다');
+  ok(UNITS.filter((u) => isFusionUnit(u.id)).map((u) => u.id).join() === 'u8' && REGULAR_UNITS.map((u) => u.id).join() === 'u1,u2,u3,u4,u5,u6,u7,a1,a2,a3' && !isFusionUnit('__proto__') && !isFusionUnit('u9'),
+    '융합 단원은 u8 하나이고 교과서 단원은 u1~u7과 a1~a3이다');
   store.resetAll();
   ok(model.studiedUnits().join() === 'u1,u2,u3,u4,u5,u6,u7', '공부한 흔적이 없으면 혼합 평가 범위는 교과서 단원 전체다');
   store.update((s) => {
@@ -567,7 +567,7 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
     `진단 문항은 공통수학 ${common.length}개, 대수 ${alg.length}개로 나뉘고 융합 단원은 어느 진단에도 들지 않는다`);
   const gc = model.gradeDiagnosis(right(DIAGNOSIS)); // 다른 묶음의 응답이 섞여 있어도 그 묶음 문항만 채점
   const ga = model.gradeDiagnosis(right(DIAGNOSIS), 'algebra');
-  ok(gc.set === 'common' && gc.total === 17 && gc.items.every((it) => common.some((q) => q.id === it.id)) && ga.set === 'algebra' && ga.total === alg.length && Object.keys(ga.units).join() === 'a1,a2' && ga.overall === 100,
+  ok(gc.set === 'common' && gc.total === 17 && gc.items.every((it) => common.some((q) => q.id === it.id)) && ga.set === 'algebra' && ga.total === alg.length && Object.keys(ga.units).join() === 'a1,a2,a3' && ga.overall === 100,
     '진단은 묶음 문항만 채점하고 기록에 묶음을 남긴다');
   ok(Object.values(gc.skills).every((v) => typeof v === 'number') && Object.values(ga.skills).some((v) => v === null) && ga.track === 'killer',
     '진단이 다루지 않은 역량은 0점이 아니라 근거 없음(null)으로 남기고, 트랙 기준은 묶음의 심화 문항 수에 맞춘다');
