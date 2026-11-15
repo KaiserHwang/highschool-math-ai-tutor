@@ -637,6 +637,21 @@ async function run(viewport, tag) {
     ok(after.sets.at(-1) === 'algebra' && after.sets.includes('common') && (await page.locator('.plan a[href="#/diagnosis?set=algebra"]').count()) === 0
       && (await page.textContent('.home-side')).includes('대수') && trackBefore !== undefined,
       `[${tag}] 대수 진단 기록이 따로 남고, 오늘 화면의 안내가 사라진다`);
+    // 공통수학 진단을 시작해 둔 채 과목을 대수만 남기면, 진단 메뉴는 꺼 둔 과목의 진단을 이어 가지 않는다
+    await page.goto(BASE + '#/diagnosis');
+    await page.click('[data-start="common"]');
+    await page.waitForSelector('.diag .q-text');
+    await page.goto(BASE + '#/settings');
+    await page.waitForSelector('[data-course="common1"]');
+    await page.uncheck('[data-course="common1"]');
+    await page.uncheck('[data-course="common2"]');
+    await page.goto(BASE + '#/diagnosis');
+    await page.waitForSelector('[data-start="algebra"]');
+    ok((await page.locator('.diag .q-text').count()) === 0 && (await page.locator('[data-start="common"]').count()) === 0, `[${tag}] 진단 도중 그 과목을 끄면 진단 메뉴는 공부하는 과목의 진단 목록을 연다`);
+    await page.goto(BASE + '#/settings');
+    await page.waitForSelector('[data-course="common1"]');
+    await page.check('[data-course="common1"]');
+    await page.check('[data-course="common2"]');
     await page.goto(BASE + '#/settings');
     await page.waitForSelector('[data-course="algebra"]');
     await page.uncheck('[data-course="algebra"]');

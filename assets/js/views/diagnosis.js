@@ -2,7 +2,7 @@
 import { DIAG_SET_BY_ID, isDiagSetId, diagItems } from '../content/diagnosis.js';
 import { UNIT_BY_ID, UNITS, TRACKS, SKILLS, LEVELS, unitLabel, courseTitle } from '../content/units.js';
 import { getState, update } from '../store.js';
-import { gradeDiagnosis, latestDiagnosis, latestDiagnosisOf, activeDiagSets, diagSetOf, isCorrect, normalizeAnswer, diagUnitReadiness, practiceTarget } from '../model.js';
+import { gradeDiagnosis, latestDiagnosis, latestDiagnosisOf, activeDiagSets, diagSetOf, activeTrack, saveDiagnosis, chooseTrack, isCorrect, normalizeAnswer, diagUnitReadiness, practiceTarget } from '../model.js';
 import { LESSON_BY_ID } from '../content/lessons/index.js';
 import { newSeed } from '../content/generators.js';
 import { tex, esc, CIRCLED, fmtDate, gradeMark, toast, optionsClass } from '../lib/ui.js';
@@ -34,7 +34,8 @@ export function renderDiagnosis(view, { params }) {
     const d = set ? latestDiagnosisOf(set) : latestDiagnosis();
     if (d) { renderResult(view, d); return cleanup; }
   }
-  if (run && set && run.set !== set) run = null; // 다른 묶음의 진단을 열면 하던 진단은 접는다
+  // 하던 진단을 접는 경우: 진단 목록을 열었을 때, 다른 묶음의 주소로 들어왔을 때, 그 묶음의 과목을 꺼 두었을 때
+  if (run && (params.get('view') === 'intro' || (set && run.set !== set) || !activeDiagSets().some((s) => s.id === run.set))) run = null;
   if (!run) renderIntro(view);
   else renderQuestion(view);
   return cleanup;
@@ -169,12 +170,7 @@ function renderQuestion(view) {
 
 function finish(view) {
   const result = gradeDiagnosis(run.responses, run.set);
-  // 트랙은 기준 진단(공부하는 과목 중 앞쪽 묶음)에서 정한다. 그 묶음의 진단을 새로 봤을 때만 수동 선택을 풀어 새 추천을 따르게 한다.
-  const drivesTrack = activeDiagSets()[0]?.id === result.set;
-  update((st) => {
-    st.diagnoses.push(result);
-    if (drivesTrack) st.profile.track = null;
-  });
+  update((st) => saveDiagnosis(st, result)); // 이 결과가 기준 진단이 되면 수동 트랙을 풀어 새 추천을 따른다
   run = null;
   location.hash = `#/diagnosis?view=result&set=${result.set}`;
 }
@@ -245,7 +241,7 @@ function renderResult(view, d) {
           <h2 class="h3">추천 트랙: ${track.label}</h2>
           <p>${track.desc}</p>
           <p class="hint-text">${d.track === 'killer' ? `심화·최상위 문제 ${d.advCorrect}개를 맞혀 최상위 트랙을 추천합니다.` : d.track === 'standard' ? '기본기가 갖춰져 있어 내신 1등급 트랙을 추천합니다.' : '개념을 다시 다지면 심화 문제가 훨씬 수월해집니다.'}</p>
-          <div class="row">${Object.entries(TRACKS).map(([k, v]) => `<button type="button" class="chip" data-track="${k}" aria-pressed="${(getState().profile.track || d.track) === k}">${v.label}</button>`).join('')}</div>
+          <div class="row">${Object.entries(TRACKS).map(([k, v]) => `<button type="button" class="chip" data-track="${k}" aria-pressed="${activeTrack() === k}">${v.label}</button>`).join('')}</div>
           <p class="hint-text">트랙 이름은 학습 목표와 문제 난이도의 추천 경로입니다. 내신 등급이나 수능 성적을 예측하거나 보장하지 않습니다.</p>
         </section>
         <section class="side-block">
@@ -268,7 +264,7 @@ function renderResult(view, d) {
   function onClick(e) {
     const t = e.target.closest('[data-track]');
     if (t) {
-      update((st) => (st.profile.track = t.dataset.track === d.track ? null : t.dataset.track));
+      update((st) => chooseTrack(st, t.dataset.track)); // 기준 진단의 추천과 같으면 '추천 따르기', 다르면 수동 선택
       view.querySelectorAll('[data-track]').forEach((b) => b.setAttribute('aria-pressed', String(b === t)));
       toast(`${TRACKS[t.dataset.track].label} 트랙으로 학습합니다.`);
     }

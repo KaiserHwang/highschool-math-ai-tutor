@@ -261,6 +261,18 @@ export function activeTrack() {
   return st.profile.track || latestDiagnosis()?.track || 'standard';
 }
 
+/** 진단 결과를 저장한다. 저장한 결과가 기준 진단이 되면 수동으로 고른 트랙을 풀어 새 추천을 따르게 한다. */
+export function saveDiagnosis(st, result) {
+  st.diagnoses.push(result);
+  if (latestDiagnosis() === result) st.profile.track = null;
+}
+
+/** 트랙을 고른다. 기준 진단의 추천과 같으면 '추천 따르기'(null)로, 다르면 그 트랙으로 저장한다. */
+export function chooseTrack(st, track) {
+  if (!Object.hasOwn(TRACKS, track)) return;
+  st.profile.track = track === latestDiagnosis()?.track ? null : track;
+}
+
 // ── 추천 ─────────────────────────────────────────────
 /** 다음에 풀 문제.
  *  1) 가장 최근에 풀던 단원에 트랙 난이도의 안 푼 문제가 남아 있으면 그 단원을 이어서

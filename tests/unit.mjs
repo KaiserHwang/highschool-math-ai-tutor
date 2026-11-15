@@ -591,6 +591,28 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   let threw = false;
   try { store.importData(JSON.stringify(exp)); } catch (e) { threw = /백업 파일/.test(e.message); }
   ok(threw, '모르는 진단 묶음이 든 백업은 거절한다');
+  // 묶음 이름만 바꾼 기록(공통수학 문항인데 set이 대수)은 거절한다
+  const { checkState } = await import('../assets/js/backup.js');
+  const relabeled = { ...model.gradeDiagnosis({}), set: 'algebra' };
+  let rej = false;
+  try { checkState({ attempts: {}, wrong: {}, activity: {}, diagnoses: [relabeled] }, { strict: true }); } catch (e) { rej = /다른 묶음/.test(e.message); }
+  const lenient = checkState({ attempts: {}, wrong: {}, activity: {}, diagnoses: [relabeled, model.gradeDiagnosis({}, 'algebra')] }, { strict: false }).state;
+  ok(rej && lenient.diagnoses.length === 1 && lenient.diagnoses[0].items.every((it) => it.id >= 'd18'), '진단 묶음과 문항·단원이 맞지 않는 기록은 거절하고(저장된 기록이면 그 진단만 버린다)');
+  // 트랙: 기준 진단이 아닌 결과에서 그 결과의 추천을 골라도 실제 트랙이 그렇게 바뀐다
+  store.resetAll();
+  store.update((s) => { s.profile.courses = ['common1', 'common2', 'algebra']; model.saveDiagnosis(s, model.gradeDiagnosis({})); model.saveDiagnosis(s, ga); });
+  ok(model.activeTrack() === 'foundation', '기준 진단(공통수학)의 추천은 개념 완성이다');
+  store.update((s) => model.chooseTrack(s, 'killer'));
+  ok(model.activeTrack() === 'killer' && store.getState().profile.track === 'killer', '대수 결과의 추천(최상위)을 골라도 실제로 최상위 트랙이 된다');
+  store.update((s) => model.chooseTrack(s, 'foundation'));
+  ok(store.getState().profile.track === null && model.activeTrack() === 'foundation', '기준 진단의 추천을 고르면 추천 따르기로 돌아간다');
+  // 앞쪽 묶음을 보지 않은 상태에서 뒤 묶음부터 보면 그 결과가 기준 진단이 되어 수동 트랙을 푼다
+  store.resetAll();
+  store.update((s) => { s.profile.courses = ['common1', 'common2', 'algebra']; s.profile.track = 'killer'; model.saveDiagnosis(s, model.gradeDiagnosis({}, 'algebra')); });
+  ok(store.getState().profile.track === null && model.activeTrack() === 'foundation' && model.latestDiagnosis().set === 'algebra', '공통수학 진단이 없을 때 대수 진단을 먼저 보면 대수 진단이 기준이 되고 수동 트랙이 풀린다');
+  store.update((s) => { s.profile.track = 'standard'; model.saveDiagnosis(s, ga); });
+  store.update((s) => { model.saveDiagnosis(s, model.gradeDiagnosis({})); });
+  ok(store.getState().profile.track === null && model.latestDiagnosis().set === 'common', '기준이 아니던 묶음(공통수학)의 진단을 처음 보면 그것이 기준이 되어 수동 트랙이 풀린다');
   ok(DIAG_SETS.every((s) => s.minutes > 0), '진단 묶음마다 예상 시간이 있다');
   store.resetAll();
 }
