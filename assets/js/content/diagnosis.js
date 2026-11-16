@@ -265,6 +265,30 @@ export const DIAGNOSIS = [
     skills: { reason: 1, calc: 0.5 },
     hint: t`연속이려면 $\displaystyle\lim_{x\to1}f(x)=4$이고, 분모 $\to0$이므로 분자도 $\to0$이어야 합니다.`,
     solution: t`$1+a+b=0$이고 $x^2+ax+b=(x-1)(x+c)$에서 $1+c=4$, $c=3$. $(x-1)(x+3)=x^2+2x-3$이므로 $a=2$, $b=-3$, $ab=-6$`,
+  },
+  {
+    id: 'd32', unit: 'c2', level: 'basic', type: 'short', sec: 60, lesson: 'c2-l1',
+    q: t`함수 $f(x)=x^2+x$에서 $x$의 값이 $1$에서 $4$까지 변할 때의 평균변화율을 구하시오.`,
+    answer: '6',
+    skills: { calc: 1, concept: 0.5 },
+    hint: t`$\dfrac{f(4)-f(1)}{4-1}$`,
+    solution: t`$\dfrac{20-2}{3}=6$`,
+  },
+  {
+    id: 'd33', unit: 'c2', level: 'core', type: 'short', sec: 90, lesson: 'c2-l2',
+    q: t`함수 $f(x)=(x+1)(x^2-3)$에 대하여 $f'(2)$의 값을 구하시오.`,
+    answer: '13',
+    skills: { calc: 1 },
+    hint: t`곱의 미분법 $\{fg\}'=f'g+fg'$`,
+    solution: t`$f'(x)=(x^2-3)+(x+1)\times2x$이므로 $f'(2)=1+12=13$`,
+  },
+  {
+    id: 'd34', unit: 'c2', level: 'adv', type: 'short', sec: 120, lesson: 'c2-l3',
+    q: t`곡선 $y=x^3-3x$ 위의 점 $(2,\ 2)$에서의 접선의 $x$절편을 구하시오.`,
+    answer: '16/9',
+    skills: { concept: 1, calc: 0.5 },
+    hint: t`접선의 기울기는 $y'=3x^2-3$에 $x=2$를 넣은 값입니다.`,
+    solution: t`기울기 $9$이므로 접선은 $y=9x-16$, $x$절편은 $\dfrac{16}{9}$`,
   },];
 
 // ── 진단 묶음 ─────────────────────────────────────
@@ -274,7 +298,7 @@ export const DIAGNOSIS = [
 export const DIAG_SETS = [
   { id: 'common', title: '공통수학1·2', courses: ['common1', 'common2'], minutes: 35 },
   { id: 'algebra', title: '대수', courses: ['algebra'], minutes: 28 },
-  { id: 'calculus1', title: '미적분Ⅰ', courses: ['calculus1'], minutes: 9 },
+  { id: 'calculus1', title: '미적분Ⅰ', courses: ['calculus1'], minutes: 18 },
 ];
 export const DIAG_SET_BY_ID = Object.fromEntries(DIAG_SETS.map((s) => [s.id, s]));
 export const isDiagSetId = (id) => typeof id === 'string' && Object.hasOwn(DIAG_SET_BY_ID, id);

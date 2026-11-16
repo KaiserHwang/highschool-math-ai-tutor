@@ -64,6 +64,13 @@ def polys(deg_max=3, rng=range(-6, 7)):
         yield cs[0] * x ** 3 + cs[1] * x ** 2 + cs[2] * x + cs[3]
 
 
+def pick_expr(options, target):
+    """보기 식 중 target과 같은 것이 하나뿐이면 그 번호"""
+    hits = [i for i, o in enumerate(options) if sp.simplify(sp.expand(o - target)) == 0]
+    assert len(hits) == 1, hits
+    return hits[0]
+
+
 def value_at_pole(f, a):
     """f(x)/(x-a)의 x→a 극한이 유한하면 그 값, 아니면 None (약분 후 대입)"""
     e = sp.cancel(f / (x - a))
@@ -97,7 +104,78 @@ def expected_calculus_bank(P=None):
     hits = [a * b for a in range(-10, 11) for b in range(-10, 11)
             if continuous_at(sp.Piecewise((4, sp.Eq(x, 1)), ((x ** 2 + a * x + b) / (x - 1), True)), 1)]
     E['d31'] = single(hits)
+    # ── 미분(은행 c2-01~c2-08): 미분계수는 정의(차분몫의 극한)로, 접선은 접점을 문자로 놓고 연립해서 구한다
+    E['c2-01'] = avg_rate(x ** 3, 1, 2)
+    E['c2-02'] = deriv_at(3 * x ** 2 - 4 * x + 1, 2)
+    m, b = tangent(x ** 2 + 1, 1)
+    E['c2-03'] = m * 3 + b
+    E['c2-04'] = lim(((x ** 3 + x) - (2 ** 3 + 2)) / (x ** 2 - 4), 2)
+    E['c2-05'] = deriv_at((x ** 2 - 2) * (x + 3), -1)
+    tt = sp.Symbol('tt', real=True)
+    ts = sp.solve(sp.Eq(2 * tt * (0 - tt) + tt ** 2, -2), tt)  # 접선 y = 2t(x - t) + t² 이 (0, -2)를 지남
+    E['c2-06'] = sp.Mul(*[2 * v for v in ts]) if len(ts) == 2 else None
+    hits = []
+    for a in range(-6, 7):
+        for b in range(-6, 7):
+            f = sp.Piecewise((a * x ** 2 + b * x, x < 1), (x ** 3 - x + 3, True))
+            if differentiable_at(f, 1):
+                hits.append(a * b)
+    E['c2-07'] = single(hits)
+    hits = []
+    for a in range(-6, 7):
+        for b in range(-6, 7):
+            f = x ** 3 + a * x ** 2 + b * x
+            m, c0 = tangent(f, 1)
+            if c0 == 0 and m == 2:  # 접선이 원점을 지나고 f'(1)=2
+                hits.append(f.subs(x, 2))
+    E['c2-08'] = single(hits)
+    # 공통접선: 두 곡선 위 접점 a, b에서의 접선이 같은 직선(기울기·절편 모두 같음)인 (a, b)를 푼다
+    A, B = sp.symbols('A B', real=True)
+    f1, f2 = x ** 2, -x ** 2 + 4 * x - 6
+    m1, c1_ = tangent_sym(f1, A)
+    m2, c2_ = tangent_sym(f2, B)
+    sols = sp.solve([m1 - m2, c1_ - c2_], [A, B], dict=True)
+    assert len(sols) == 2, sols
+    E['c2-09'] = sp.simplify(sp.Mul(*[m1.subs(s) for s in sols]))
+    E['d32'] = avg_rate(x ** 2 + x, 1, 4)
+    E['d33'] = deriv_at((x + 1) * (x ** 2 - 3), 2)
+    m, b = tangent(x ** 3 - 3 * x, 2)
+    E['d34'] = single(sp.solve(m * x + b, x))
     return E
+
+
+hh = sp.Symbol('hh', real=True)
+
+
+def deriv_at(f, a):
+    """미분계수를 정의 lim (f(a+h)-f(a))/h 로 계산"""
+    return sp.limit((f.subs(x, a + hh) - f.subs(x, a)) / hh, hh, 0)
+
+
+def avg_rate(f, a, b):
+    return (f.subs(x, b) - f.subs(x, a)) / (b - a)
+
+
+def tangent(f, a):
+    """x=a에서의 접선 y = m x + c 의 (m, c)"""
+    m = deriv_at(f, a)
+    return m, sp.expand(f.subs(x, a) - m * a)
+
+
+def tangent_sym(f, a):
+    """접점의 x좌표가 문자 a일 때 접선 y = m x + c 의 (m, c). 미분계수는 차분몫의 극한으로"""
+    m = sp.limit((f.subs(x, a + hh) - f.subs(x, a)) / hh, hh, 0)
+    return sp.expand(m), sp.expand(f.subs(x, a) - m * a)
+
+
+def differentiable_at(f, a):
+    """구간별 함수: 연속이고 좌우 미분계수(차분몫의 한쪽 극한)가 같은지"""
+    if not continuous_at(f, a):
+        return False
+    fa = sp.simplify(piece_at(f, a).subs(x, a))
+    left = sp.limit((piece_at(f, a - EPS).subs(x, a + hh) - fa) / hh, hh, 0, '-')
+    right = sp.limit((piece_at(f, a + EPS).subs(x, a + hh) - fa) / hh, hh, 0, '+')
+    return left == right and left.is_finite
 
 
 def expected_calculus_lessons():
@@ -151,7 +229,64 @@ def expected_calculus_lessons():
     step0 = sp.Piecewise((x + 1, x < 0), (x - 1, True))
     E['c1-l3-d1'] = single([a for a in range(-10, 11) for b in range(-10, 11) if continuous_at(step0 * (x ** 2 + a * x + b), 0) and 1 + a + b == 3])
     E['c1-l3-d2'] = sign_changes([2, -1, -3, 4, -2])
+    # ── c2-l1 미분계수
+    E['c2-l1-e1'] = avg_rate(x ** 2, 1, 3)
+    E['c2-l1-e2'] = deriv_at(x ** 2 + 3 * x, 1)
+    E['c2-l1-e3'] = sp.limit(((2 + 3 * hh) ** 3 - 2 ** 3) / hh, hh, 0)
+    E['c2-l1-c1'] = avg_rate(2 * x ** 2 - x, 0, 2)
+    # f'(1)=4인 여러 함수로 계산해도 값이 같은지(공식을 쓰지 않고 극한으로)
+    E['c2-l1-c2'] = same([4 * x, 2 * x ** 2, x ** 3 + x, x ** 2 + 2 * x - 7], lambda f: sp.limit((f.subs(x, 1 + 2 * hh) - f.subs(x, 1 - hh)) / hh, hh, 0))
+    E['c2-l1-p'] = [S(2), S(1), S(0), None].index(sp.limit(((1 + hh) ** 2 - 1) / hh, hh, 0))
+    E['c2-l1-de1'] = same([6 * x, 3 * x ** 2, x ** 3 + 3 * x], lambda f: lim((f - f.subs(x, 1)) / (x ** 2 - 1), 1))
+    nd = lambda f, pts: sum(1 for p in pts if not differentiable_at(f, p))
+    # 정수점과 반정수점을 모두 확인해 미분가능하지 않은 점을 센다
+    E['c2-l1-de2'] = nd(sp.Abs(x ** 2 - 1), [S(p, 2) for p in range(-10, 11)])
+    E['c2-l1-d1'] = same([5 * x, x ** 2 + x, x ** 3 - 7 * x], lambda f: lim((f - f.subs(x, 2)) / (x ** 3 - 8), 2))
+    g = sp.Abs(x - 1) + sp.Abs(x - 3)
+    E['c2-l1-d2'] = sum(p for p in range(-5, 8) if not differentiable_at(g, p))
+    # ── c2-l2 도함수
+    E['c2-l2-e1'] = deriv_at(x ** 3 - 2 * x ** 2 + 5, 2)
+    E['c2-l2-e2'] = deriv_at((x ** 2 + 1) * (x - 3), 1)
+    E['c2-l2-e3'] = single([a + b for a in range(-6, 7) for b in range(-6, 7) if differentiable_at(sp.Piecewise((x ** 2 + a * x, x < 1), (3 * x + b, True)), 1)])
+    E['c2-l2-c1'] = deriv_at(2 * x ** 4 - x ** 3, 1)
+    E['c2-l2-c2'] = deriv_at((2 * x - 1) * (x ** 2 + x), 1)
+    prod = sp.diff(x ** 2 * x ** 3, x)
+    E['c2-l2-p'] = 0 if sp.simplify(prod - 6 * x ** 3) != 0 and sp.simplify(prod - 5 * x ** 4) == 0 else 1
+    E['c2-l2-de1'] = deriv_at((x - 2) ** 2 * (x + 5), 3)
+    E['c2-l2-de2'] = sp.limit(((1 + hh) ** 5 - 3 * (1 + hh) + 2) / hh, hh, 0)
+    E['c2-l2-d1'] = deriv_at((x + 1) ** 2 * (x - 2), 1)
+    E['c2-l2-d2'] = lim((x ** 10 - 1) / (x - 1), 1)
+    # ── c2-l3 접선과 평균값 정리
+    m, b = tangent(x ** 2 - 3 * x + 1, 2)
+    E['c2-l3-e1'] = b
+    ts = sp.solve(sp.Eq(sp.diff(x ** 3, x).subs(x, tt := sp.Symbol('tt', real=True)), 3), tt)
+    E['c2-l3-e2'] = sp.Mul(*[tangent(x ** 3, v)[1] for v in ts])
+    E['c2-l3-e3'] = mvt_c(x ** 2, 0, 2)
+    E['c2-l3-c1'] = tangent(x ** 3 - x, 1)[1]
+    E['c2-l3-c2'] = mvt_c(x ** 2 - 4 * x, 1, 5)
+    # 보기: y=2x-1, y=2x, y=x, y=x²-1
+    m, b = tangent(x ** 2, 1)
+    E['c2-l3-p'] = [(2, -1), (2, 0), (1, 0)].index((m, b))
+    E['c2-l3-de1'] = mvt_c(x ** 3 - 3 * x ** 2, 0, 3)
+    m, b = tangent(x ** 3, 1)
+    E['c2-l3-de2'] = single([r for r in sp.solve(x ** 3 - (m * x + b), x) if r != 1])
+    E['c2-l3-d1'] = mvt_c(x ** 3 - x, -1, 2)
+    m, b = tangent(x ** 3 - 3 * x, -1)
+    E['c2-l3-d2'] = single([r for r in sp.solve(x ** 3 - 3 * x - (m * x + b), x) if r != -1])
     return E
+
+
+def same(fs, g):
+    out = {sp.simplify(g(f)) for f in fs}
+    assert len(out) == 1, out
+    return out.pop()
+
+
+def mvt_c(f, a, b):
+    """평균값 정리(롤의 정리 포함)를 만족하는 c (열린구간 안에서 하나뿐인지 확인)"""
+    c = sp.Symbol('c', real=True)
+    slope = avg_rate(f, a, b)
+    return single([r for r in sp.solve(sp.Eq(deriv_at(f, c), slope), c) if a < r < b])
 
 
 def expected_calculus_cq():
@@ -177,6 +312,20 @@ def expected_calculus_cq():
     roots = [r for r in sp.solve(f3, x) if 0 < r < 1]
     C['c1-l3-q3'] = 0 if f3.subs(x, 0) < 0 < f3.subs(x, 1) and len(roots) == 3 else None
     C['c1-l3-q4'] = 0 if sp.limit(1 / x, x, 0, '+') == oo else None
+    # ── 미분
+    C['c2-l1-q3'] = 0 if continuous_at(sp.Abs(x), 0) and not differentiable_at(sp.Abs(x), 0) else None
+    C['c2-l1-q4'] = 0 if all(sp.limit((f.subs(x, 1 + 2 * hh) - f.subs(x, 1)) / hh, hh, 0) == 2 * deriv_at(f, 1) for f in (x ** 2, x ** 3 + x, 5 * x - 2)) else None
+    C['c2-l2-q1'] = pick_expr([5 * x ** 4, 5 * x ** 5, x ** 4], sp.diff(x ** 5, x))
+    C['c2-l2-q2'] = pick_expr([S(0), S(7), 7 * x], sp.limit((7 - 7) / hh, hh, 0) + 0 * x)
+    fx, gx = x ** 2 + 1, x ** 3 - x
+    C['c2-l2-q3'] = pick_expr([sp.diff(fx, x) * gx + fx * sp.diff(gx, x), sp.diff(fx, x) * sp.diff(gx, x), sp.diff(fx, x) * gx - fx * sp.diff(gx, x)], sp.diff(fx * gx, x))
+    # 미분계수는 같지만 불연속인 예: 미분가능하지 않다
+    C['c2-l2-q4'] = 0 if not differentiable_at(sp.Piecewise((x, x < 0), (x + 1, True)), 0) else None
+    m, b = tangent(x ** 3, 1)
+    ts = sp.solve(sp.Eq(3 * x ** 2, 3), x)
+    C['c2-l3-q2'] = 0 if len(ts) == 2 else None
+    C['c2-l3-q3'] = 0 if continuous_at(sp.Abs(x), 0) and not differentiable_at(sp.Abs(x), 0) and avg_rate(sp.Abs(x), -1, 1) == 0 else None
+    C['c2-l3-q4'] = [S(0)].index(sp.simplify(avg_rate(x ** 3 - 3 * x ** 2, 0, 3)))
     return {k: v for k, v in C.items() if v is not None}
 
 
