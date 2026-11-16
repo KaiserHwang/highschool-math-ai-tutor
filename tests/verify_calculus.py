@@ -4,6 +4,7 @@
 미정계수는 조건을 만족하는 정수 후보를 전수 조사해 하나뿐인지 확인한다.
 """
 import sympy as sp
+from sympy.calculus.util import maximum, minimum
 
 x = sp.Symbol('x', real=True)
 S = sp.Rational
@@ -137,6 +138,27 @@ def expected_calculus_bank(P=None):
     sols = sp.solve([m1 - m2, c1_ - c2_], [A, B], dict=True)
     assert len(sols) == 2, sols
     E['c2-09'] = sp.simplify(sp.Mul(*[m1.subs(s) for s in sols]))
+    # ── 도함수의 활용(은행 c2-10~c2-17): 극값은 부호 변화로, 최대·최소는 sympy maximum/minimum, 실근은 실근 목록으로
+    E['c2-10'] = single(ext_vals(x ** 3 - 12 * x, 'min'))
+    E['c2-11'] = maximum(x ** 3 - 3 * x ** 2, x, sp.Interval(1, 3))
+    E['c2-12'] = deriv_at(x ** 2 - 4 * x + 3, 3)  # x를 시각 t로 본다
+    hits = []
+    for a in range(-12, 13):
+        for b in range(-12, 13):
+            ex = extrema(x ** 3 + a * x ** 2 + b * x + 1)
+            if [(c, k) for c, k, _ in ex] == [(1, 'max'), (3, 'min')]:
+                hits.append(ex[0][2])
+    E['c2-13'] = single(hits)
+    E['c2-14'] = sum(k for k in range(-20, 21) if len(n_roots(x ** 3 - 3 * x ** 2 + 4 - k)) == 2)
+    E['c2-15'] = -minimum(x ** 4 - 4 * x, x, sp.S.Reals)
+    tq = sp.Symbol('tq', positive=True)
+    E['c2-16'] = maximum(2 * tq * (9 - tq ** 2), tq, sp.Interval.open(0, 3)) ** 2
+    T = sp.Symbol('T', real=True)
+    m, c = tangent_sym(x ** 3 - 3 * x, T)
+    E['c2-17'] = sum(1 for k in range(-30, 31) if len(set(sp.real_roots(sp.Poly(sp.expand(m * 2 + c - k), T)))) == 3)
+    E['d35'] = single(ext_vals(2 * x ** 3 - 3 * x ** 2, 'min'))
+    E['d36'] = maximum(x ** 3 - 6 * x ** 2 + 9 * x, x, sp.Interval(0, 4))
+    E['d37'] = sum(1 for k in range(-60, 61) if len(n_roots(x ** 3 - 3 * x ** 2 - 9 * x - k)) == 3)
     E['d32'] = avg_rate(x ** 2 + x, 1, 4)
     E['d33'] = deriv_at((x + 1) * (x ** 2 - 3), 2)
     m, b = tangent(x ** 3 - 3 * x, 2)
@@ -160,6 +182,28 @@ def tangent(f, a):
     """x=a에서의 접선 y = m x + c 의 (m, c)"""
     m = deriv_at(f, a)
     return m, sp.expand(f.subs(x, a) - m * a)
+
+
+def extrema(f):
+    """다항함수의 극값: [(x, 'max'|'min', 값)] — f'(c)=0인 실수 c의 좌우에서 f'의 부호 변화를 직접 확인"""
+    d = sp.diff(f, x)
+    out = []
+    for c in sorted(set(sp.real_roots(sp.Poly(d, x))), key=float):
+        l, r = d.subs(x, c - S(1, 10 ** 6)), d.subs(x, c + S(1, 10 ** 6))
+        if l > 0 > r:
+            out.append((c, 'max', sp.simplify(f.subs(x, c))))
+        elif l < 0 < r:
+            out.append((c, 'min', sp.simplify(f.subs(x, c))))
+    return out
+
+
+def ext_vals(f, kind):
+    return [v for _, k, v in extrema(f) if k == kind]
+
+
+def n_roots(e):
+    """다항식 e(x)=0의 서로 다른 실근 (오름차순)"""
+    return sorted(set(sp.real_roots(sp.Poly(sp.expand(e), x))), key=float)
 
 
 def tangent_sym(f, a):
@@ -273,6 +317,64 @@ def expected_calculus_lessons():
     E['c2-l3-d1'] = mvt_c(x ** 3 - x, -1, 2)
     m, b = tangent(x ** 3 - 3 * x, -1)
     E['c2-l3-d2'] = single([r for r in sp.solve(x ** 3 - 3 * x - (m * x + b), x) if r != -1])
+    # ── c2-l4 증가·감소와 극값
+    f = x ** 3 - 3 * x ** 2 + 2
+    E['c2-l4-e1'] = single(ext_vals(f, 'max')) - single(ext_vals(f, 'min'))
+    E['c2-l4-e2'] = sum(1 for a in range(-20, 21) if minimum(sp.diff(x ** 3 + a * x ** 2 + 3 * x, x), x, sp.S.Reals) >= 0)
+    hits = []
+    for a in range(-10, 11):
+        for b in range(-10, 11):
+            g = x ** 3 + a * x ** 2 + b * x
+            if (1, 'min', -2) in [(c0, k, v) for c0, k, v in extrema(g)]:
+                hits.append(single(ext_vals(g, 'max')))
+    E['c2-l4-e3'] = single(hits)
+    E['c2-l4-c1'] = single(ext_vals(2 * x ** 3 - 6 * x + 1, 'max'))
+    E['c2-l4-c2'] = sp.solveset(sp.diff(-x ** 3 + 3 * x ** 2 + 9 * x, x) >= 0, x, sp.S.Reals).measure
+    E['c2-l4-p'] = 0 if not extrema(x ** 3) and sp.diff(x ** 3, x).subs(x, 0) == 0 else 1
+    E['c2-l4-de1'] = sum(1 for a in range(-20, 21) if not extrema(x ** 3 - a * x ** 2 + a * x))
+    gap = lambda g: single(ext_vals(g, 'max')) - single(ext_vals(g, 'min'))
+    E['c2-l4-de2'] = single([a for a in range(1, 21) if gap(x ** 3 - 3 * a ** 2 * x) == 32])
+    E['c2-l4-d1'] = sum(1 for a in range(-30, 31) if minimum(sp.diff(x ** 3 + a * x ** 2 + 12 * x, x), x, sp.S.Reals) >= 0)
+    E['c2-l4-d2'] = single([a for a in range(1, 21) if sp.simplify(gap(2 * x ** 3 - 6 * a * x) - 64) == 0])
+    # ── c2-l5 그래프와 최대·최소
+    I = sp.Interval
+    E['c2-l5-e1'] = maximum(x ** 3 - 3 * x, x, I(0, 2)) - minimum(x ** 3 - 3 * x, x, I(0, 2))
+    ex = extrema(x ** 3 - 6 * x ** 2 + 9 * x)
+    (x1, _, y1), (x2, _, y2) = ex
+    E['c2-l5-e2'] = (x2 - x1) ** 2 + (y2 - y1) ** 2
+    E['c2-l5-e3'] = minimum(x ** 4 - 2 * x ** 2, x, sp.S.Reals)
+    g = -x ** 3 + 3 * x + 1
+    E['c2-l5-c1'] = maximum(g, x, I(-2, 2)) + minimum(g, x, I(-2, 2))
+    E['c2-l5-c2'] = minimum(x ** 4 - 4 * x ** 3, x, sp.S.Reals)
+    g = x ** 3 - 3 * x
+    top = maximum(g, x, I(0, 3))
+    E['c2-l5-p'] = [3, 1, 0].index(single([v for v in (0, 1, 3) if g.subs(x, v) == top]))
+    g = x ** 3 - 12 * x
+    E['c2-l5-de1'] = maximum(g, x, I(-1, 3)) + minimum(g, x, I(-1, 3))
+    E['c2-l5-de2'] = maximum(x * (12 - 2 * x) ** 2, x, I.open(0, 6))
+    g = -x ** 3 + 3 * x ** 2
+    E['c2-l5-d1'] = maximum(g, x, I(-1, 3)) - minimum(g, x, I(-1, 3))
+    E['c2-l5-d2'] = maximum((12 - x) * x ** 2, x, I.open(0, 12))  # x를 y로 본다
+    # ── c2-l6 방정식·부등식과 속도·가속도 (시각 t는 x로 쓴다)
+    E['c2-l6-e1'] = sum(1 for k in range(-30, 31) if len(n_roots(x ** 3 - 3 * x - k)) == 3)
+    E['c2-l6-e2'] = -minimum(x ** 3 - 3 * x, x, I(0, sp.oo))
+    pos = x ** 3 - 6 * x ** 2 + 9 * x
+    v = sp.diff(pos, x)
+    turns = [r for r in n_roots(v) if r > 0 and v.subs(x, r - S(1, 10 ** 6)) * v.subs(x, r + S(1, 10 ** 6)) < 0]
+    E['c2-l6-e3'] = pos.subs(x, turns[0])
+    E['c2-l6-c1'] = sum(1 for k in range(-60, 61) if len(n_roots(2 * x ** 3 - 3 * x ** 2 - 12 * x - k)) == 3)
+    E['c2-l6-c2'] = sp.diff(x ** 3 - 3 * x ** 2 + 2, x, 2).subs(x, 2)
+    E['c2-l6-p'] = [3, 1, 2].index(len(n_roots(x ** 3 - 3 * x - 1)))
+    def two_pos_one_neg(k):
+        rs = n_roots(x ** 3 - 3 * x ** 2 - 9 * x + k)
+        return len(rs) == 3 and sum(1 for r in rs if r > 0) == 2 and sum(1 for r in rs if r < 0) == 1
+    E['c2-l6-de1'] = sum(1 for k in range(-60, 61) if two_pos_one_neg(k))
+    E['c2-l6-de2'] = single(sp.solve(sp.Eq(sp.diff(x ** 2, x), sp.diff(4 * x - 3, x)), x))
+    E['c2-l6-d1'] = sum(1 for k in range(-30, 31) if (lambda rs: len(rs) == 3 and all(r > 0 for r in rs))(n_roots(x ** 3 - 6 * x ** 2 + 9 * x - k)))
+    pos = 2 * x ** 3 - 9 * x ** 2 + 12 * x
+    v = sp.diff(pos, x)
+    turns = [r for r in n_roots(v) if r > 0 and v.subs(x, r - S(1, 10 ** 6)) * v.subs(x, r + S(1, 10 ** 6)) < 0]
+    E['c2-l6-d2'] = sp.integrate(sp.Abs(v), (x, turns[0], turns[1]))
     return E
 
 
@@ -326,6 +428,17 @@ def expected_calculus_cq():
     C['c2-l3-q2'] = 0 if len(ts) == 2 else None
     C['c2-l3-q3'] = 0 if continuous_at(sp.Abs(x), 0) and not differentiable_at(sp.Abs(x), 0) and avg_rate(sp.Abs(x), -1, 1) == 0 else None
     C['c2-l3-q4'] = [S(0)].index(sp.simplify(avg_rate(x ** 3 - 3 * x ** 2, 0, 3)))
+    # ── 도함수의 활용
+    C['c2-l4-q1'] = 0 if sp.diff(x ** 3, x).subs(x, 0) == 0 and not extrema(x ** 3) else None
+    C['c2-l4-q2'] = 0 if extrema(x ** 3 - 3 * x)[0][:2] == (-1, 'max') else None  # x=-1: f'의 부호 양 → 음
+    C['c2-l4-q3'] = 0 if sp.diff(x ** 3, x).subs(x, 0) == 0 and all((x ** 3).subs(x, p) < (x ** 3).subs(x, q) for p, q in ((-1, -S(1, 2)), (-S(1, 2), 0), (0, S(1, 2)))) else None
+    C['c2-l5-q1'] = 0 if maximum(x ** 3 - 3 * x, x, sp.Interval(0, 3)) == 18 and all(k == 'min' for c0, k, _v in extrema(x ** 3 - 3 * x) if 0 < c0 < 3) else None
+    C['c2-l5-q2'] = 0 if sp.limit(2 * x ** 3 - 5 * x ** 2 + 1, x, oo) == oo else None
+    mins = [(c0, v) for c0, k, v in extrema(x ** 4 - 2 * x ** 2) if k == 'min']
+    C['c2-l5-q3'] = 0 if [c0 for c0, _ in mins] == [-1, 1] and len({v for _, v in mins}) == 1 else None
+    C['c2-l5-q4'] = 0 if not extrema(x ** 3) else None
+    vt = sp.diff(x ** 3, x)  # 위치 t³ 의 속도
+    C['c2-l6-q3'] = 0 if vt.subs(x, 0) == 0 and vt.subs(x, -S(1, 2)) > 0 and vt.subs(x, S(1, 2)) > 0 else None
     return {k: v for k, v in C.items() if v is not None}
 
 
