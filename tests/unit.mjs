@@ -451,8 +451,8 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   ok(routeRe(ids.ID_PART.problem).test('/p/u1-05') && routeRe(ids.ID_PART.problem).test('/p/a10-01') && !routeRe(ids.ID_PART.problem).test('/p/g-sym') && !routeRe(ids.ID_PART.problem).test('/p/u1-05/x'),
     '주소 규칙 조각은 문제 주소와 생성기 주소를 구분한다');
   // 융합 단원을 id가 아니라 단원의 종류로 구분해도 결과가 같다
-  ok(UNITS.filter((u) => isFusionUnit(u.id)).map((u) => u.id).join() === 'u8' && REGULAR_UNITS.map((u) => u.id).join() === 'u1,u2,u3,u4,u5,u6,u7,a1,a2,a3' && !isFusionUnit('__proto__') && !isFusionUnit('u9'),
-    '융합 단원은 u8 하나이고 교과서 단원은 u1~u7과 a1~a3이다');
+  ok(UNITS.filter((u) => isFusionUnit(u.id)).map((u) => u.id).join() === 'u8' && REGULAR_UNITS.map((u) => u.id).join() === 'u1,u2,u3,u4,u5,u6,u7,a1,a2,a3,c1' && !isFusionUnit('__proto__') && !isFusionUnit('u9'),
+    '융합 단원은 u8 하나이고 교과서 단원은 u1~u7, a1~a3, c1이다');
   store.resetAll();
   ok(model.studiedUnits().join() === 'u1,u2,u3,u4,u5,u6,u7', '공부한 흔적이 없으면 혼합 평가 범위는 교과서 단원 전체다');
   store.update((s) => {
@@ -562,9 +562,9 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   const model = await import('../assets/js/model.js');
   const { DIAGNOSIS, DIAG_SETS, diagItems, diagSetOfUnit } = await import('../assets/js/content/diagnosis.js');
   const right = (qs) => Object.fromEntries(qs.map((q) => [q.id, { response: q.answer, conf: 'sure', hint: false, sec: 30 }]));
-  const common = diagItems('common'), alg = diagItems('algebra');
-  ok(common.length === 17 && alg.length >= 3 && common.length + alg.length === DIAGNOSIS.length && diagSetOfUnit('u8') === null && diagSetOfUnit('a1') === 'algebra' && diagSetOfUnit('__proto__') === null,
-    `진단 문항은 공통수학 ${common.length}개, 대수 ${alg.length}개로 나뉘고 융합 단원은 어느 진단에도 들지 않는다`);
+  const common = diagItems('common'), alg = diagItems('algebra'), cal = diagItems('calculus1');
+  ok(common.length === 17 && alg.length >= 3 && cal.length >= 3 && common.length + alg.length + cal.length === DIAGNOSIS.length && cal.every((q) => q.unit === 'c1') && diagSetOfUnit('u8') === null && diagSetOfUnit('a1') === 'algebra' && diagSetOfUnit('c1') === 'calculus1' && diagSetOfUnit('__proto__') === null,
+    `진단 문항은 공통수학 ${common.length}개, 대수 ${alg.length}개, 미적분Ⅰ ${cal.length}개로 나뉘고 융합 단원은 어느 진단에도 들지 않는다`);
   const gc = model.gradeDiagnosis(right(DIAGNOSIS)); // 다른 묶음의 응답이 섞여 있어도 그 묶음 문항만 채점
   const ga = model.gradeDiagnosis(right(DIAGNOSIS), 'algebra');
   ok(gc.set === 'common' && gc.total === 17 && gc.items.every((it) => common.some((q) => q.id === it.id)) && ga.set === 'algebra' && ga.total === alg.length && Object.keys(ga.units).join() === 'a1,a2,a3' && ga.overall === 100,

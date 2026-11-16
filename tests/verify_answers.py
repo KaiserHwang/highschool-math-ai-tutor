@@ -351,6 +351,10 @@ def main():
     alg = expected_algebra_bank(P)
     assert not set(alg) & set(E), f'중복 계산: {set(alg) & set(E)}'
     E.update(alg)
+    from verify_calculus import expected_calculus_bank
+    cal = expected_calculus_bank(P)
+    assert not set(cal) & set(E), f'중복 계산: {set(cal) & set(E)}'
+    E.update(cal)
     items = data['PROBLEMS'] + data['DIAGNOSIS']
     unit_ids = {u['id'] for u in data['UNITS']}
     skill_keys = {s['key'] for s in data['SKILLS']}

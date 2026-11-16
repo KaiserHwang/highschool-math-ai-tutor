@@ -240,6 +240,31 @@ export const DIAGNOSIS = [
     skills: { calc: 1, concept: 0.5 },
     hint: t`$n=1,\ 2,\ 3,\ 4$를 차례로 넣어 $a_2$부터 구합니다.`,
     solution: t`$a_2=5$, $a_3=10$, $a_4=17$, $a_5=26$`,
+  },
+  // ── 미적분Ⅰ 진단
+  {
+    id: 'd29', unit: 'c1', level: 'basic', type: 'short', sec: 60, lesson: 'c1-l1',
+    q: t`함수 $f(x)=\begin{cases}x^2+1 & (x<2)\\ 3x-2 & (x\ge2)\end{cases}$에 대하여 $\displaystyle\lim_{x\to2-}f(x)\times\lim_{x\to2+}f(x)$의 값을 구하시오.`,
+    answer: '20',
+    skills: { concept: 1 },
+    hint: t`좌극한은 $x<2$인 식, 우극한은 $x\ge2$인 식으로 구합니다.`,
+    solution: t`좌극한 $5$, 우극한 $4$이므로 $20$`,
+  },
+  {
+    id: 'd30', unit: 'c1', level: 'core', type: 'short', sec: 90, lesson: 'c1-l2',
+    q: t`$\displaystyle\lim_{x\to-1}\dfrac{x^2+3x+2}{x^2-1}$의 값을 구하시오.`,
+    answer: '-1/2',
+    skills: { calc: 1, concept: 0.5 },
+    hint: t`분자와 분모를 인수분해해 공통인수 $x+1$을 약분합니다.`,
+    solution: t`$\dfrac{(x+1)(x+2)}{(x+1)(x-1)}=\dfrac{x+2}{x-1}\to\dfrac{1}{-2}=-\dfrac12$`,
+  },
+  {
+    id: 'd31', unit: 'c1', level: 'adv', type: 'short', sec: 120, lesson: 'c1-l3',
+    q: t`함수 $f(x)=\begin{cases}\dfrac{x^2+ax+b}{x-1} & (x\ne1)\\ 4 & (x=1)\end{cases}$가 $x=1$에서 연속일 때, 상수 $a,\ b$에 대하여 $ab$의 값을 구하시오.`,
+    answer: '-6',
+    skills: { reason: 1, calc: 0.5 },
+    hint: t`연속이려면 $\displaystyle\lim_{x\to1}f(x)=4$이고, 분모 $\to0$이므로 분자도 $\to0$이어야 합니다.`,
+    solution: t`$1+a+b=0$이고 $x^2+ax+b=(x-1)(x+c)$에서 $1+c=4$, $c=3$. $(x-1)(x+3)=x^2+2x-3$이므로 $a=2$, $b=-3$, $ab=-6$`,
   },];
 
 // ── 진단 묶음 ─────────────────────────────────────
@@ -249,6 +274,7 @@ export const DIAGNOSIS = [
 export const DIAG_SETS = [
   { id: 'common', title: '공통수학1·2', courses: ['common1', 'common2'], minutes: 35 },
   { id: 'algebra', title: '대수', courses: ['algebra'], minutes: 28 },
+  { id: 'calculus1', title: '미적분Ⅰ', courses: ['calculus1'], minutes: 9 },
 ];
 export const DIAG_SET_BY_ID = Object.fromEntries(DIAG_SETS.map((s) => [s.id, s]));
 export const isDiagSetId = (id) => typeof id === 'string' && Object.hasOwn(DIAG_SET_BY_ID, id);
