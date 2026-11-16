@@ -129,6 +129,14 @@ def expected_calculus_bank(P=None):
             if c0 == 0 and m == 2:  # 접선이 원점을 지나고 f'(1)=2
                 hits.append(f.subs(x, 2))
     E['c2-08'] = single(hits)
+    # 공통접선: 두 곡선 위 접점 a, b에서의 접선이 같은 직선(기울기·절편 모두 같음)인 (a, b)를 푼다
+    A, B = sp.symbols('A B', real=True)
+    f1, f2 = x ** 2, -x ** 2 + 4 * x - 6
+    m1, c1_ = tangent_sym(f1, A)
+    m2, c2_ = tangent_sym(f2, B)
+    sols = sp.solve([m1 - m2, c1_ - c2_], [A, B], dict=True)
+    assert len(sols) == 2, sols
+    E['c2-09'] = sp.simplify(sp.Mul(*[m1.subs(s) for s in sols]))
     E['d32'] = avg_rate(x ** 2 + x, 1, 4)
     E['d33'] = deriv_at((x + 1) * (x ** 2 - 3), 2)
     m, b = tangent(x ** 3 - 3 * x, 2)
@@ -152,6 +160,12 @@ def tangent(f, a):
     """x=a에서의 접선 y = m x + c 의 (m, c)"""
     m = deriv_at(f, a)
     return m, sp.expand(f.subs(x, a) - m * a)
+
+
+def tangent_sym(f, a):
+    """접점의 x좌표가 문자 a일 때 접선 y = m x + c 의 (m, c). 미분계수는 차분몫의 극한으로"""
+    m = sp.limit((f.subs(x, a + hh) - f.subs(x, a)) / hh, hh, 0)
+    return sp.expand(m), sp.expand(f.subs(x, a) - m * a)
 
 
 def differentiable_at(f, a):
