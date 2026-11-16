@@ -59,7 +59,7 @@ export default [
     id: 'c1-l2', unit: 'c1', title: '함수의 극한에 대한 성질과 계산',
     summary: t`극한의 성질, $\dfrac00$ 꼴과 $\dfrac\infty\infty$ 꼴, $\infty-\infty$ 꼴, 극한값으로 미정계수 정하기`,
     core: t`<div class="box"><p class="box-t">극한의 성질</p>
-<p>$\displaystyle\lim_{x\to a}f(x)=\alpha$, $\displaystyle\lim_{x\to a}g(x)=\beta$이면 합·차·실수배·곱의 극한은 극한의 합·차·실수배·곱이고, $\beta\ne0$이면 $\displaystyle\lim_{x\to a}\dfrac{f(x)}{g(x)}=\dfrac\alpha\beta$</p></div>
+<p>$\displaystyle\lim_{x\to a}f(x)=\alpha$, $\displaystyle\lim_{x\to a}g(x)=\beta$ ($\alpha,\ \beta$는 실수)이면 합·차·실수배·곱의 극한은 극한의 합·차·실수배·곱이고, $\beta\ne0$이면 $\displaystyle\lim_{x\to a}\dfrac{f(x)}{g(x)}=\dfrac\alpha\beta$</p></div>
 <div class="box"><p class="box-t">꼴에 따른 계산</p>
 <ul>
 <li>$\dfrac00$ 꼴: 인수분해하여 약분하거나, 무리식은 유리화한다.</li>
