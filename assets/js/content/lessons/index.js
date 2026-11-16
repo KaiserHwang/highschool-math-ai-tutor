@@ -28,6 +28,7 @@ import a1 from './a1.js';
 import a2 from './a2.js';
 import a3 from './a3.js';
 import c1 from './c1.js';
+import c2 from './c2.js';
 import p1 from './plus/u1.js';
 import p2 from './plus/u2.js';
 import p3 from './plus/u3.js';
@@ -40,6 +41,7 @@ import pa1 from './plus/a1.js';
 import pa2 from './plus/a2.js';
 import pa3 from './plus/a3.js';
 import pc1 from './plus/c1.js';
+import pc2 from './plus/c2.js';
 import q1 from './concept/u1.js';
 import q2 from './concept/u2.js';
 import q3 from './concept/u3.js';
@@ -52,8 +54,9 @@ import qa1 from './concept/a1.js';
 import qa2 from './concept/a2.js';
 import qa3 from './concept/a3.js';
 import qc1 from './concept/c1.js';
+import qc2 from './concept/c2.js';
 
-const PLUS = { ...p1, ...p2, ...p3, ...p4, ...p5, ...p6, ...p7, ...p8, ...pa1, ...pa2, ...pa3, ...pc1 };
+const PLUS = { ...p1, ...p2, ...p3, ...p4, ...p5, ...p6, ...p7, ...p8, ...pa1, ...pa2, ...pa3, ...pc1, ...pc2 };
 // 개념 질문은 정답을 맨 앞에 두고 작성하므로, 문항 id로 정해지는 순서로 답 보기와 이유 보기를 섞는다(늘 같은 순서).
 const hash = (s) => { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
 function perm(n, seed) {
@@ -66,10 +69,10 @@ function mixCQ(q) {
   const po = perm(q.options.length, hash(q.id)), pr = perm(q.reasons.length, hash(q.id + '#r'));
   return { ...q, options: po.map((i) => q.options[i]), answer: po.indexOf(q.answer), reasons: pr.map((i) => q.reasons[i]), reason: pr.indexOf(q.reason), mis: pr.map((i) => q.mis[i]) };
 }
-export const CQ_RAW = { ...q1, ...q2, ...q3, ...q4, ...q5, ...q6, ...q7, ...q8, ...qa1, ...qa2, ...qa3, ...qc1 }; // 작성한 그대로(검증용)
+export const CQ_RAW = { ...q1, ...q2, ...q3, ...q4, ...q5, ...q6, ...q7, ...q8, ...qa1, ...qa2, ...qa3, ...qc1, ...qc2 }; // 작성한 그대로(검증용)
 const CQ = Object.fromEntries(Object.entries(CQ_RAW).map(([k, v]) => [k, v.map(mixCQ)]));
 
-export const LESSONS = [...u1, ...u2, ...u3, ...u4, ...u5, ...u6, ...u7, ...u8, ...a1, ...a2, ...a3, ...c1].map((l) => {
+export const LESSONS = [...u1, ...u2, ...u3, ...u4, ...u5, ...u6, ...u7, ...u8, ...a1, ...a2, ...a3, ...c1, ...c2].map((l) => {
   const x = PLUS[l.id];
   if (!x) return { ...l, cq: CQ[l.id] || [] };
   const { traps = {}, deep = null, ...rest } = x;
