@@ -184,12 +184,12 @@ export default {
     explore: [{
       title: t`$g(x)=\displaystyle\int_0^x(t-1)\,dt$를 넓이로 보기`,
       intro: t`위끝 $x$를 움직이며, $y=t-1$과 $t$축 사이의 부호 있는 넓이 $g(x)$가 어떻게 변하는지 봅니다. $t$축 아래는 음수로 셉니다.`,
-      params: [{ k: 'x', label: t`위끝 $x$`, min: -1, max: 3, step: 0.5, value: 0.5 }],
+      params: [{ k: 'x', label: t`위끝 $x$`, min: 0, max: 3, step: 0.5, value: 0.5 }],
       fig: ({ x }) => ({
         x: [-1.5, 3.5], y: [-2.5, 2.5], w: 280, h: 240, equal: false,
         alt: `y=t-1의 그래프와 0부터 ${num(x)}까지 칠한 부분`,
         items: [
-          ...(x === 0 ? [] : [{ t: 'shade', f: { poly: [-1, 1] }, from: Math.min(0, x), to: Math.max(0, x) }]),
+          ...(x === 0 ? [] : [{ t: 'shade', f: { poly: [-1, 1] }, from: 0, to: x }]),
           { t: 'fn', f: { poly: [-1, 1] } },
           { t: 'vl', x },
         ],

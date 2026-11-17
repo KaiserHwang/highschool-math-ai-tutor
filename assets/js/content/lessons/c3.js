@@ -11,7 +11,7 @@ export default [
 <div class="box"><p class="box-t">다항함수의 부정적분</p>
 <ul>
 <li>$\displaystyle\int x^n\,dx=\dfrac{1}{n+1}x^{n+1}+C$ ($n$은 $0$ 또는 자연수)</li>
-<li>$\displaystyle\int kf(x)\,dx=k\int f(x)\,dx$, $\displaystyle\int\{f(x)\pm g(x)\}\,dx=\int f(x)\,dx\pm\int g(x)\,dx$</li>
+<li>$\displaystyle\int kf(x)\,dx=k\int f(x)\,dx$ ($k$는 $0$이 아닌 상수), $\displaystyle\int\{f(x)\pm g(x)\}\,dx=\int f(x)\,dx\pm\int g(x)\,dx$</li>
 </ul></div>
 <div class="box"><p class="box-t">미분과 부정적분</p>
 <p>$\dfrac{d}{dx}\displaystyle\int f(x)\,dx=f(x)$, $\displaystyle\int\left\{\dfrac{d}{dx}f(x)\right\}dx=f(x)+C$</p></div>`,
