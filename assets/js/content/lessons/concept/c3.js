@@ -94,4 +94,66 @@ export default {
       note: t`넓이로 보면 폭 $h$, 높이 약 $f(a)$인 띠를 $h$로 나눈 것이라 $f(a)$에 가까워집니다.`,
     },
   ],
+
+  'c3-l4': [
+    {
+      id: 'c3-l4-q1', q: t`곡선 $y=f(x)$와 $x$축, $x=a$, $x=b$로 둘러싸인 부분의 넓이는?`,
+      options: [t`$\displaystyle\int_a^b|f(x)|\,dx$`, t`$\displaystyle\int_a^bf(x)\,dx$`, t`$\left|\displaystyle\int_a^bf(x)\,dx\right|$`], answer: 0,
+      reasons: [t`$x$축 아래 부분도 양수로 더해야 넓이가 된다`, '정적분은 언제나 넓이와 같다', '정적분 값에 절댓값을 씌우면 넓이가 된다', '넓이는 위끝의 함숫값과 같다'],
+      reason: 0, mis: [null, 'overgen', 'formula', 'def'],
+      note: t`$\left|\int_a^bf\,dx\right|$은 위아래가 지워진 뒤에 절댓값을 씌운 것이라 넓이보다 작을 수 있습니다.`,
+    },
+    {
+      id: 'c3-l4-q2', q: t`$a\le x\le b$에서 $f(x)\ge g(x)$일 때 두 곡선 사이의 넓이는?`,
+      options: [t`$\displaystyle\int_a^b\{f(x)-g(x)\}\,dx$`, t`$\displaystyle\int_a^b\{g(x)-f(x)\}\,dx$`, t`$\displaystyle\int_a^bf(x)\,dx\times\int_a^bg(x)\,dx$`], answer: 0,
+      reasons: ['위 곡선 아래 넓이에서 아래 곡선 아래 넓이를 뺀다', '아래 곡선에서 위 곡선을 뺀다', '두 넓이를 곱한다', '두 곡선이 x축 위에 있을 때만 구할 수 있다'],
+      reason: 0, mis: [null, 'sign', 'formula', 'cond'],
+      note: t`두 곡선이 $x$축 아래에 있어도 (위) $-$ (아래)는 두 곡선 사이의 세로 길이라 그대로 씁니다.`,
+    },
+    {
+      id: 'c3-l4-q3', q: t`$\displaystyle\int_a^bf(x)\,dx=0$이면 곡선 $y=f(x)$와 $x$축 사이의 넓이도 $0$일까요?`,
+      options: ['아닐 수 있다', '항상 0이다', '항상 정적분의 두 배이다'], answer: 0,
+      reasons: [t`$x$축 위 넓이와 아래 넓이가 같으면 정적분은 $0$이지만 넓이는 그 합이다`, '정적분과 넓이는 같은 것이다', '넓이는 정적분의 두 배이다', '정적분이 0이면 함수가 0이다'],
+      reason: 0, mis: [null, 'overgen', 'formula', 'converse'],
+      note: t`$\displaystyle\int_{-1}^{1}x^3\,dx=0$이지만 넓이는 $\dfrac12$입니다.`,
+    },
+    {
+      id: 'c3-l4-q4', q: '두 곡선이 구간 안에서 서로 엇갈리면 넓이를 어떻게 구할까요?',
+      options: ['교점에서 구간을 나누어 구간마다 (위) − (아래)를 적분한다', '처음 구간의 위아래로 한 번에 적분한다', '두 곡선의 정적분 값을 더한다'], answer: 0,
+      reasons: ['교점을 지나면 위아래가 바뀌어 빼는 순서가 달라진다', '위아래는 구간 전체에서 같다', '각 곡선 아래의 넓이를 더하면 된다', '엇갈리면 넓이를 구할 수 없다'],
+      reason: 0, mis: [null, 'overgen', 'method', 'def'],
+      note: t`한 번에 적분하면 엇갈린 뒤의 부분이 음수로 들어가 넓이가 줄어듭니다.`,
+    },
+  ],
+
+  'c3-l5': [
+    {
+      id: 'c3-l5-q1', q: t`속도 $v(t)$로 $t=a$에서 $t=b$까지의 위치의 변화량을 구하면?`,
+      options: [t`$\displaystyle\int_a^bv(t)\,dt$`, t`$\displaystyle\int_a^b|v(t)|\,dt$`, t`$v(b)-v(a)$`], answer: 0,
+      reasons: [t`위치는 속도의 부정적분이라 $x(b)-x(a)=\int_a^bv\,dt$이다`, '방향과 관계없이 모두 더한다', '속도의 차가 위치의 차이다', '속도를 미분해야 위치가 된다'],
+      reason: 0, mis: [null, 'transfer', 'formula', 'formula'],
+      note: t`$v(b)-v(a)$는 속도의 변화량으로, 가속도를 적분한 값입니다.`,
+    },
+    {
+      id: 'c3-l5-q2', q: t`$t=a$에서 $t=b$까지 실제로 움직인 거리는?`,
+      options: [t`$\displaystyle\int_a^b|v(t)|\,dt$`, t`$\displaystyle\int_a^bv(t)\,dt$`, t`$|x(b)-x(a)|$`], answer: 0,
+      reasons: ['뒤로 움직인 부분도 거리에 더해야 한다', '앞뒤 움직임이 지워진 값이 거리이다', '처음과 나중 위치의 차가 거리이다', '속도가 음수인 구간은 빼야 한다'],
+      reason: 0, mis: [null, 'transfer', 'cond', 'sign'],
+      note: t`$|x(b)-x(a)|$는 방향이 바뀌지 않을 때만 거리와 같습니다.`,
+    },
+    {
+      id: 'c3-l5-q3', q: t`$a\le t\le b$에서 항상 $v(t)>0$이면 움직인 거리와 위치의 변화량은?`,
+      options: ['같다', '거리가 더 크다', '변화량이 더 크다'], answer: 0,
+      reasons: [t`속도가 양수이면 $|v|=v$라 두 정적분이 같다`, '거리는 항상 변화량보다 크다', '변화량은 거리보다 항상 크다', '속도가 양수이면 위치가 변하지 않는다'],
+      reason: 0, mis: [null, 'overgen', 'def', 'def'],
+      note: t`방향이 한 번이라도 바뀌면 거리가 변화량의 크기보다 커집니다.`,
+    },
+    {
+      id: 'c3-l5-q4', q: t`$t=0$에서의 위치가 $x_0$일 때, 시각 $t$에서의 위치는?`,
+      options: [t`$x_0+\displaystyle\int_0^tv(s)\,ds$`, t`$\displaystyle\int_0^tv(s)\,ds$`, t`$x_0\times\displaystyle\int_0^tv(s)\,ds$`], answer: 0,
+      reasons: ['처음 위치에 위치의 변화량을 더한다', '위치의 변화량이 곧 위치이다', '처음 위치에 변화량을 곱한다', '속도를 그대로 더한다'],
+      reason: 0, mis: [null, 'cond', 'formula', 'formula'],
+      note: t`출발점이 원점($x_0=0$)일 때만 변화량과 위치가 같습니다.`,
+    },
+  ],
 };
