@@ -117,6 +117,7 @@ export default [
       t`$\Big[t^3\Big]_0^2$`,
     ],
     solution: t`$8-0=8$`,
+    trap: t`거리는 속도를 미분한 값이 아니라 적분한 값입니다. $v'(t)=6t$에 $t=2$를 넣은 $12$와 헷갈리지 않습니다.`,
   },
   {
     id: 'c3-11', unit: 'c3', level: 'basic', topic: '곡선과 직선 사이의 넓이', type: 'short',
