@@ -431,7 +431,10 @@ def expected_calculus_cq():
     # ── 도함수의 활용
     C['c2-l4-q1'] = 0 if sp.diff(x ** 3, x).subs(x, 0) == 0 and not extrema(x ** 3) else None
     C['c2-l4-q2'] = 0 if extrema(x ** 3 - 3 * x)[0][:2] == (-1, 'max') else None  # x=-1: f'의 부호 양 → 음
-    C['c2-l4-q3'] = 0 if sp.diff(x ** 3, x).subs(x, 0) == 0 and all((x ** 3).subs(x, p) < (x ** 3).subs(x, q) for p, q in ((-1, -S(1, 2)), (-S(1, 2), 0), (0, S(1, 2)))) else None
+    # 보기 0(f'≥0): x³처럼 f'=0인 점이 있어도 증가한다. 보기 1(f'>0)은 x³ 때문에 틀린다.
+    # 상수함수 1은 f'≥0 이지만 증가하지 않으므로 문항이 상수함수를 제외해야 한다(문항 문구로 확인)
+    inc = lambda g: all(g.subs(x, p) < g.subs(x, q) for p, q in ((-1, -S(1, 2)), (-S(1, 2), 0), (0, S(1, 2))))
+    C['c2-l4-q3'] = 0 if sp.diff(x ** 3, x).subs(x, 0) == 0 and inc(x ** 3) and not inc(sp.Integer(1) + 0 * x) else None
     C['c2-l5-q1'] = 0 if maximum(x ** 3 - 3 * x, x, sp.Interval(0, 3)) == 18 and all(k == 'min' for c0, k, _v in extrema(x ** 3 - 3 * x) if 0 < c0 < 3) else None
     C['c2-l5-q2'] = 0 if sp.limit(2 * x ** 3 - 5 * x ** 2 + 1, x, oo) == oo else None
     mins = [(c0, v) for c0, k, v in extrema(x ** 4 - 2 * x ** 2) if k == 'min']

@@ -110,6 +110,10 @@ for (const u of UNITS) {
   check(`${u.id}.title`, u.title);
   check(`${u.id}.sub`, u.sub);
   (u.next || []).forEach((n, i) => check(`${u.id}.next[${i}].what`, n.what));
+  // 단원 화면은 이 문자열을 esc()로 이스케이프한 뒤 수식을 그리므로, 수식 안의 ' " & < > 는 엔티티로 바뀌어 KaTeX 오류가 난다
+  for (const [w, s] of [['sub', u.sub], ...u.traps.map((s, i) => [`traps[${i}]`, s]), ...(u.next || []).map((n, i) => [`next[${i}].what`, n.what])]) {
+    for (const m of String(s).match(/\$[^$]*\$/g) || []) if (/['"&<>]/.test(m)) fail(`${u.id}.${w}: 수식 ${m} 안에 esc()가 바꾸는 문자(' " & < >)가 있음 — f^\\prime 처럼 쓴다`);
+  }
 }
 for (const u of UNITS) if (!Array.isArray(u.next) || !u.next.length || !u.next.every((n) => n.subject && n.what)) fail(`${u.id}: 후속 과목 연결(next)이 없음`);
 
