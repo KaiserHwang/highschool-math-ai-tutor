@@ -355,6 +355,10 @@ def main():
     cal = expected_calculus_bank(P)
     assert not set(cal) & set(E), f'중복 계산: {set(cal) & set(E)}'
     E.update(cal)
+    from verify_statistics import expected_statistics_bank
+    sta = expected_statistics_bank(P)
+    assert not set(sta) & set(E), f'중복 계산: {set(sta) & set(E)}'
+    E.update(sta)
     items = data['PROBLEMS'] + data['DIAGNOSIS']
     unit_ids = {u['id'] for u in data['UNITS']}
     skill_keys = {s['key'] for s in data['SKILLS']}

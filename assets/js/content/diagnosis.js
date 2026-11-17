@@ -353,6 +353,31 @@ export const DIAGNOSIS = [
     skills: { concept: 1, reason: 0.5 },
     hint: t`$t=2$에서 속도의 부호가 바뀝니다.`,
     solution: t`$\displaystyle\int_0^2(4-2t)\,dt+\int_2^4(2t-4)\,dt=4+4=8$`,
+  },
+  // ── 확률과 통계 진단
+  {
+    id: 'd43', unit: 's1', level: 'basic', type: 'short', sec: 60, lesson: 's1-l1',
+    q: t`숫자 $1,\ 2,\ 3,\ 4,\ 5$에서 중복을 허락하여 만들 수 있는 세 자리 자연수의 개수를 구하시오.`,
+    answer: '125',
+    skills: { concept: 1 },
+    hint: t`자리마다 숫자 $5$개 중 하나를 고르고, 같은 숫자를 다시 써도 됩니다.`,
+    solution: t`$_5\Pi_3=5^3=125$`,
+  },
+  {
+    id: 'd44', unit: 's1', level: 'core', type: 'short', sec: 90, lesson: 's1-l2',
+    q: t`방정식 $x+y+z+w=5$를 만족하는 음이 아닌 정수 $x,\ y,\ z,\ w$의 순서쌍의 개수를 구하시오.`,
+    answer: '56',
+    skills: { concept: 1, calc: 0.5 },
+    hint: t`네 문자 중에서 중복을 허락하여 $5$개를 고르는 것과 같습니다.`,
+    solution: t`$_4\mathrm{H}_5={}_8\mathrm{C}_5=56$`,
+  },
+  {
+    id: 'd45', unit: 's1', level: 'adv', type: 'short', sec: 120, lesson: 's1-l3',
+    q: t`$\left(x+\dfrac1x\right)^8$의 전개식에서 상수항을 구하시오.`,
+    answer: '70',
+    skills: { calc: 1, reason: 0.5 },
+    hint: t`일반항 $_8\mathrm{C}_rx^{8-r}x^{-r}$에서 $x$의 지수가 $0$인 $r$을 찾습니다.`,
+    solution: t`$8-2r=0$에서 $r=4$이므로 $_8\mathrm{C}_4=70$`,
   },];
 
 // ── 진단 묶음 ─────────────────────────────────────
@@ -363,6 +388,7 @@ export const DIAG_SETS = [
   { id: 'common', title: '공통수학1·2', courses: ['common1', 'common2'], minutes: 35 },
   { id: 'algebra', title: '대수', courses: ['algebra'], minutes: 28 },
   { id: 'calculus1', title: '미적분Ⅰ', courses: ['calculus1'], minutes: 42 },
+  { id: 'statistics', title: '확률과 통계', courses: ['statistics'], minutes: 9 },
 ];
 export const DIAG_SET_BY_ID = Object.fromEntries(DIAG_SETS.map((s) => [s.id, s]));
 export const isDiagSetId = (id) => typeof id === 'string' && Object.hasOwn(DIAG_SET_BY_ID, id);

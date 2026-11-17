@@ -612,6 +612,10 @@ def main():
     cal = expected_calculus_lessons()
     assert not set(cal) & set(computed), f'중복 계산: {set(cal) & set(computed)}'
     computed.update(cal)
+    from verify_statistics import expected_statistics_lessons, expected_statistics_cq
+    sta = expected_statistics_lessons()
+    assert not set(sta) & set(computed), f'중복 계산: {set(sta) & set(computed)}'
+    computed.update(sta)
     fails = 0
     seen = 0
     manual = {'u6-l5-c1', 'u6-l5-c2'}  # 논리 형식(대우, 증명 방법)을 묻는 문항: 계산 대신 정의로 판정
@@ -661,6 +665,9 @@ def main():
     calcq = expected_calculus_cq()
     assert not set(calcq) & set(cqcalc), f'중복 계산: {set(calcq) & set(cqcalc)}'
     cqcalc.update(calcq)
+    stacq = expected_statistics_cq()
+    assert not set(stacq) & set(cqcalc), f'중복 계산: {set(stacq) & set(cqcalc)}'
+    cqcalc.update(stacq)
     # 화면에서는 보기 순서를 섞으므로, 작성한 그대로의 데이터(CQ_RAW)로 대조한다.
     CQ_RAW = data['CQ_RAW']
     cq_ids = {q['id'] for qs in CQ_RAW.values() for q in qs}
