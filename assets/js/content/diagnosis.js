@@ -357,11 +357,11 @@ export const DIAGNOSIS = [
   // ── 확률과 통계 진단
   {
     id: 'd43', unit: 's1', level: 'basic', type: 'short', sec: 60, lesson: 's1-l1',
-    q: t`$7$명이 원탁에 둘러앉는 경우의 수를 구하시오.`,
-    answer: '720',
+    q: t`숫자 $1,\ 2,\ 3,\ 4,\ 5$에서 중복을 허락하여 만들 수 있는 세 자리 자연수의 개수를 구하시오.`,
+    answer: '125',
     skills: { concept: 1 },
-    hint: t`한 명의 자리를 고정합니다.`,
-    solution: t`$(7-1)!=720$`,
+    hint: t`자리마다 숫자 $5$개 중 하나를 고르고, 같은 숫자를 다시 써도 됩니다.`,
+    solution: t`$_5\Pi_3=5^3=125$`,
   },
   {
     id: 'd44', unit: 's1', level: 'core', type: 'short', sec: 90, lesson: 's1-l2',

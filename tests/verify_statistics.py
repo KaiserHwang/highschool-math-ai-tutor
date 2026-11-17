@@ -1,6 +1,6 @@
 """확률과 통계 단원(s1~)의 정답을 독립 계산한다. verify_answers.py와 verify_lessons.py가 불러 쓴다.
 
-공식(원순열 (n-1)!, 중복조합 nHr, 이항정리)을 쓰지 않고, itertools로 경우를 직접 나열해 센다.
+공식(중복순열 n^r, 중복조합 nHr, 이항정리)을 쓰지 않고, itertools로 경우를 직접 나열해 센다.
 전개식의 계수는 sympy로 실제로 전개해 읽는다.
 """
 import itertools as it
@@ -15,25 +15,6 @@ def single(xs):
     xs = list(xs)
     assert len(xs) == 1, xs
     return xs[0]
-
-
-def circular(items):
-    """원형 배열의 개수: 일렬 배열을 모두 만든 뒤 회전을 같은 것으로 묶어 센다"""
-    seen = set()
-    for p in it.permutations(items):
-        rots = [p[i:] + p[:i] for i in range(len(p))]
-        seen.add(min(rots))
-    return len(seen)
-
-
-def table_seats(people, sides, per_side):
-    """정다각형 탁자(변 sides개, 변마다 per_side명): 탁자를 돌려 겹치는 배열(변 단위 회전)을 같은 것으로 센다"""
-    seen = set()
-    n = sides * per_side
-    for p in it.permutations(range(people)):
-        rots = [p[i:] + p[:i] for i in range(0, n, per_side)]
-        seen.add(min(rots))
-    return len(seen)
 
 
 def arrangements(word):
@@ -68,7 +49,7 @@ def lattice_paths(a, b, avoid=None):
 
 def expected_statistics_bank(P=None):
     E = {}
-    E['s1-01'] = circular(range(5))
+    E['s1-01'] = sum(1 for _ in it.product('RB', repeat=5))
     E['s1-02'] = arrangements('11123')
     E['s1-03'] = coeff((x + 1) ** 6, 4)
     E['s1-04'] = sum(1 for w in it.product('abcd', repeat=5) if 'a' in w)
@@ -76,7 +57,7 @@ def expected_statistics_bank(P=None):
     E['s1-06'] = lattice_paths(4, 4, avoid=(2, 2))
     E['s1-07'] = coeff((x ** 2 + 1 / x) ** 6, 3)
     E['s1-08'] = solutions(12, 3, high=5)
-    E['d43'] = circular(range(7))
+    E['d43'] = sum(1 for _ in it.product(range(1, 6), repeat=3))
     E['d44'] = solutions(5, 4)
     E['d45'] = coeff((x + 1 / x) ** 8, 0)
     return E
@@ -85,21 +66,16 @@ def expected_statistics_bank(P=None):
 def expected_statistics_lessons():
     E = {}
     # ── s1-l1 원순열과 중복순열
-    E['s1-l1-e1'] = circular(range(6))
+    E['s1-l1-e1'] = sum(1 for _ in it.product('abc', repeat=4))
     E['s1-l1-e2'] = sum(1 for _ in it.product(range(3), repeat=5))  # 공마다 상자를 고른다
     E['s1-l1-e3'] = sum(1 for w in it.product((1, 2, 3), repeat=4) if w[-1] % 2 == 1)
-    # 부모(0, 1)가 이웃: 원형 배열을 직접 모아 이웃 조건을 확인
-    seen = set()
-    for p in it.permutations(range(6)):
-        i, j = p.index(0), p.index(1)
-        if (i - j) % 6 in (1, 5):
-            seen.add(min(p[k:] + p[:k] for k in range(6)))
-    E['s1-l1-c1'] = len(seen)
+    E['s1-l1-c1'] = sum(1 for f in it.product((1, 2, 3, 4), repeat=3) if f[2] % 2 == 0)
     E['s1-l1-c2'] = sum(1 for w in it.product((0, 1, 2), repeat=3) if w[0] != 0)
-    E['s1-l1-p'] = [2, 6].index(circular('ABC'))  # 보기: 적다(2), 같다(6), 많다
-    E['s1-l1-de1'] = table_seats(6, 3, 2)
+    # 보기: 2³=8, 3²=9, 3!=6 — 공 3개가 각각 상자 2개 중 하나를 고르는 배정을 직접 센다
+    E['s1-l1-p'] = [8, 9, 6].index(sum(1 for _ in it.product(range(2), repeat=3)))
+    E['s1-l1-de1'] = sum(1 for w in it.product(range(2), repeat=4) if len(set(w)) == 2)  # 빈 상자 없음 = 두 상자 모두 사용
     E['s1-l1-de2'] = sum(1 for f in it.product((1, 2, 3, 4), repeat=3) if f[0] != 1)
-    E['s1-l1-d1'] = table_seats(8, 4, 2)
+    E['s1-l1-d1'] = sum(1 for w in it.product(range(2), repeat=5) if len(set(w)) == 2)
     E['s1-l1-d2'] = sum(1 for f in it.product((0, 1), repeat=4) if sum(f) == 2)
     # ── s1-l2 같은 것이 있는 순열과 중복조합
     E['s1-l2-e1'] = arrangements('aabbbc')
@@ -111,8 +87,7 @@ def expected_statistics_lessons():
     E['s1-l2-de1'] = sum(1 for p in it.permutations('abcdef') if p.index('a') < p.index('b') < p.index('c'))
     E['s1-l2-de2'] = solutions(8, 4, low=1)
     E['s1-l2-d1'] = sum(1 for p in it.permutations('abcdefg') if p.index('a') < p.index('b') < p.index('c'))
-    a, b, c = sp.symbols('a b c')
-    E['s1-l2-d2'] = len(sp.Poly(sp.expand((a + b + c) ** 5), a, b, c).terms())
+    E['s1-l2-d2'] = len(set(it.combinations_with_replacement('xyz', 5)))  # 세 종류에서 중복을 허락해 5개 고르기를 직접 나열
     # ── s1-l3 이항정리
     E['s1-l3-e1'] = coeff((x + 2) ** 5, 3)
     E['s1-l3-e2'] = coeff((2 * x - 1 / x) ** 6, 0)
@@ -131,12 +106,9 @@ def expected_statistics_lessons():
 
 def expected_statistics_cq():
     C = {}
-    C['s1-l1-q1'] = 0 if all(circular(range(n)) == factorial(n - 1) for n in range(3, 7)) else None
+    C['s1-l1-q1'] = [3 ** 4, 4 ** 3, comb(4, 3)].index(sum(1 for _ in it.product(range(3), repeat=4)))
     C['s1-l1-q2'] = 0 if all(sum(1 for _ in it.product(range(n), repeat=r)) == n ** r for n, r in ((3, 4), (4, 2), (2, 5))) else None
-    seen = set()
-    for p in it.permutations(range(6), 4):
-        seen.add(min(p[k:] + p[:k] for k in range(4)))
-    C['s1-l1-q3'] = 0 if len(seen) == 6 * 5 * 4 * 3 // 4 else None
+    C['s1-l1-q3'] = [2 ** 3, 3 ** 2, factorial(3)].index(sum(1 for _ in it.product('ab', repeat=3)))
     C['s1-l1-q4'] = 0 if sum(1 for w in it.product(range(4), repeat=4) if w[0] != 0) != 4 ** 4 else None
     C['s1-l2-q1'] = 0 if arrangements('aabbb') == factorial(5) // (factorial(2) * factorial(3)) else None
     C['s1-l2-q2'] = 0 if all(solutions(r, n) == comb(n + r - 1, r) for n, r in ((3, 5), (4, 2), (2, 6))) else None
