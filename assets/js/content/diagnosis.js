@@ -289,6 +289,30 @@ export const DIAGNOSIS = [
     skills: { concept: 1, calc: 0.5 },
     hint: t`접선의 기울기는 $y'=3x^2-3$에 $x=2$를 넣은 값입니다.`,
     solution: t`기울기 $9$이므로 접선은 $y=9x-16$, $x$절편은 $\dfrac{16}{9}$`,
+  },
+  {
+    id: 'd35', unit: 'c2', level: 'basic', type: 'short', sec: 60, lesson: 'c2-l4',
+    q: t`함수 $f(x)=2x^3-3x^2$의 극솟값을 구하시오.`,
+    answer: '-1',
+    skills: { concept: 1, calc: 0.5 },
+    hint: t`$f'(x)=6x(x-1)$의 부호가 음에서 양으로 바뀌는 곳이 극소입니다.`,
+    solution: t`$x=1$에서 극소이므로 극솟값은 $f(1)=-1$`,
+  },
+  {
+    id: 'd36', unit: 'c2', level: 'core', type: 'short', sec: 90, lesson: 'c2-l5',
+    q: t`닫힌구간 $[0,\ 4]$에서 함수 $f(x)=x^3-6x^2+9x$의 최댓값을 구하시오.`,
+    answer: '4',
+    skills: { concept: 1, calc: 0.5 },
+    hint: t`구간 안의 극값과 양 끝값 $f(0)$, $f(4)$를 비교합니다.`,
+    solution: t`$f'(x)=3(x-1)(x-3)$. $f(0)=0$, $f(1)=4$, $f(3)=0$, $f(4)=4$이므로 최댓값은 $4$`,
+  },
+  {
+    id: 'd37', unit: 'c2', level: 'adv', type: 'short', sec: 120, lesson: 'c2-l6',
+    q: t`곡선 $y=x^3-3x^2-9x$와 직선 $y=k$가 서로 다른 세 점에서 만나도록 하는 정수 $k$의 개수를 구하시오.`,
+    answer: '31',
+    skills: { reason: 1, calc: 0.5 },
+    hint: t`$f(x)=x^3-3x^2-9x$의 극댓값과 극솟값 사이에 $k$가 있어야 합니다.`,
+    solution: t`$f'(x)=3(x+1)(x-3)$에서 극댓값 $f(-1)=5$, 극솟값 $f(3)=-27$. $-27<k<5$이므로 정수는 $31$개`,
   },];
 
 // ── 진단 묶음 ─────────────────────────────────────
@@ -298,7 +322,7 @@ export const DIAGNOSIS = [
 export const DIAG_SETS = [
   { id: 'common', title: '공통수학1·2', courses: ['common1', 'common2'], minutes: 35 },
   { id: 'algebra', title: '대수', courses: ['algebra'], minutes: 28 },
-  { id: 'calculus1', title: '미적분Ⅰ', courses: ['calculus1'], minutes: 18 },
+  { id: 'calculus1', title: '미적분Ⅰ', courses: ['calculus1'], minutes: 27 },
 ];
 export const DIAG_SET_BY_ID = Object.fromEntries(DIAG_SETS.map((s) => [s.id, s]));
 export const isDiagSetId = (id) => typeof id === 'string' && Object.hasOwn(DIAG_SET_BY_ID, id);
