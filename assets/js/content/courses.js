@@ -10,6 +10,7 @@ export const COURSES = [
   // 단원 접두어: 대수 a, 미적분Ⅰ c, 확률과 통계 s (u는 공통수학, g는 생성기). 한 번 쓴 접두어는 바꾸지 않는다.
   { id: 'algebra', title: '대수', short: '대수', starter: false, requires: ['common1', 'common2'] },
   { id: 'calculus1', title: '미적분Ⅰ', short: '미적Ⅰ', starter: false, requires: ['common1', 'common2'] },
+  { id: 'statistics', title: '확률과 통계', short: '확통', starter: false, requires: ['common1', 'common2'] },
 ];
 
 export const COURSE_BY_ID = Object.fromEntries(COURSES.map((c) => [c.id, c]));
