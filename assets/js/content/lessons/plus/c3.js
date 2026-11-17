@@ -162,14 +162,14 @@ export default {
         },
       ],
       checks: [
-        { id: 'c3-l2-d1', type: 'short', q: t`$\displaystyle\int_0^3\max\{x,\ 1\}\,dx$의 값을 구하시오.`, answer: '5', solution: t`$0\le x\le1$에서 $1$, $1\le x\le3$에서 $x$이므로 $1+\Big[\dfrac{x^2}2\Big]_1^3=1+4=5$` },
+        { id: 'c3-l2-d1', type: 'short', q: t`$\displaystyle\int_0^3\max\{x,\ 1\}\,dx$의 값을 구하시오. (단, $\max\{a,\ b\}$는 $a,\ b$ 중 크거나 같은 수)`, answer: '5', solution: t`$0\le x\le1$에서 $1$, $1\le x\le3$에서 $x$이므로 $1+\Big[\dfrac{x^2}2\Big]_1^3=1+4=5$` },
         { id: 'c3-l2-d2', type: 'short', q: t`함수 $f(x)=6x^2-2\displaystyle\int_0^1f(t)\,dt$에 대하여 $f(1)$의 값을 구하시오.`, answer: '14/3', solution: t`$k=\displaystyle\int_0^1f(t)\,dt$로 놓으면 $k=2-2k$, $k=\dfrac23$. $f(1)=6-\dfrac43=\dfrac{14}{3}$` },
       ],
     },
     explain: {
       prompt: '정적분 값에 적분상수가 영향을 주지 않는 이유를 설명해 보세요.',
       model: t`정적분은 한 부정적분 $F(x)$로 $F(b)-F(a)$를 계산합니다. 다른 부정적분 $F(x)+C$를 써도 $\{F(b)+C\}-\{F(a)+C\}=F(b)-F(a)$로 $C$가 빼는 과정에서 지워집니다. 그래서 어떤 부정적분을 골라도 정적분 값은 같습니다.`,
-      keys: [t`정적분은 $F(b)-F(a)$`, t`$C$는 두 값에 똑같이 들어 있다`, '빼면 C가 지워진다'],
+      keys: [t`정적분은 $F(b)-F(a)$`, t`$C$는 두 값에 똑같이 들어 있다`, t`빼면 $C$가 지워진다`],
     },
   },
 
@@ -250,7 +250,7 @@ export default {
     explain: {
       prompt: t`$\dfrac{d}{dx}\displaystyle\int_a^xf(t)\,dt=f(x)$를 넓이로 설명해 보세요.`,
       model: t`$f\ge0$일 때 $\displaystyle\int_a^xf(t)\,dt$는 $t=a$부터 $t=x$까지 곡선 아래의 넓이입니다. 오른쪽 끝을 $x$에서 $x+h$로 조금 늘리면, 더해지는 넓이는 폭 $h$, 높이가 거의 $f(x)$인 좁은 띠라 약 $f(x)\times h$입니다. 이것을 $h$로 나누고 $h\to0$이면 $f(x)$가 되므로, 넓이의 변화율이 $f(x)$입니다.`,
-      keys: ['정적분은 곡선 아래의 넓이', '끝을 조금 늘리면 높이 f(x), 폭 h인 띠가 더해진다', '변화율은 f(x)'],
+      keys: ['정적분은 곡선 아래의 넓이', t`끝을 조금 늘리면 높이 $f(x)$, 폭 $h$인 띠가 더해진다`, t`변화율은 $f(x)$`],
     },
   },
 };

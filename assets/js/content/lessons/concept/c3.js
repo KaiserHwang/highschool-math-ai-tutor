@@ -11,7 +11,7 @@ export default {
       note: t`$x^4$을 미분하면 $4x^3$이라 $\dfrac14$을 곱해야 합니다. 미분해서 확인하는 습관이 가장 확실합니다.`,
     },
     {
-      id: 'c3-l1-q2', q: '부정적분에 적분상수 C를 붙이는 이유는?',
+      id: 'c3-l1-q2', q: t`부정적분에 적분상수 $C$를 붙이는 이유는?`,
       options: ['미분하면 상수가 사라져 원래 함수가 하나로 정해지지 않기 때문', t`$C$는 항상 $0$이므로 형식상 붙인다`, '계산 실수를 줄이기 위해서'], answer: 0,
       reasons: [t`$F(x)$와 $F(x)+5$는 미분하면 같다`, t`적분상수는 언제나 $0$이다`, '습관적으로 붙이는 기호이다', '정적분과 구분하기 위한 표시일 뿐이다'],
       reason: 0, mis: [null, 'def', 'def', 'def'],
@@ -82,7 +82,7 @@ export default {
     {
       id: 'c3-l3-q3', q: t`$\dfrac{d}{dx}\displaystyle\int_x^2f(t)\,dt$는?`,
       options: [t`$-f(x)$`, t`$f(x)$`, t`$f(2)$`], answer: 0,
-      reasons: [t`$\displaystyle\int_x^2f(t)\,dt=F(2)-F(x)$이므로 미분하면 $-f(x)$이다`, '어느 끝이 변수이든 미분하면 f(x)이다', '위끝의 값이 결과이다', t`상수 $2$가 있어 미분하면 $0$이다`],
+      reasons: [t`$\displaystyle\int_x^2f(t)\,dt=F(2)-F(x)$이므로 미분하면 $-f(x)$이다`, t`어느 끝이 변수이든 미분하면 $f(x)$이다`, '위끝의 값이 결과이다', t`상수 $2$가 있어 미분하면 $0$이다`],
       reason: 0, mis: [null, 'sign', 'def', 'def'],
       note: t`$\displaystyle\int_x^2=-\int_2^x$로 바꾸면 부호가 반대임이 바로 보입니다.`,
     },
