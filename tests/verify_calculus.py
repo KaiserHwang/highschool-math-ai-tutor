@@ -172,6 +172,22 @@ def expected_calculus_bank(P=None):
     g = sp.integrate(tt_ ** 2 - 2 * tt_ - 3, (tt_, 0, x))
     E['c3-07'] = single(ext_vals(g, 'max')) - single(ext_vals(g, 'min'))
     E['c3-08'] = solve_poly_f(lambda f: sp.integrate((x - tt_) * f.subs(x, tt_), (tt_, 1, x)), lambda a, b: x ** 4 - 2 * x ** 3 + a * x ** 2 + b, 2, at=2)
+    # ── 넓이·속도와 거리(은행 c3-09~c3-16): 넓이는 |f|, |f-g|를 sympy로 적분(구간을 손으로 나누지 않는다), 거리는 ∫|v|
+    E['c3-09'] = area_x(x ** 2 - 1)
+    E['c3-10'] = sp.integrate(sp.Abs(3 * x ** 2), (x, 0, 2))
+    E['c3-11'] = area_between(x ** 2, 9 + 0 * x)
+    E['c3-12'] = area_x(x ** 3 - x)
+    E['c3-13'] = area_between(x ** 2 - 2 * x, x)
+    E['c3-14'] = sp.integrate(sp.Abs(x ** 2 - 4 * x + 3), (x, 0, 3))
+    m, c = tangent(x ** 2, 1)
+    E['c3-15'] = sp.integrate(sp.Abs(x ** 2 - (m * x + c)), (x, 0, 1))
+    av = sp.Symbol('av', positive=True)
+    total = area_between(3 * x ** 2, 3 + 0 * x)
+    lower = sp.integrate(av - 3 * x ** 2, (x, -sp.sqrt(av / 3), sp.sqrt(av / 3)))  # y=a 아래, 곡선 위
+    sol = [s for s in sp.solve(sp.Eq(lower, total / 2), av) if 0 < s < 3]
+    E['c3-16'] = sp.nsimplify(single(sol) ** 3)
+    E['d41'] = area_x(x ** 2 - 3 * x)
+    E['d42'] = sp.integrate(sp.Abs(4 - 2 * x), (x, 0, 4))
     E['d38'] = sp.integrate(3 * x ** 2, (x, 1, 2))
     E['d39'] = anti(3 * x ** 2 - 2 * x, 1, 0).subs(x, 2)
     p, q, r, a = sp.symbols('p q r a')
@@ -212,6 +228,22 @@ def anti(f, x0, y0):
     C = sp.Symbol('C')
     F = sp.integrate(f, x) + C
     return F.subs(C, single(sp.solve(F.subs(x, x0) - y0, C)))
+
+
+def area_x(f, a=None, b=None):
+    """곡선과 x축으로 둘러싸인 넓이: 끝이 없으면 x축과의 양 끝 교점 사이. ∫|f|를 sympy가 직접 계산"""
+    if a is None:
+        rs = n_roots(f)
+        a, b = rs[0], rs[-1]
+    return sp.integrate(sp.Abs(f), (x, a, b))
+
+
+def area_between(f, g, a=None, b=None):
+    """두 곡선으로 둘러싸인 넓이: 끝이 없으면 양 끝 교점 사이. ∫|f-g|"""
+    if a is None:
+        rs = n_roots(f - g)
+        a, b = rs[0], rs[-1]
+    return sp.integrate(sp.Abs(f - g), (x, a, b))
 
 
 def solve_poly_f(lhs, rhs, deg, at):
@@ -464,6 +496,40 @@ def expected_calculus_lessons():
     E['c3-l3-de2'] = sp.diff(sp.integrate((x - tt_) * tt_ ** 2, (tt_, 0, x)), x).subs(x, 3)
     E['c3-l3-d1'] = maximum(sp.integrate(9 - tt_ ** 2, (tt_, 0, xs)), xs, sp.Interval(0, oo))
     E['c3-l3-d2'] = sp.diff(sp.integrate((x - tt_) * (2 * tt_ + 1), (tt_, 0, x)), x).subs(x, 2)
+    # ── c3-l4 넓이
+    E['c3-l4-e1'] = area_x(x ** 2 - 4)
+    E['c3-l4-e2'] = area_x(x ** 3, -1, 1)
+    E['c3-l4-e3'] = area_between(x ** 2, x + 2)
+    E['c3-l4-c1'] = area_x(-x ** 2 + 2 * x)
+    E['c3-l4-c2'] = 6 * area_between(x ** 2, x, 0, 1)
+    E['c3-l4-p'] = 0 if sp.integrate(x ** 3, (x, -1, 1)) == 0 and area_x(x ** 3, -1, 1) == S(1, 2) else 1
+    m, c = tangent(x ** 3, 1)
+    E['c3-l4-de1'] = area_between(x ** 3, m * x + c)
+    a_ = sp.Symbol('a_', positive=True)
+    # 아래 넓이(0..a)와 위 넓이(a..3)가 같은 a: 두 넓이를 각각 |f|로 적분해 같다고 놓는다(정적분=0 풀이를 쓰지 않는다)
+    def equal_areas(top):
+        f = x ** 2 - a_ * x
+        cands = [s for s in sp.solve(sp.Eq(sp.integrate(-f, (x, 0, a_)), sp.integrate(f, (x, a_, top))), a_) if 0 < s < top]
+        return single(cands)
+    E['c3-l4-de2'] = equal_areas(3)
+    m, c = tangent(x ** 3 - 3 * x, -1)
+    E['c3-l4-d1'] = area_between(x ** 3 - 3 * x, m * x + c)
+    E['c3-l4-d2'] = equal_areas(6)
+    # ── c3-l5 속도와 거리 (시각 t는 x로 쓴다)
+    E['c3-l5-e1'] = 2 + sp.integrate(3 * x ** 2 - 6 * x, (x, 0, 3))
+    E['c3-l5-e2'] = sp.integrate(sp.Abs(x - 2), (x, 0, 4))
+    top_t = single(sp.solve(20 - 10 * x, x))
+    E['c3-l5-e3'] = sp.integrate(20 - 10 * x, (x, 0, top_t))
+    E['c3-l5-c1'] = sp.integrate(2 * x - 4, (x, 0, 3))
+    E['c3-l5-c2'] = sp.integrate(sp.Abs(2 * x - 4), (x, 0, 3))
+    # 보기: (변화량 0, 거리 6), (0, 0), (6, 6) — v가 1초 동안 +3, 다음 1초 동안 -3인 운동
+    vstep = sp.Piecewise((3, x < 1), (-3, True))
+    E['c3-l5-p'] = [(0, 6), (0, 0), (6, 6)].index((sp.integrate(vstep, (x, 0, 2)), sp.integrate(sp.Abs(vstep), (x, 0, 2))))
+    pos = lambda v: sp.integrate(v.subs(x, tt_), (tt_, 0, x))
+    E['c3-l5-de1'] = single([r for r in sp.solve(pos(2 * x) - pos(6 - 2 * x), x) if r > 0])
+    E['c3-l5-de2'] = min(r for r in sp.solve(pos(2 * x - 6), x) if r > 0)
+    E['c3-l5-d1'] = single([r for r in sp.solve(pos(4 * x) - pos(12 - 2 * x), x) if r > 0])
+    E['c3-l5-d2'] = min(r for r in sp.solve(pos(3 * x ** 2 - 6 * x), x) if r > 0)
     return E
 
 
@@ -541,6 +607,12 @@ def expected_calculus_cq():
     C['c3-l3-q2'] = 0 if all(sp.integrate(f.subs(x, tt_), (tt_, 4, 4)) == 0 for f in fs) else None
     C['c3-l3-q3'] = 0 if all(sp.simplify(sp.diff(sp.integrate(f.subs(x, tt_), (tt_, x, 2)), x) + f) == 0 for f in fs) else None
     C['c3-l3-q4'] = 0 if all(sp.limit(sp.integrate(f.subs(x, tt_), (tt_, 1, 1 + hh)) / hh, hh, 0) == f.subs(x, 1) for f in fs) else None
+    C['c3-l4-q3'] = 0 if sp.integrate(x ** 3, (x, -1, 1)) == 0 and area_x(x ** 3, -1, 1) > 0 else None
+    # 엇갈리는 두 곡선: 한 번에 적분한 값과 넓이가 다르다
+    C['c3-l4-q4'] = 0 if abs(sp.integrate(x ** 3 - x, (x, -1, 1))) != area_between(x ** 3, x) else None
+    v2 = x - 2
+    C['c3-l5-q2'] = 0 if sp.integrate(sp.Abs(v2), (x, 0, 4)) != abs(sp.integrate(v2, (x, 0, 4))) else None
+    C['c3-l5-q3'] = 0 if all(sp.integrate(sp.Abs(v), (x, 0, 3)) == sp.integrate(v, (x, 0, 3)) for v in (x + 1, 3 * x ** 2 + 2, 5 + 0 * x)) else None
     vt = sp.diff(x ** 3, x)  # 위치 t³ 의 속도
     C['c2-l6-q3'] = 0 if vt.subs(x, 0) == 0 and vt.subs(x, -S(1, 2)) > 0 and vt.subs(x, S(1, 2)) > 0 else None
     return {k: v for k, v in C.items() if v is not None}

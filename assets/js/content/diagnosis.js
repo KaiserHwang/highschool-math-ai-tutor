@@ -337,6 +337,22 @@ export const DIAGNOSIS = [
     skills: { reason: 1, calc: 0.5 },
     hint: t`양변을 $x$에 대하여 미분합니다.`,
     solution: t`$f(x)=3x^2+a$이고 $f(1)=3+a=5$에서 $a=2$. $f(2)=12+2=14$`,
+  },
+  {
+    id: 'd41', unit: 'c3', level: 'core', type: 'short', sec: 90, lesson: 'c3-l4',
+    q: t`곡선 $y=x^2-3x$와 $x$축으로 둘러싸인 부분의 넓이를 구하시오.`,
+    answer: '9/2',
+    skills: { concept: 1, calc: 0.5 },
+    hint: t`$x=0,\ 3$에서 만나고, 그 사이에서 곡선은 $x$축 아래에 있습니다.`,
+    solution: t`$\displaystyle\int_0^3(3x-x^2)\,dx=\dfrac{27}2-9=\dfrac92$`,
+  },
+  {
+    id: 'd42', unit: 'c3', level: 'adv', type: 'short', sec: 120, lesson: 'c3-l5',
+    q: t`수직선 위를 움직이는 점의 시각 $t$에서의 속도가 $v(t)=4-2t$일 때, $t=0$에서 $t=4$까지 움직인 거리를 구하시오.`,
+    answer: '8',
+    skills: { concept: 1, reason: 0.5 },
+    hint: t`$t=2$에서 속도의 부호가 바뀝니다.`,
+    solution: t`$\displaystyle\int_0^2(4-2t)\,dt+\int_2^4(2t-4)\,dt=4+4=8$`,
   },];
 
 // ── 진단 묶음 ─────────────────────────────────────
@@ -346,7 +362,7 @@ export const DIAGNOSIS = [
 export const DIAG_SETS = [
   { id: 'common', title: '공통수학1·2', courses: ['common1', 'common2'], minutes: 35 },
   { id: 'algebra', title: '대수', courses: ['algebra'], minutes: 28 },
-  { id: 'calculus1', title: '미적분Ⅰ', courses: ['calculus1'], minutes: 36 },
+  { id: 'calculus1', title: '미적분Ⅰ', courses: ['calculus1'], minutes: 42 },
 ];
 export const DIAG_SET_BY_ID = Object.fromEntries(DIAG_SETS.map((s) => [s.id, s]));
 export const isDiagSetId = (id) => typeof id === 'string' && Object.hasOwn(DIAG_SET_BY_ID, id);

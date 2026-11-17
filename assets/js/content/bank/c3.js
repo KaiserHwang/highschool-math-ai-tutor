@@ -1,4 +1,4 @@
-// 미적분Ⅰ Ⅲ. 적분 (부정적분, 정적분, 정적분으로 정의된 함수)
+// 미적분Ⅰ Ⅲ. 적분 (부정적분, 정적분, 정적분으로 정의된 함수, 넓이, 속도와 거리)
 // 모든 정답은 tests/verify_calculus.py 에서 독립 계산으로 검증한다.
 const t = String.raw;
 
@@ -94,5 +94,98 @@ export default [
     ],
     solution: t`$x=1$을 넣으면 $1-2+a+b=0$. 한 번 미분한 식에 $x=1$을 넣으면 $0=4-6+2a$에서 $a=1$, $b=0$. 다시 미분하면 $f(x)=12x^2-12x+2$이므로 $f(2)=26$`,
     trap: t`$x$가 적분 기호 안에 있으면 바로 미분할 수 없습니다. $x$를 적분 기호 밖으로 꺼낸 뒤 곱의 미분을 씁니다.`,
+  },
+  {
+    id: 'c3-09', unit: 'c3', level: 'basic', topic: '곡선과 x축 사이의 넓이', type: 'short',
+    q: t`곡선 $y=x^2-1$과 $x$축으로 둘러싸인 부분의 넓이를 구하시오.`,
+    answer: '4/3',
+    skills: { calc: 1, concept: 0.5 },
+    hints: [
+      t`$x=\pm1$에서 $x$축과 만나고, 그 사이에서 곡선은 $x$축 아래에 있습니다.`,
+      t`$\displaystyle\int_{-1}^{1}(1-x^2)\,dx$`,
+    ],
+    solution: t`$2\Big[x-\dfrac{x^3}3\Big]_0^1=\dfrac43$`,
+    trap: t`$\displaystyle\int_{-1}^{1}(x^2-1)\,dx=-\dfrac43$은 넓이가 아닙니다. $x$축 아래 부분은 부호를 바꿉니다.`,
+  },
+  {
+    id: 'c3-10', unit: 'c3', level: 'basic', topic: '속도와 움직인 거리', type: 'short',
+    q: t`수직선 위를 움직이는 점의 시각 $t$에서의 속도가 $v(t)=3t^2$일 때, $t=0$에서 $t=2$까지 움직인 거리를 구하시오.`,
+    answer: '8',
+    skills: { concept: 1 },
+    hints: [
+      t`$v(t)\ge0$이므로 거리는 $\displaystyle\int_0^2v(t)\,dt$입니다.`,
+      t`$\Big[t^3\Big]_0^2$`,
+    ],
+    solution: t`$8-0=8$`,
+    trap: t`거리는 속도를 미분한 값이 아니라 적분한 값입니다. $v'(t)=6t$에 $t=2$를 넣은 $12$와 헷갈리지 않습니다.`,
+  },
+  {
+    id: 'c3-11', unit: 'c3', level: 'basic', topic: '곡선과 직선 사이의 넓이', type: 'short',
+    q: t`곡선 $y=x^2$과 직선 $y=9$로 둘러싸인 부분의 넓이를 구하시오.`,
+    answer: '36',
+    skills: { calc: 1, concept: 0.5 },
+    hints: [
+      t`교점은 $x=\pm3$이고 그 사이에서 직선이 위에 있습니다.`,
+      t`$\displaystyle\int_{-3}^{3}(9-x^2)\,dx$`,
+    ],
+    solution: t`$2\Big[9x-\dfrac{x^3}3\Big]_0^3=2\times18=36$`,
+  },
+  {
+    id: 'c3-12', unit: 'c3', level: 'core', topic: 'x축 위아래로 나뉘는 넓이', type: 'short',
+    q: t`곡선 $y=x^3-x$와 $x$축으로 둘러싸인 두 부분의 넓이의 합을 구하시오.`,
+    answer: '1/2',
+    skills: { concept: 1, calc: 0.5 },
+    hints: [
+      t`$x^3-x=x(x+1)(x-1)$이므로 $x=-1,\ 0,\ 1$에서 $x$축과 만납니다.`,
+      t`$-1\le x\le0$에서 위, $0\le x\le1$에서 아래`,
+    ],
+    solution: t`$\displaystyle\int_{-1}^{0}(x^3-x)\,dx+\int_0^1(x-x^3)\,dx=\dfrac14+\dfrac14=\dfrac12$`,
+    trap: t`$\displaystyle\int_{-1}^{1}(x^3-x)\,dx=0$입니다. 위아래 넓이가 지워져 넓이의 합이 아닙니다.`,
+  },
+  {
+    id: 'c3-13', unit: 'c3', level: 'core', topic: '두 곡선 사이의 넓이', type: 'short',
+    q: t`곡선 $y=x^2-2x$와 직선 $y=x$로 둘러싸인 부분의 넓이를 구하시오.`,
+    answer: '9/2',
+    skills: { calc: 1, concept: 0.5 },
+    hints: [
+      t`교점: $x^2-2x=x$에서 $x=0,\ 3$`,
+      t`그 사이에서 직선이 위에 있으므로 $\displaystyle\int_0^3(3x-x^2)\,dx$`,
+    ],
+    solution: t`$\Big[\dfrac{3x^2}{2}-\dfrac{x^3}3\Big]_0^3=\dfrac{27}{2}-9=\dfrac92$`,
+  },
+  {
+    id: 'c3-14', unit: 'c3', level: 'core', topic: '방향이 바뀌는 운동의 거리', type: 'short',
+    q: t`수직선 위를 움직이는 점의 시각 $t$에서의 속도가 $v(t)=t^2-4t+3$일 때, $t=0$에서 $t=3$까지 움직인 거리를 구하시오.`,
+    answer: '8/3',
+    skills: { concept: 1, calc: 0.5 },
+    hints: [
+      t`$v(t)=(t-1)(t-3)$이므로 $t=1$에서 방향이 바뀝니다.`,
+      t`$\displaystyle\int_0^1v\,dt-\int_1^3v\,dt$`,
+    ],
+    solution: t`$\displaystyle\int_0^1v\,dt=\dfrac43$, $\displaystyle\int_1^3v\,dt=-\dfrac43$이므로 거리는 $\dfrac43+\dfrac43=\dfrac83$`,
+    trap: t`$\displaystyle\int_0^3v\,dt=0$은 위치의 변화량입니다. 출발점으로 돌아왔지만 움직인 거리는 $0$이 아닙니다.`,
+  },
+  {
+    id: 'c3-15', unit: 'c3', level: 'adv', topic: '곡선과 접선 사이의 넓이', type: 'short',
+    q: t`곡선 $y=x^2$ 위의 점 $(1,\ 1)$에서의 접선과 이 곡선 및 $y$축으로 둘러싸인 부분의 넓이를 구하시오.`,
+    answer: '1/3',
+    skills: { insight: 1, calc: 0.5 },
+    hints: [
+      t`접선은 $y=2x-1$입니다.`,
+      t`$0\le x\le1$에서 곡선이 접선보다 위에 있으므로 $\displaystyle\int_0^1(x^2-2x+1)\,dx$`,
+    ],
+    solution: t`$\displaystyle\int_0^1(x-1)^2\,dx=\Big[\dfrac{(x-1)^3}{3}\Big]_0^1=\dfrac13$`,
+  },
+  {
+    id: 'c3-16', unit: 'c3', level: 'killer', topic: '넓이를 이등분하는 직선', type: 'short',
+    q: t`곡선 $y=3x^2$과 직선 $y=3$으로 둘러싸인 부분의 넓이를 직선 $y=a$ ($0<a<3$)가 이등분할 때, $a^3$의 값을 구하시오.`,
+    answer: '27/4',
+    skills: { insight: 1, reason: 1 },
+    hints: [
+      t`전체 넓이는 $\displaystyle\int_{-1}^{1}(3-3x^2)\,dx=4$입니다.`,
+      t`직선 $y=a$ 아래 부분(곡선과 $y=a$ 사이)의 넓이가 $2$이어야 합니다. 교점은 $x=\pm\sqrt{\dfrac a3}$`,
+    ],
+    solution: t`$c=\sqrt{\dfrac a3}$이라 하면 아래 부분의 넓이는 $\displaystyle2\int_0^c(a-3x^2)\,dx=2(ac-c^3)=4c^3$ ($a=3c^2$). $4c^3=2$에서 $c^3=\dfrac12$이고 $a^3=27c^6=\dfrac{27}{4}$`,
+    trap: t`직선 아래 부분은 직사각형이 아니라 곡선과 직선 사이입니다. 교점의 $x$좌표가 $a$에 따라 바뀝니다.`,
   },
 ];

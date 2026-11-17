@@ -47,7 +47,7 @@ export function renderReport(view) {
     <header class="page-head">
       <h1 class="page-title">학습 리포트</h1>
       <p class="lead">${st.profile.name ? esc(st.profile.name) + ' · ' : ''}${fmtDate(today())} 기준 · ${TRACKS[activeTrack()].label} 트랙 · 공부하는 과목: ${esc(scope)}</p>
-      <p class="hint-text">${esc(NEXT_SUBJECTS_NOTE)} 이 리포트의 숙련도는 그 기초 단계의 학습 기록이며, 수능 준비도 전체를 나타내지 않습니다.</p>
+      <p class="hint-text">${esc(NEXT_SUBJECTS_NOTE)} 이 리포트의 숙련도는 앱에서 공부한 기록이며, 수능 준비도 전체를 나타내지 않습니다.</p>
     </header>
     <dl class="stats">
       <div><dt>오래 기억한 개념</dt><dd>${conceptMemory().kept}<small>/${conceptMemory().learned}</small></dd></div>
