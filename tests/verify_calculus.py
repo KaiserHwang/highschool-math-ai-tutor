@@ -159,6 +159,26 @@ def expected_calculus_bank(P=None):
     E['d35'] = single(ext_vals(2 * x ** 3 - 3 * x ** 2, 'min'))
     E['d36'] = maximum(x ** 3 - 6 * x ** 2 + 9 * x, x, sp.Interval(0, 4))
     E['d37'] = sum(1 for k in range(-60, 61) if len(n_roots(x ** 3 - 3 * x ** 2 - 9 * x - k)) == 3)
+    # ── 적분(은행 c3-01~c3-08): 정적분·부정적분은 sympy.integrate로, 모르는 다항함수는 계수를 미지수로 놓고 항등식을 풀어 구한다
+    E['c3-01'] = sp.integrate(6 * x ** 2 + 2 * x, (x, 0, 1))
+    E['c3-02'] = anti(4 * x - 3, 0, 1).subs(x, 3)
+    E['c3-03'] = sp.diff(sp.integrate(tt_ ** 2 - tt_, (tt_, 1, x)), x).subs(x, 3)
+    # ∫₀² f = 5, ∫₀² g = 2 를 만족하는 서로 다른 함수 쌍으로 계산해도 같은지
+    pairs = [(S(5, 2) + 0 * x, 1 + 0 * x), (S(15, 8) * x ** 2, x), (x ** 3 - S(3, 2) * x + 2, S(3, 4) * x ** 2)]
+    assert all(sp.integrate(f, (x, 0, 2)) == 5 and sp.integrate(g, (x, 0, 2)) == 2 for f, g in pairs)
+    E['c3-04'] = single({sp.integrate(3 * f - 2 * g + 1, (x, 0, 2)) for f, g in pairs})
+    E['c3-05'] = sp.integrate(sp.diff(x ** 3 - 3 * x, x), (x, -1, 2))
+    E['c3-06'] = sp.integrate(sp.Piecewise((x, x < 1), (2 * x - 1, True)), (x, 0, 2))
+    g = sp.integrate(tt_ ** 2 - 2 * tt_ - 3, (tt_, 0, x))
+    E['c3-07'] = single(ext_vals(g, 'max')) - single(ext_vals(g, 'min'))
+    E['c3-08'] = solve_poly_f(lambda f: sp.integrate((x - tt_) * f.subs(x, tt_), (tt_, 1, x)), lambda a, b: x ** 4 - 2 * x ** 3 + a * x ** 2 + b, 2, at=2)
+    E['d38'] = sp.integrate(3 * x ** 2, (x, 1, 2))
+    E['d39'] = anti(3 * x ** 2 - 2 * x, 1, 0).subs(x, 2)
+    p, q, r, a = sp.symbols('p q r a')
+    f = p * x ** 2 + q * x + r
+    eqs = sp.Poly(sp.integrate(f.subs(x, tt_), (tt_, 0, x)) - (x ** 3 + a * x), x).all_coeffs() + [f.subs(x, 1) - 5]
+    sol = sp.solve(eqs, [p, q, r, a], dict=True)
+    E['d40'] = f.subs(single(sol)).subs(x, 2)
     E['d32'] = avg_rate(x ** 2 + x, 1, 4)
     E['d33'] = deriv_at((x + 1) * (x ** 2 - 3), 2)
     m, b = tangent(x ** 3 - 3 * x, 2)
@@ -182,6 +202,26 @@ def tangent(f, a):
     """x=a에서의 접선 y = m x + c 의 (m, c)"""
     m = deriv_at(f, a)
     return m, sp.expand(f.subs(x, a) - m * a)
+
+
+tt_ = sp.Symbol('t', real=True)  # 적분 변수
+
+
+def anti(f, x0, y0):
+    """f의 부정적분 중 x=x0에서 값이 y0인 것 (sympy.integrate + 적분상수를 조건으로 결정)"""
+    C = sp.Symbol('C')
+    F = sp.integrate(f, x) + C
+    return F.subs(C, single(sp.solve(F.subs(x, x0) - y0, C)))
+
+
+def solve_poly_f(lhs, rhs, deg, at):
+    """모르는 다항함수 f(차수 deg 이하)와 상수 a, b에 대해 항등식 lhs(f) = rhs(a, b)를 계수 비교로 풀고 f(at)을 돌려준다"""
+    cs = sp.symbols(f'k0:{deg + 1}')
+    a, b = sp.symbols('a b')
+    f = sum(c * x ** i for i, c in enumerate(cs))
+    eqs = sp.Poly(sp.expand(lhs(f) - rhs(a, b)), x).all_coeffs()
+    sol = sp.solve(eqs, list(cs) + [a, b], dict=True)
+    return f.subs(single(sol)).subs(x, at)
 
 
 def extrema(f):
@@ -375,6 +415,55 @@ def expected_calculus_lessons():
     v = sp.diff(pos, x)
     turns = [r for r in n_roots(v) if r > 0 and v.subs(x, r - S(1, 10 ** 6)) * v.subs(x, r + S(1, 10 ** 6)) < 0]
     E['c2-l6-d2'] = sp.integrate(sp.Abs(v), (x, turns[0], turns[1]))
+    # ── c3-l1 부정적분
+    E['c3-l1-e1'] = anti(3 * x ** 2 - 4 * x + 1, 0, 2).subs(x, 2)
+    E['c3-l1-e2'] = anti(6 * x - 2, 1, 3).subs(x, 2)
+    E['c3-l1-e3'] = sp.diff(sp.integrate(x ** 3 - 2 * x, x), x).subs(x, 2)
+    E['c3-l1-c1'] = anti(4 * x ** 3 + 2 * x, 0, 1).subs(x, 1)
+    E['c3-l1-c2'] = anti(3 * x ** 2 - 1, 1, 2).subs(x, 2)
+    E['c3-l1-p'] = 0 if all(sp.diff(x ** 2 + c, x) == 2 * x for c in (0, 1, -7, S(5, 3))) else 1  # 보기: 무수히 많다, 하나, 두 개
+    E['c3-l1-de1'] = single(ext_vals(anti(3 * x ** 2 - 12 * x + 9, 0, 2), 'max'))
+    def joined(left_d, right_d, x0, y0, joint, at):
+        """구간마다 다른 도함수(왼쪽, 오른쪽)에서 연속인 f: 왼쪽 조건 f(x0)=y0, 경계 joint에서 이어 붙여 f(at)"""
+        L = anti(left_d, x0, y0)
+        R = anti(right_d, joint, L.subs(x, joint))
+        return R.subs(x, at)
+    E['c3-l1-de2'] = joined(2 * x, 1 + 0 * x, 0, 1, 1, 3)
+    E['c3-l1-d1'] = single(ext_vals(anti(3 * x ** 2 - 3, 0, 1), 'min'))
+    E['c3-l1-d2'] = joined(3 * x ** 2, 2 + 0 * x, 0, 0, 1, 2)
+    # ── c3-l2 정적분
+    E['c3-l2-e1'] = sp.integrate(3 * x ** 2 - 2 * x, (x, 0, 2))
+    E['c3-l2-e2'] = sp.integrate(x ** 3 + 3 * x ** 2 + x, (x, -1, 1))
+    E['c3-l2-e3'] = sp.integrate(sp.Abs(x - 1), (x, 0, 3))
+    E['c3-l2-c1'] = sp.integrate(2 * x + 1, (x, 1, 3))
+    E['c3-l2-c2'] = sp.integrate(x ** 5 - 4 * x ** 3 + 3 * x ** 2 + 1, (x, -2, 2))
+    C = sp.Symbol('C')
+    F = x ** 3 / 3 + C
+    E['c3-l2-p'] = 0 if sp.simplify(F.subs(x, 2) - F.subs(x, 0)) == sp.integrate(x ** 2, (x, 0, 2)) else 1
+    E['c3-l2-de1'] = sp.integrate(sp.Max(x ** 2, x).rewrite(sp.Piecewise), (x, 0, 2))
+    k = sp.Symbol('k')
+    E['c3-l2-de2'] = (3 * x ** 2 - k).subs(k, single(sp.solve(sp.integrate(3 * x ** 2 - k, (x, 0, 2)) - k, k))).subs(x, 1)
+    E['c3-l2-d1'] = sp.integrate(sp.Max(x, 1).rewrite(sp.Piecewise), (x, 0, 3))
+    E['c3-l2-d2'] = (6 * x ** 2 - 2 * k).subs(k, single(sp.solve(sp.integrate(6 * x ** 2 - 2 * k, (x, 0, 1)) - k, k))).subs(x, 1)
+    # ── c3-l3 정적분으로 정의된 함수: 모르는 f는 계수를 미지수로 놓고 항등식을 푼다
+    pp, qq, aa, kk = sp.symbols('pp qq aa kk')
+    f = pp * x + qq
+    sol = sp.solve(sp.Poly(sp.integrate(f.subs(x, tt_), (tt_, 1, x)) - (x ** 2 + aa * x - 3), x).all_coeffs(), [pp, qq, aa], dict=True)
+    E['c3-l3-e1'] = f.subs(single(sol)).subs(x, 3)
+    g = sp.integrate(tt_ ** 2 - 4, (tt_, 0, x))
+    E['c3-l3-e2'] = single(ext_vals(g, 'min'))
+    E['c3-l3-e3'] = sp.limit(sp.integrate(tt_ ** 3 + 1, (tt_, 2, 2 + hh)) / hh, hh, 0)
+    r0 = sp.Symbol('r0')
+    f = pp * x ** 2 + qq * x + r0
+    eqs = sp.Poly(sp.integrate(f.subs(x, tt_), (tt_, 0, x)) - (x ** 3 - 2 * x ** 2 + kk * x), x).all_coeffs() + [f.subs(x, 1) - 2]
+    E['c3-l3-c1'] = f.subs(single(sp.solve(eqs, [pp, qq, r0, kk], dict=True))).subs(x, 2)
+    E['c3-l3-c2'] = sp.limit(sp.integrate(tt_ ** 2 + 2 * tt_, (tt_, 1, x)) / (x - 1), x, 1)
+    E['c3-l3-p'] = pick_expr([x ** 2 + 1, x ** 3 / 3 + x, 2 * x], sp.diff(sp.integrate(tt_ ** 2 + 1, (tt_, 0, x)), x))
+    xs = sp.Symbol('xs', nonnegative=True)
+    E['c3-l3-de1'] = maximum(sp.integrate(4 - tt_ ** 2, (tt_, 0, xs)), xs, sp.Interval(0, oo))
+    E['c3-l3-de2'] = sp.diff(sp.integrate((x - tt_) * tt_ ** 2, (tt_, 0, x)), x).subs(x, 3)
+    E['c3-l3-d1'] = maximum(sp.integrate(9 - tt_ ** 2, (tt_, 0, xs)), xs, sp.Interval(0, oo))
+    E['c3-l3-d2'] = sp.diff(sp.integrate((x - tt_) * (2 * tt_ + 1), (tt_, 0, x)), x).subs(x, 2)
     return E
 
 
@@ -440,6 +529,18 @@ def expected_calculus_cq():
     mins = [(c0, v) for c0, k, v in extrema(x ** 4 - 2 * x ** 2) if k == 'min']
     C['c2-l5-q3'] = 0 if [c0 for c0, _ in mins] == [-1, 1] and len({v for _, v in mins}) == 1 else None
     C['c2-l5-q4'] = 0 if not extrema(x ** 3) else None
+    # ── 적분
+    C['c3-l1-q1'] = pick_expr([x ** 4 / 4, 3 * x ** 2, x ** 4], sp.integrate(x ** 3, x))
+    fs = [x ** 2 - 3 * x, 5 * x ** 3 + 1, 7 + 0 * x]
+    C['c3-l1-q3'] = 0 if all(sp.simplify(sp.diff(sp.integrate(f, x), x) - f) == 0 for f in fs) else None
+    C['c3-l2-q1'] = 0 if all(sp.integrate(f, (x, 3, 3)) == 0 for f in fs) else None
+    C['c3-l2-q2'] = 0 if all(sp.integrate(f, (x, 2, -1)) == -sp.integrate(f, (x, -1, 2)) for f in fs) else None
+    C['c3-l2-q3'] = [S(0), S(8)].index(sp.integrate(x ** 3, (x, -2, 2)))
+    C['c3-l2-q4'] = 0 if sp.simplify((x ** 4 / 4 + sp.Symbol('C')).subs(x, 2) - (x ** 4 / 4 + sp.Symbol('C')).subs(x, 1)) == sp.integrate(x ** 3, (x, 1, 2)) else None
+    C['c3-l3-q1'] = 0 if all(sp.simplify(sp.diff(sp.integrate(f.subs(x, tt_), (tt_, 2, x)), x) - f) == 0 for f in fs) else None
+    C['c3-l3-q2'] = 0 if all(sp.integrate(f.subs(x, tt_), (tt_, 4, 4)) == 0 for f in fs) else None
+    C['c3-l3-q3'] = 0 if all(sp.simplify(sp.diff(sp.integrate(f.subs(x, tt_), (tt_, x, 2)), x) + f) == 0 for f in fs) else None
+    C['c3-l3-q4'] = 0 if all(sp.limit(sp.integrate(f.subs(x, tt_), (tt_, 1, 1 + hh)) / hh, hh, 0) == f.subs(x, 1) for f in fs) else None
     vt = sp.diff(x ** 3, x)  # 위치 t³ 의 속도
     C['c2-l6-q3'] = 0 if vt.subs(x, 0) == 0 and vt.subs(x, -S(1, 2)) > 0 and vt.subs(x, S(1, 2)) > 0 else None
     return {k: v for k, v in C.items() if v is not None}

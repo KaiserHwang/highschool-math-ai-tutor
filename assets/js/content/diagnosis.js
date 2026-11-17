@@ -313,6 +313,30 @@ export const DIAGNOSIS = [
     skills: { reason: 1, calc: 0.5 },
     hint: t`$f(x)=x^3-3x^2-9x$의 극댓값과 극솟값 사이에 $k$가 있어야 합니다.`,
     solution: t`$f'(x)=3(x+1)(x-3)$에서 극댓값 $f(-1)=5$, 극솟값 $f(3)=-27$. $-27<k<5$이므로 정수는 $31$개`,
+  },
+  {
+    id: 'd38', unit: 'c3', level: 'basic', type: 'short', sec: 60, lesson: 'c3-l2',
+    q: t`$\displaystyle\int_1^23x^2\,dx$의 값을 구하시오.`,
+    answer: '7',
+    skills: { calc: 1 },
+    hint: t`한 부정적분은 $x^3$입니다.`,
+    solution: t`$\Big[x^3\Big]_1^2=8-1=7$`,
+  },
+  {
+    id: 'd39', unit: 'c3', level: 'core', type: 'short', sec: 90, lesson: 'c3-l1',
+    q: t`$f'(x)=3x^2-2x$이고 $f(1)=0$일 때, $f(2)$의 값을 구하시오.`,
+    answer: '4',
+    skills: { concept: 1, calc: 0.5 },
+    hint: t`$f(x)=x^3-x^2+C$로 놓고 $f(1)=0$으로 $C$를 정합니다.`,
+    solution: t`$C=0$이므로 $f(2)=8-4=4$`,
+  },
+  {
+    id: 'd40', unit: 'c3', level: 'adv', type: 'short', sec: 120, lesson: 'c3-l3',
+    q: t`다항함수 $f(x)$가 모든 실수 $x$에 대하여 $\displaystyle\int_0^xf(t)\,dt=x^3+ax$를 만족하고 $f(1)=5$일 때, $f(2)$의 값을 구하시오. (단, $a$는 상수)`,
+    answer: '14',
+    skills: { reason: 1, calc: 0.5 },
+    hint: t`양변을 $x$에 대하여 미분합니다.`,
+    solution: t`$f(x)=3x^2+a$이고 $f(1)=3+a=5$에서 $a=2$. $f(2)=12+2=14$`,
   },];
 
 // ── 진단 묶음 ─────────────────────────────────────
@@ -322,7 +346,7 @@ export const DIAGNOSIS = [
 export const DIAG_SETS = [
   { id: 'common', title: '공통수학1·2', courses: ['common1', 'common2'], minutes: 35 },
   { id: 'algebra', title: '대수', courses: ['algebra'], minutes: 28 },
-  { id: 'calculus1', title: '미적분Ⅰ', courses: ['calculus1'], minutes: 27 },
+  { id: 'calculus1', title: '미적분Ⅰ', courses: ['calculus1'], minutes: 36 },
 ];
 export const DIAG_SET_BY_ID = Object.fromEntries(DIAG_SETS.map((s) => [s.id, s]));
 export const isDiagSetId = (id) => typeof id === 'string' && Object.hasOwn(DIAG_SET_BY_ID, id);
