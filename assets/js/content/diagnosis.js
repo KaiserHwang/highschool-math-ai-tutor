@@ -418,6 +418,30 @@ export const DIAGNOSIS = [
     skills: { concept: 1, calc: 0.5 },
     hint: t`성공 확률 $\dfrac16$인 독립시행을 $3$번 합니다.`,
     solution: t`$_3\mathrm{C}_1\times\dfrac16\times\left(\dfrac56\right)^2=\dfrac{75}{216}=\dfrac{25}{72}$`,
+  },
+  {
+    id: 'd51', unit: 's3', level: 'basic', type: 'short', sec: 60, lesson: 's3-l1',
+    q: t`확률변수 $X$의 확률질량함수가 $\mathrm{P}(X=x)=k(4-x)\ (x=1,\ 2,\ 3)$일 때, $\mathrm{P}(X=1)$을 구하시오. (단, $k$는 상수)`,
+    answer: '1/2',
+    skills: { concept: 1 },
+    hint: t`확률을 모두 더하면 $1$입니다.`,
+    solution: t`$k(3+2+1)=1$에서 $k=\dfrac16$이므로 $\mathrm{P}(X=1)=\dfrac36=\dfrac12$`,
+  },
+  {
+    id: 'd52', unit: 's3', level: 'core', type: 'short', sec: 90, lesson: 's3-l2',
+    q: t`확률변수 $X$가 가지는 값이 $2,\ 4,\ 6$이고 각 값을 가질 확률이 모두 $\dfrac13$일 때, $\mathrm{V}(X)$를 구하시오.`,
+    answer: '8/3',
+    skills: { concept: 1, calc: 0.5 },
+    hint: t`$\mathrm{V}(X)=\mathrm{E}(X^2)-\{\mathrm{E}(X)\}^2$`,
+    solution: t`$\mathrm{E}(X)=4$, $\mathrm{E}(X^2)=\dfrac{4+16+36}3=\dfrac{56}3$이므로 $\dfrac{56}3-16=\dfrac83$`,
+  },
+  {
+    id: 'd53', unit: 's3', level: 'core', type: 'short', sec: 90, lesson: 's3-l3',
+    q: t`한 개의 주사위를 $36$번 던질 때 $6$의 눈이 나오는 횟수를 $X$라 하자. $\mathrm{V}(X)$를 구하시오.`,
+    answer: '5',
+    skills: { concept: 1 },
+    hint: t`$X$는 이항분포 $\mathrm{B}\left(36,\ \dfrac16\right)$을 따릅니다.`,
+    solution: t`$36\times\dfrac16\times\dfrac56=5$`,
   },];
 
 // ── 진단 묶음 ─────────────────────────────────────
@@ -428,7 +452,7 @@ export const DIAG_SETS = [
   { id: 'common', title: '공통수학1·2', courses: ['common1', 'common2'], minutes: 35 },
   { id: 'algebra', title: '대수', courses: ['algebra'], minutes: 28 },
   { id: 'calculus1', title: '미적분Ⅰ', courses: ['calculus1'], minutes: 42 },
-  { id: 'statistics', title: '확률과 통계', courses: ['statistics'], minutes: 24 },
+  { id: 'statistics', title: '확률과 통계', courses: ['statistics'], minutes: 33 },
 ];
 export const DIAG_SET_BY_ID = Object.fromEntries(DIAG_SETS.map((s) => [s.id, s]));
 export const isDiagSetId = (id) => typeof id === 'string' && Object.hasOwn(DIAG_SET_BY_ID, id);

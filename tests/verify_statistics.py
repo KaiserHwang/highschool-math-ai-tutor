@@ -91,6 +91,7 @@ def expected_statistics_bank(P=None):
     E['s2-16'] = cond(items, lambda o: o[1], lambda o: o[0] == 'A')
     E['d49'] = prob(list(it.permutations(['T1', 'T2', 'N1', 'N2', 'N3'], 2)), lambda o: o[0][0] == 'T' and o[1][0] == 'T')
     E['d50'] = prob(list(it.product(range(1, 7), repeat=3)), lambda o: o.count(6) == 1)
+    E.update(s3_bank())
     return E
 
 
@@ -245,6 +246,7 @@ def expected_statistics_lessons():
     E['s2-l5-de2'] = prob(list(it.product('HT', repeat=5)), lambda o: o.count('H') >= 4)
     E['s2-l5-d1'] = cond(DICE2, lambda o: o[0] % 2 == 1, lambda o: sum(o) == 6)
     E['s2-l5-d2'] = trials(F(1, 3), 3, lambda k: k >= 2)
+    E.update(s3_lessons())
     return E
 
 
@@ -282,7 +284,11 @@ def expected_statistics_cq():
     C['s2-l5-q3'] = 0 if prob(die, lambda v: a_(v) and b_(v)) == prob(die, a_) * prob(die, b_) and prob(die, lambda v: a_(v) and not b_(v)) == prob(die, a_) * (1 - prob(die, b_)) else None
     C['s2-l5-q4'] = 0 if all(trials(F(1, 3), n, lambda k, r=r: k == r) == comb(n, r) * F(1, 3) ** r * F(2, 3) ** (n - r) for n in range(1, 6) for r in range(n + 1)) else None
     C['s2-l3-q2'] = 0 if cond(stu, lambda s: s[1] == 'g', lambda s: s[0] == 'f') != cond(stu, lambda s: s[0] == 'f', lambda s: s[1] == 'g') else None
+    C.update(s3_cq())
     return {k: v for k, v in C.items() if v is not None}
+
+
+from verify_statistics_s3 import s3_bank, s3_lessons, s3_cq  # noqa: E402
 
 
 if __name__ == '__main__':
