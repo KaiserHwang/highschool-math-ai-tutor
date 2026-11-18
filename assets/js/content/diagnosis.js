@@ -412,7 +412,7 @@ export const DIAGNOSIS = [
     solution: t`$\dfrac25\times\dfrac14=\dfrac1{10}$`,
   },
   {
-    id: 'd50', unit: 's2', level: 'adv', type: 'short', sec: 120, lesson: 's2-l5',
+    id: 'd50', unit: 's2', level: 'core', type: 'short', sec: 90, lesson: 's2-l5',
     q: t`한 개의 주사위를 $3$번 던질 때, $6$의 눈이 정확히 한 번 나올 확률을 구하시오.`,
     answer: '25/72',
     skills: { concept: 1, calc: 0.5 },

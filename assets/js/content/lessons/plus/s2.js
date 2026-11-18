@@ -277,9 +277,12 @@ export default {
         { k: 'b', label: t`검은 공 $b$`, min: 1, max: 5, step: 1, value: 2 },
       ],
       fig: ({ w, b }) => ({
-        x: [-0.5, 10.5], y: [-0.8, 0.8], w: 300, h: 80, equal: false, axes: false,
+        x: [-0.5, 10.5], y: [-0.8, 1.0], w: 300, h: 100, equal: false, axes: false,
         alt: `흰 공 ${w}개(빈 점)와 검은 공 ${b}개(채운 점)`,
-        items: range(1, w + b).map((i) => ({ t: 'pt', p: [i, 0], open: i <= w })),
+        items: [
+          ...range(1, w + b).map((i) => ({ t: 'pt', p: [i, 0], open: i <= w })),
+          { t: 'text', p: [5, 0.65], s: '빈 점: 흰 공 / 채운 점: 검은 공' },
+        ],
       }),
       read: ({ w, b }) => {
         const n = w + b;
@@ -336,7 +339,7 @@ export default {
     },
     explain: {
       prompt: '꺼낸 공을 되돌려 놓지 않을 때 두 번째 확률을 조건부확률로 보아야 하는 이유를 설명해 보세요.',
-      model: t`되돌려 놓지 않으면 첫 번째에 무엇을 꺼냈는지에 따라 주머니에 남은 공의 개수와 색의 구성이 달라집니다. 그래서 두 번째에 흰 공이 나올 확률은 "첫 번째 결과가 주어졌을 때"의 확률, 곧 조건부확률입니다. 두 번 모두 흰 공일 확률은 곱셈정리로 (첫 번째 흰 공의 확률)$\times$(첫 번째가 흰 공일 때 두 번째도 흰 공일 확률)입니다.`,
+      model: t`되돌려 놓지 않으면 첫 번째에 무엇을 꺼냈는지에 따라 주머니에 남은 공의 개수와 색의 구성이 달라집니다. 그래서 첫 번째 공의 색이 주어졌을 때 두 번째에 흰 공이 나올 확률은 그 조건에서의 확률, 곧 조건부확률입니다. 두 번 모두 흰 공일 확률은 곱셈정리로 (첫 번째 흰 공의 확률)$\times$(첫 번째가 흰 공일 때 두 번째도 흰 공일 확률)입니다.`,
       keys: ['첫 결과에 따라 남은 공이 달라진다', '두 번째 확률은 조건부확률', '곱셈정리로 곱한다'],
     },
   },
@@ -357,13 +360,20 @@ export default {
         { k: 'r', label: t`성공 횟수 $r$`, min: 0, max: 5, step: 1, value: 0 },
       ],
       fig: ({ n, r }) => ({
-        x: [-0.7, 5.7], y: [-0.08, 0.75], w: 300, h: 220, equal: false,
-        xt: range(0, 5).map((v) => [v, String(v)]), yt: [[0.5, '1/2']],
-        alt: `성공 확률 1/3인 시행 ${n}번에서 성공 횟수 0~${n}의 확률 막대그래프, ${r}번 강조`,
-        items: range(0, n).map((k) => {
-          const h = (C(n, k) * 2 ** (n - k)) / 3 ** n;
-          return { t: 'poly', pts: [[k - 0.35, 0], [k + 0.35, 0], [k + 0.35, h], [k - 0.35, h]], fill: k === r, style: k === r ? 'red' : 'main' };
-        }),
+        x: [-0.7, 5.7], y: [-0.14, 0.75], w: 300, h: 220, equal: false, axes: false,
+        alt: r > n
+          ? `성공 확률 1/3인 시행 ${n}번에서 성공 횟수 0~${n}의 확률 막대그래프. 성공 ${r}번은 시행 횟수를 넘어 확률 0`
+          : `성공 확률 1/3인 시행 ${n}번에서 성공 횟수 0~${n}의 확률 막대그래프, 성공 ${r}번 막대 강조`,
+        items: [
+          { t: 'seg', p: [-0.6, 0], q: [5.6, 0] },
+          ...range(0, 5).map((k) => ({ t: 'text', p: [k, -0.07], s: String(k) })),
+          ...range(0, n).map((k) => {
+            const h = (C(n, k) * 2 ** (n - k)) / 3 ** n;
+            return { t: 'poly', pts: [[k - 0.35, 0], [k + 0.35, 0], [k + 0.35, h], [k - 0.35, h]], fill: k === r, style: k === r ? 'red' : 'main' };
+          }),
+          // 막대가 아주 낮아도 선택한 칸이 보이도록 위에 표시한다
+          ...(r <= n ? [{ t: 'pt', p: [r, (C(n, r) * 2 ** (n - r)) / 3 ** n + 0.04], style: 'red', label: '▼', pos: 'n' }] : []),
+        ],
       }),
       read: ({ n, r }) => [[t`$\mathrm{P}(\text{성공 }r\text{번})$`, r > n ? '$0$ (성공 횟수는 시행 횟수를 넘을 수 없음)' : `$_{${n}}\\mathrm{C}_{${r}}\\left(\\dfrac13\\right)^{${r}}\\left(\\dfrac23\\right)^{${n - r}}=${frac(C(n, r) * 2 ** (n - r), 3 ** n)}$`]],
       goals: [
@@ -383,7 +393,7 @@ export default {
       ],
     },
     traps: {
-      's2-l5-c1': { '1/6': t`$\mathrm{P}(B^C)=1-\dfrac12=\dfrac12$입니다. $\dfrac23\times\dfrac14$처럼 다른 값을 곱하지 않았는지 확인합니다.`, '2/3': t`$\mathrm{P}(A\cap B^C)$는 $A$와 $B^C$이 함께 일어날 확률이라 $\mathrm{P}(A)$보다 작거나 같습니다. $\mathrm{P}(B^C)=\dfrac12$을 곱합니다.` },
+      's2-l5-c1': { '1/6': t`$\mathrm{P}(A\cap B^C)$은 $\mathrm{P}(A)-\mathrm{P}(B)$가 아니라 $\mathrm{P}(A)-\mathrm{P}(A\cap B)=\mathrm{P}(A)\mathrm{P}(B^C)$입니다.`, '2/3': t`$\mathrm{P}(A\cap B^C)$는 $A$와 $B^C$이 함께 일어날 확률이라 $\mathrm{P}(A)$보다 작거나 같습니다. $\mathrm{P}(B^C)=\dfrac12$을 곱합니다.` },
       's2-l5-c2': { '4/27': t`$\dfrac49\times\dfrac13$은 명중하는 회차가 정해진 한 가지 순서입니다. $_3\mathrm{C}_2=3$을 곱합니다.`, '2/3': t`명중률 자체가 아니라 "정확히 2번"의 확률입니다. 독립시행의 확률을 씁니다.` },
     },
     deep: {
