@@ -1,5 +1,4 @@
-// 확률과 통계 Ⅱ. 확률 — 소단원별 개념 학습(확률의 뜻과 기본 성질, 덧셈정리와 여사건, 조건부확률)
-// 사건의 독립과 종속, 확률의 곱셈정리 소단원은 이어서 추가한다.
+// 확률과 통계 Ⅱ. 확률 — 소단원별 개념 학습(확률의 뜻과 기본 성질, 덧셈정리와 여사건, 조건부확률, 곱셈정리, 독립과 종속)
 // 2022 개정 적용 시 고려 사항: 세 사건 이상에서 서로 배반이거나 독립임을 가정한 복잡한 문제는 다루지 않는다.
 const t = String.raw;
 
@@ -154,5 +153,104 @@ export default [
       t`$\mathrm{P}(B\,|\,A)$의 세로선 오른쪽이 조건입니다. 순서를 바꾸면 다른 확률입니다.`,
     ],
     related: ['s2-03', 's2-06', 's2-08'],
+  },
+  {
+    id: 's2-l4', unit: 's2', title: '확률의 곱셈정리',
+    summary: t`$\mathrm{P}(A\cap B)=\mathrm{P}(A)\mathrm{P}(B\,|\,A)$, 차례로 꺼내는 확률, 경우를 나누어 더하는 확률`,
+    core: t`<div class="box"><p class="box-t">확률의 곱셈정리</p>
+<p>$\mathrm{P}(A)>0$, $\mathrm{P}(B)>0$일 때 $\mathrm{P}(A\cap B)=\mathrm{P}(A)\mathrm{P}(B\,|\,A)=\mathrm{P}(B)\mathrm{P}(A\,|\,B)$</p></div>
+<div class="box"><p class="box-t">자주 쓰는 꼴</p>
+<ul>
+<li>꺼낸 것을 되돌려 놓지 않고 차례로 꺼낼 때: 첫째 확률 $\times$ (첫째 결과가 주어졌을 때) 둘째 확률</li>
+<li>경우를 나누어 더하기: $\mathrm{P}(B)=\mathrm{P}(A\cap B)+\mathrm{P}(A^C\cap B)=\mathrm{P}(A)\mathrm{P}(B\,|\,A)+\mathrm{P}(A^C)\mathrm{P}(B\,|\,A^C)$</li>
+</ul></div>`,
+    why: t`<p>조건부확률의 정의 $\mathrm{P}(B\,|\,A)=\dfrac{\mathrm{P}(A\cap B)}{\mathrm{P}(A)}$의 양변에 $\mathrm{P}(A)$를 곱한 것이 곱셈정리입니다. "먼저 $A$가 일어날 확률"에 "$A$가 일어났다는 조건에서 $B$가 일어날 확률"을 곱하면 둘 다 일어날 확률이 됩니다.</p>
+<p>꺼낸 것을 되돌려 놓지 않으면 두 번째에는 전체 개수와 남은 개수가 바뀝니다. 그래서 두 번째 확률은 첫 번째 결과에 따른 조건부확률이고, 곱셈정리로 계산합니다.</p>`,
+    examples: [
+      {
+        q: t`흰 공 $3$개와 검은 공 $2$개가 들어 있는 주머니에서 공을 한 개씩 두 번 꺼낼 때, 두 번 모두 흰 공일 확률을 구하시오. (단, 꺼낸 공은 다시 넣지 않는다)`,
+        steps: [
+          t`첫 번째 흰 공: $\dfrac35$, 그때 두 번째 흰 공: $\dfrac24$`,
+          t`$\dfrac35\times\dfrac24=\dfrac3{10}$`,
+        ],
+        answer: '3/10',
+      },
+      {
+        q: t`당첨 제비 $3$개를 포함한 $10$개의 제비 중에서 A가 먼저 한 개를 뽑고, 이어서 B가 한 개를 뽑는다. B가 당첨 제비를 뽑을 확률을 구하시오. (단, 뽑은 제비는 다시 넣지 않는다)`,
+        steps: [
+          t`A가 당첨일 때: $\dfrac3{10}\times\dfrac29=\dfrac6{90}$`,
+          t`A가 당첨이 아닐 때: $\dfrac7{10}\times\dfrac39=\dfrac{21}{90}$`,
+          t`더하면 $\dfrac{27}{90}=\dfrac3{10}$ (먼저 뽑든 나중에 뽑든 같습니다)`,
+        ],
+        answer: '3/10',
+      },
+      {
+        q: t`두 사건 $A,\ B$에 대하여 $\mathrm{P}(A)=\dfrac25$, $\mathrm{P}(B\,|\,A)=\dfrac12$일 때, $\mathrm{P}(A\cap B)$를 구하시오.`,
+        steps: [
+          t`$\mathrm{P}(A\cap B)=\mathrm{P}(A)\mathrm{P}(B\,|\,A)=\dfrac25\times\dfrac12$`,
+          t`$=\dfrac15$`,
+        ],
+        answer: '1/5',
+      },
+    ],
+    checks: [
+      { id: 's2-l4-c1', type: 'short', q: t`불량품 $2$개가 섞인 제품 $8$개 중에서 한 개씩 두 번 꺼낼 때, 두 번 모두 불량품일 확률을 구하시오. (단, 꺼낸 제품은 다시 넣지 않는다)`, answer: '1/28', solution: t`$\dfrac28\times\dfrac17=\dfrac1{28}$` },
+      { id: 's2-l4-c2', type: 'short', q: t`동전을 던져 앞면이 나오면 흰 공 $2$개, 검은 공 $2$개가 든 상자에서, 뒷면이 나오면 흰 공 $1$개, 검은 공 $3$개가 든 상자에서 공을 한 개 꺼낸다. 꺼낸 공이 흰 공일 확률을 구하시오.`, answer: '3/8', solution: t`$\dfrac12\times\dfrac24+\dfrac12\times\dfrac14=\dfrac14+\dfrac18=\dfrac38$` },
+    ],
+    tips: [
+      t`되돌려 놓는지(복원) 아닌지(비복원)를 먼저 확인합니다. 되돌려 놓지 않으면 두 번째 분모가 하나 줄어듭니다.`,
+      t`"어떤 경우에서 일어났는지"가 여럿이면 경우마다 곱셈정리로 구해 더합니다.`,
+    ],
+    related: ['s2-09', 's2-12', 's2-13', 's2-16'],
+  },
+  {
+    id: 's2-l5', unit: 's2', title: '사건의 독립과 종속',
+    summary: t`$\mathrm{P}(A\cap B)=\mathrm{P}(A)\mathrm{P}(B)$이면 독립, 독립시행의 확률 $_n\mathrm{C}_rp^r(1-p)^{n-r}$`,
+    core: t`<div class="box"><p class="box-t">독립과 종속</p>
+<ul>
+<li>사건 $A$가 일어나는 것이 사건 $B$가 일어날 확률에 영향을 주지 않을 때, 곧 $\mathrm{P}(B\,|\,A)=\mathrm{P}(B)$일 때 $A$와 $B$는 서로 <em>독립</em>이라 하고, 독립이 아닌 두 사건은 서로 <em>종속</em>이라 한다.</li>
+<li>두 사건 $A,\ B$가 서로 독립 $\iff$ $\mathrm{P}(A\cap B)=\mathrm{P}(A)\mathrm{P}(B)$ (단, $\mathrm{P}(A)>0$, $\mathrm{P}(B)>0$)</li>
+<li>$A,\ B$가 서로 독립이면 $A$와 $B^C$, $A^C$과 $B$, $A^C$과 $B^C$도 각각 서로 독립이다.</li>
+</ul></div>
+<div class="box"><p class="box-t">독립시행의 확률</p>
+<p>같은 시행을 반복할 때 각 시행의 결과가 서로 영향을 주지 않으면 이 시행을 <em>독립시행</em>이라 한다. 한 번의 시행에서 사건 $A$가 일어날 확률이 $p$일 때, $n$번의 독립시행에서 $A$가 $r$번 일어날 확률은 $_n\mathrm{C}_rp^r(1-p)^{n-r}$</p></div>`,
+    why: t`<p>독립은 "$A$가 일어났다는 정보가 $B$의 확률을 바꾸지 않는다"는 뜻입니다. 이것을 곱셈정리에 넣으면 $\mathrm{P}(A\cap B)=\mathrm{P}(A)\mathrm{P}(B\,|\,A)=\mathrm{P}(A)\mathrm{P}(B)$가 되어, 독립이면 확률을 그냥 곱할 수 있습니다.</p>
+<p>독립시행에서 $A$가 $r$번 일어나는 한 가지 순서(예: 처음 $r$번 일어나고 나머지는 안 일어남)의 확률은 $p^r(1-p)^{n-r}$입니다. $A$가 일어나는 $r$번을 $n$번 중 어디에 둘지가 $_n\mathrm{C}_r$가지이고 모두 확률이 같으므로 곱합니다.</p>
+<p>배반과 독립은 다릅니다. 확률이 양수인 두 사건이 배반이면 $A$가 일어났을 때 $B$는 절대 일어나지 않으므로 오히려 종속입니다.</p>`,
+    examples: [
+      {
+        q: t`두 사건 $A,\ B$가 서로 독립이고 $\mathrm{P}(A)=\dfrac13$, $\mathrm{P}(B)=\dfrac14$일 때, $\mathrm{P}(A\cup B)$를 구하시오.`,
+        steps: [
+          t`독립이므로 $\mathrm{P}(A\cap B)=\dfrac13\times\dfrac14=\dfrac1{12}$`,
+          t`$\mathrm{P}(A\cup B)=\dfrac13+\dfrac14-\dfrac1{12}=\dfrac12$`,
+        ],
+        answer: '1/2',
+      },
+      {
+        q: t`한 개의 주사위를 $4$번 던질 때, $1$의 눈이 정확히 $2$번 나올 확률을 구하시오.`,
+        steps: [
+          t`$p=\dfrac16$인 독립시행을 $4$번 하므로 $_4\mathrm{C}_2\left(\dfrac16\right)^2\left(\dfrac56\right)^2$`,
+          t`$=6\times\dfrac{25}{1296}=\dfrac{25}{216}$`,
+        ],
+        answer: '25/216',
+      },
+      {
+        q: t`두 사건 $A,\ B$가 서로 독립이고 $\mathrm{P}(A)=\dfrac12$, $\mathrm{P}(A\cap B)=\dfrac16$일 때, $\mathrm{P}(B)$를 구하시오.`,
+        steps: [
+          t`$\mathrm{P}(A\cap B)=\mathrm{P}(A)\mathrm{P}(B)$이므로 $\dfrac16=\dfrac12\mathrm{P}(B)$`,
+          t`$\mathrm{P}(B)=\dfrac13$`,
+        ],
+        answer: '1/3',
+      },
+    ],
+    checks: [
+      { id: 's2-l5-c1', type: 'short', q: t`두 사건 $A,\ B$가 서로 독립이고 $\mathrm{P}(A)=\dfrac23$, $\mathrm{P}(B)=\dfrac12$일 때, $\mathrm{P}(A\cap B^C)$를 구하시오.`, answer: '1/3', solution: t`$A$와 $B^C$도 독립이므로 $\dfrac23\times\left(1-\dfrac12\right)=\dfrac13$` },
+      { id: 's2-l5-c2', type: 'short', q: t`명중률이 $\dfrac23$인 사수가 과녁을 향해 $3$번 쏠 때, 정확히 $2$번 명중할 확률을 구하시오. (단, 각 시행은 서로 독립이다)`, answer: '4/9', solution: t`$_3\mathrm{C}_2\left(\dfrac23\right)^2\left(\dfrac13\right)=3\times\dfrac49\times\dfrac13=\dfrac49$` },
+    ],
+    tips: [
+      t`독립인지 확인할 때는 $\mathrm{P}(A\cap B)$와 $\mathrm{P}(A)\mathrm{P}(B)$를 각각 계산해 비교합니다.`,
+      t`독립시행의 확률에서 $_n\mathrm{C}_r$을 빠뜨리면 "정해진 한 가지 순서"의 확률만 구한 것이 됩니다.`,
+    ],
+    related: ['s2-10', 's2-11', 's2-14', 's2-15'],
   },
 ];

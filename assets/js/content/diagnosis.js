@@ -402,6 +402,22 @@ export const DIAGNOSIS = [
     skills: { reason: 1, calc: 0.5 },
     hint: t`조건 "적어도 한 개가 흰 공"의 경우의 수는 전체에서 검은 공만 꺼내는 경우를 뺀 것입니다.`,
     solution: t`전체 $_7\mathrm{C}_2=21$, 검은 공만 $_3\mathrm{C}_2=3$이므로 조건은 $18$가지. 모두 흰 공은 $_4\mathrm{C}_2=6$가지이므로 $\dfrac6{18}=\dfrac13$`,
+  },
+  {
+    id: 'd49', unit: 's2', level: 'core', type: 'short', sec: 90, lesson: 's2-l4',
+    q: t`당첨 제비 $2$개를 포함한 $5$개의 제비 중에서 한 개씩 두 번 뽑을 때, 두 번 모두 당첨 제비일 확률을 구하시오. (단, 뽑은 제비는 다시 넣지 않는다)`,
+    answer: '1/10',
+    skills: { concept: 1, calc: 0.5 },
+    hint: t`두 번째에는 당첨 제비와 전체 제비가 하나씩 줄어듭니다.`,
+    solution: t`$\dfrac25\times\dfrac14=\dfrac1{10}$`,
+  },
+  {
+    id: 'd50', unit: 's2', level: 'adv', type: 'short', sec: 120, lesson: 's2-l5',
+    q: t`한 개의 주사위를 $3$번 던질 때, $6$의 눈이 정확히 한 번 나올 확률을 구하시오.`,
+    answer: '25/72',
+    skills: { concept: 1, calc: 0.5 },
+    hint: t`성공 확률 $\dfrac16$인 독립시행을 $3$번 합니다.`,
+    solution: t`$_3\mathrm{C}_1\times\dfrac16\times\left(\dfrac56\right)^2=\dfrac{75}{216}=\dfrac{25}{72}$`,
   },];
 
 // ── 진단 묶음 ─────────────────────────────────────
@@ -412,7 +428,7 @@ export const DIAG_SETS = [
   { id: 'common', title: '공통수학1·2', courses: ['common1', 'common2'], minutes: 35 },
   { id: 'algebra', title: '대수', courses: ['algebra'], minutes: 28 },
   { id: 'calculus1', title: '미적분Ⅰ', courses: ['calculus1'], minutes: 42 },
-  { id: 'statistics', title: '확률과 통계', courses: ['statistics'], minutes: 18 },
+  { id: 'statistics', title: '확률과 통계', courses: ['statistics'], minutes: 24 },
 ];
 export const DIAG_SET_BY_ID = Object.fromEntries(DIAG_SETS.map((s) => [s.id, s]));
 export const isDiagSetId = (id) => typeof id === 'string' && Object.hasOwn(DIAG_SET_BY_ID, id);
