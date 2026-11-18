@@ -1,6 +1,6 @@
 // 자동 생성 파일입니다. 직접 고치지 말고 node tools/gen-sw.mjs 를 실행하세요.
 // 오프라인에서도 열리도록 앱 파일을 미리 받아 두고, 온라인일 때는 항상 서버의 최신 파일을 먼저 씁니다.
-const VERSION = 'mathpulse-57e49f9044b9';
+const VERSION = 'mathpulse-f81b125bfa62';
 const ASSETS = [
   './',
   'assets/css/app.css',
@@ -17,6 +17,7 @@ const ASSETS = [
   'assets/js/content/bank/c2.js',
   'assets/js/content/bank/c3.js',
   'assets/js/content/bank/s1.js',
+  'assets/js/content/bank/s2.js',
   'assets/js/content/bank/u1.js',
   'assets/js/content/bank/u2.js',
   'assets/js/content/bank/u3.js',
@@ -41,6 +42,7 @@ const ASSETS = [
   'assets/js/content/lessons/concept/c2.js',
   'assets/js/content/lessons/concept/c3.js',
   'assets/js/content/lessons/concept/s1.js',
+  'assets/js/content/lessons/concept/s2.js',
   'assets/js/content/lessons/concept/u1.js',
   'assets/js/content/lessons/concept/u2.js',
   'assets/js/content/lessons/concept/u3.js',
@@ -58,6 +60,7 @@ const ASSETS = [
   'assets/js/content/lessons/plus/c3.js',
   'assets/js/content/lessons/plus/kit.js',
   'assets/js/content/lessons/plus/s1.js',
+  'assets/js/content/lessons/plus/s2.js',
   'assets/js/content/lessons/plus/u1.js',
   'assets/js/content/lessons/plus/u2.js',
   'assets/js/content/lessons/plus/u3.js',
@@ -67,6 +70,7 @@ const ASSETS = [
   'assets/js/content/lessons/plus/u7.js',
   'assets/js/content/lessons/plus/u8.js',
   'assets/js/content/lessons/s1.js',
+  'assets/js/content/lessons/s2.js',
   'assets/js/content/lessons/u1.js',
   'assets/js/content/lessons/u2.js',
   'assets/js/content/lessons/u3.js',
