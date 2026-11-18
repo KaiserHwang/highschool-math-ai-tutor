@@ -1,4 +1,4 @@
-// 확률과 통계 Ⅱ. 확률 (확률의 뜻과 기본 성질, 덧셈정리와 여사건, 조건부확률)
+// 확률과 통계 Ⅱ. 확률 (확률의 뜻과 기본 성질, 덧셈정리와 여사건, 조건부확률, 곱셈정리, 독립과 종속)
 // 모든 정답은 tests/verify_statistics.py 에서 표본공간을 직접 나열해 세는 방법으로 검증한다.
 const t = String.raw;
 
@@ -94,5 +94,96 @@ export default [
     ],
     solution: t`곱이 짝수이면서 합이 홀수인 것은 홀수의 눈이 정확히 $1$번인 경우: $_3\mathrm{C}_1\times3\times3\times3=81$. 따라서 $\dfrac{81}{189}=\dfrac37$`,
     trap: t`합이 홀수인 경우 중 "세 번 모두 홀수"는 곱이 홀수라 조건에 들지 않습니다. 빼고 셉니다.`,
+  },
+  {
+    id: 's2-09', unit: 's2', level: 'basic', topic: '확률의 곱셈정리', type: 'short',
+    q: t`두 사건 $A,\ B$에 대하여 $\mathrm{P}(A)=\dfrac13$, $\mathrm{P}(B\,|\,A)=\dfrac34$일 때, $\mathrm{P}(A\cap B)$를 구하시오.`,
+    answer: '1/4',
+    skills: { concept: 1 },
+    hints: [
+      t`$\mathrm{P}(A\cap B)=\mathrm{P}(A)\mathrm{P}(B\,|\,A)$`,
+      t`$\dfrac13\times\dfrac34$`,
+    ],
+    solution: t`$\dfrac14$`,
+  },
+  {
+    id: 's2-10', unit: 's2', level: 'basic', topic: '독립인 두 사건', type: 'short',
+    q: t`두 사건 $A,\ B$가 서로 독립이고 $\mathrm{P}(A)=\dfrac12$, $\mathrm{P}(B)=\dfrac25$일 때, $\mathrm{P}(A\cap B)$를 구하시오.`,
+    answer: '1/5',
+    skills: { concept: 1 },
+    hints: [
+      t`독립이면 $\mathrm{P}(A\cap B)=\mathrm{P}(A)\mathrm{P}(B)$`,
+      t`$\dfrac12\times\dfrac25$`,
+    ],
+    solution: t`$\dfrac15$`,
+  },
+  {
+    id: 's2-11', unit: 's2', level: 'basic', topic: '독립시행의 확률', type: 'short',
+    q: t`동전 한 개를 $4$번 던질 때, 앞면이 정확히 $1$번 나올 확률을 구하시오.`,
+    answer: '1/4',
+    skills: { concept: 1, calc: 0.5 },
+    hints: [
+      t`$_4\mathrm{C}_1\left(\dfrac12\right)^1\left(\dfrac12\right)^3$`,
+      t`앞면이 나오는 회차를 $4$번 중 하나 고릅니다.`,
+    ],
+    solution: t`$4\times\dfrac1{16}=\dfrac14$`,
+    trap: t`$\dfrac1{16}$은 정해진 한 회차에만 앞면이 나올 확률입니다. 앞면이 나오는 회차가 $4$가지입니다.`,
+  },
+  {
+    id: 's2-12', unit: 's2', level: 'core', topic: '차례로 꺼내는 확률', type: 'short',
+    q: t`흰 공 $4$개와 검은 공 $2$개가 들어 있는 주머니에서 공을 한 개씩 세 번 꺼낼 때, 흰 공, 흰 공, 검은 공의 순서로 나올 확률을 구하시오. (단, 꺼낸 공은 다시 넣지 않는다)`,
+    answer: '1/5',
+    skills: { calc: 1, concept: 0.5 },
+    hints: [
+      t`매번 남은 공의 개수가 바뀝니다.`,
+      t`$\dfrac46\times\dfrac35\times\dfrac24$`,
+    ],
+    solution: t`$\dfrac{24}{120}=\dfrac15$`,
+  },
+  {
+    id: 's2-13', unit: 's2', level: 'core', topic: '경우를 나누어 더하는 확률', type: 'short',
+    q: t`주사위를 던져 $1$ 또는 $2$의 눈이 나오면 빨간 공 $3$개와 파란 공 $2$개가 든 상자 A에서, 그 외의 눈이 나오면 빨간 공 $1$개와 파란 공 $4$개가 든 상자 B에서 공을 한 개 꺼낸다. 꺼낸 공이 빨간 공일 확률을 구하시오.`,
+    answer: '1/3',
+    skills: { reason: 1, calc: 0.5 },
+    hints: [
+      t`상자 A를 고를 확률 $\dfrac13$, 상자 B를 고를 확률 $\dfrac23$`,
+      t`$\dfrac13\times\dfrac35+\dfrac23\times\dfrac15$`,
+    ],
+    solution: t`$\dfrac3{15}+\dfrac2{15}=\dfrac13$`,
+  },
+  {
+    id: 's2-14', unit: 's2', level: 'core', topic: '독립 조건으로 확률 구하기', type: 'short',
+    q: t`두 사건 $A,\ B$가 서로 독립이고 $\mathrm{P}(A)=\dfrac12$, $\mathrm{P}(A\cup B)=\dfrac45$일 때, $\mathrm{P}(B)$를 구하시오.`,
+    answer: '3/5',
+    skills: { reason: 1, calc: 0.5 },
+    hints: [
+      t`$\mathrm{P}(B)=p$로 놓으면 $\mathrm{P}(A\cap B)=\dfrac12p$`,
+      t`$\dfrac12+p-\dfrac12p=\dfrac45$`,
+    ],
+    solution: t`$\dfrac12p=\dfrac3{10}$에서 $p=\dfrac35$`,
+    trap: t`독립이 아니면 $\mathrm{P}(A\cap B)$를 알 수 없습니다. 독립 조건으로 $\mathrm{P}(A\cap B)=\mathrm{P}(A)\mathrm{P}(B)$를 씁니다.`,
+  },
+  {
+    id: 's2-15', unit: 's2', level: 'adv', topic: '독립시행과 여사건', type: 'short',
+    q: t`한 번 시행에서 성공할 확률이 $\dfrac13$인 시행을 $4$번 반복할 때, $2$번 이상 성공할 확률을 구하시오. (단, 각 시행은 서로 독립이다)`,
+    answer: '11/27',
+    skills: { reason: 1, calc: 0.5 },
+    hints: [
+      t`여사건은 "$0$번 또는 $1$번 성공"입니다.`,
+      t`$1-\left(\dfrac23\right)^4-{}_4\mathrm{C}_1\dfrac13\left(\dfrac23\right)^3$`,
+    ],
+    solution: t`$1-\dfrac{16}{81}-\dfrac{32}{81}=\dfrac{33}{81}=\dfrac{11}{27}$`,
+  },
+  {
+    id: 's2-16', unit: 's2', level: 'killer', topic: '곱셈정리와 조건부확률', type: 'short',
+    q: t`어느 공장의 제품은 기계 A와 기계 B에서 만들어지고, 전체 제품의 $\dfrac35$는 기계 A, 나머지는 기계 B에서 만든다. 기계 A의 제품 중 $\dfrac1{20}$, 기계 B의 제품 중 $\dfrac1{10}$이 불량품이다. 이 공장의 제품 중 임의로 고른 한 개가 불량품일 때, 그 제품이 기계 A에서 만들어졌을 확률을 구하시오.`,
+    answer: '3/7',
+    skills: { insight: 1, reason: 1 },
+    hints: [
+      t`$\mathrm{P}(A\cap\text{불량})=\dfrac35\times\dfrac1{20}$, $\mathrm{P}(B\cap\text{불량})=\dfrac25\times\dfrac1{10}$`,
+      t`구하는 확률은 $\dfrac{\mathrm{P}(A\cap\text{불량})}{\mathrm{P}(\text{불량})}$`,
+    ],
+    solution: t`$\mathrm{P}(A\cap\text{불량})=\dfrac3{100}$, $\mathrm{P}(\text{불량})=\dfrac3{100}+\dfrac4{100}=\dfrac7{100}$이므로 $\dfrac37$`,
+    trap: t`$\dfrac1{20}$은 "기계 A의 제품일 때 불량일 확률"입니다. 묻는 것은 반대 방향인 "불량일 때 기계 A일 확률"입니다.`,
   },
 ];

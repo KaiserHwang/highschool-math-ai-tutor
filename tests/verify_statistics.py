@@ -76,7 +76,41 @@ def expected_statistics_bank(P=None):
     E['d47'] = prob(range(1, 31), lambda v: v % 3 == 0 or v % 5 == 0)
     bag = list(it.combinations(['W1', 'W2', 'W3', 'W4', 'B1', 'B2', 'B3'], 2))
     E['d48'] = cond(bag, lambda o: any(b[0] == 'W' for b in o), lambda o: all(b[0] == 'W' for b in o))
+    # ── 곱셈정리·독립(은행 s2-09~s2-16): 차례로 꺼내기는 순열로 직접 나열, 독립시행은 결과열을 확률 가중으로 나열
+    E['s2-09'] = F(1, 3) * F(3, 4)  # 정의 P(B|A)=P(A∩B)/P(A)에서 바로(곱셈정리 문항 자체의 정의 확인)
+    E['s2-10'] = indep_intersection(F(1, 2), F(2, 5))
+    E['s2-11'] = trials(F(1, 2), 4, lambda k: k == 1)
+    E['s2-12'] = prob(list(it.permutations(['W1', 'W2', 'W3', 'W4', 'B1', 'B2'], 3)), lambda o: [o[0][0], o[1][0], o[2][0]] == ['W', 'W', 'B'])
+    # 주사위 눈마다 상자를 정하고, 상자 안의 공까지 펼친 표본공간(눈 6 × 공 5, 모두 같은 가능성)
+    boxA, boxB = ['R'] * 3 + ['U'] * 2, ['R'] * 1 + ['U'] * 4
+    E['s2-13'] = prob([(d, c) for d in range(1, 7) for c in (boxA if d <= 2 else boxB)], lambda o: o[1] == 'R')
+    E['s2-14'] = single([F(k, 100) for k in range(1, 100) if F(1, 2) + F(k, 100) - indep_intersection(F(1, 2), F(k, 100)) == F(4, 5)])
+    E['s2-15'] = trials(F(1, 3), 4, lambda k: k >= 2)
+    # 공장 제품 1000개를 실제로 만들어 센다: A 600개 중 불량 30, B 400개 중 불량 40
+    items = [('A', i < 30) for i in range(600)] + [('B', i < 40) for i in range(400)]
+    E['s2-16'] = cond(items, lambda o: o[1], lambda o: o[0] == 'A')
+    E['d49'] = prob(list(it.permutations(['T1', 'T2', 'N1', 'N2', 'N3'], 2)), lambda o: o[0][0] == 'T' and o[1][0] == 'T')
+    E['d50'] = prob(list(it.product(range(1, 7), repeat=3)), lambda o: o.count(6) == 1)
     return E
+
+
+def trials(p, n, cond_k):
+    """독립시행: 성공/실패 결과열 2^n개를 확률 가중으로 모두 나열해, 성공 횟수가 조건을 만족하는 것의 확률을 더한다"""
+    total = F(0)
+    for seq in it.product((1, 0), repeat=n):
+        w = F(1)
+        for s in seq:
+            w *= p if s else 1 - p
+        if cond_k(sum(seq)):
+            total += w
+    return total
+
+
+def indep_intersection(pa, pb):
+    """독립인 두 사건의 교집합 확률을 모형으로 확인: 두 독립 시행의 곱 표본공간(분모 곱)에서 직접 센다"""
+    na, nb = pa.denominator, pb.denominator
+    space = list(it.product(range(na), range(nb)))
+    return prob(space, lambda o: o[0] < pa.numerator and o[1] < pb.numerator)
 
 
 DICE2 = list(it.product(range(1, 7), repeat=2))
@@ -183,6 +217,34 @@ def expected_statistics_lessons():
     gl = [('m', 'g')] * 12 + [('m', '-')] * 18 + [('f', 'g')] * 8 + [('f', '-')] * 12
     E['s2-l3-d1'] = cond(gl, lambda s: s[1] == 'g', lambda s: s[0] == 'f')
     E['s2-l3-d2'] = cond(DICE2, lambda o: sum(o) == 9, lambda o: 4 in o)
+    # ── s2-l4 확률의 곱셈정리(차례로 꺼내기는 순열로 직접 나열)
+    E['s2-l4-e1'] = prob(list(it.permutations(['W1', 'W2', 'W3', 'B1', 'B2'], 2)), lambda o: o[0][0] == 'W' and o[1][0] == 'W')
+    tickets = ['T1', 'T2', 'T3'] + [f'N{i}' for i in range(7)]
+    E['s2-l4-e2'] = prob(list(it.permutations(tickets, 2)), lambda o: o[1][0] == 'T')
+    E['s2-l4-e3'] = F(2, 5) * F(1, 2)
+    E['s2-l4-c1'] = prob(list(it.permutations(['D1', 'D2'] + [f'G{i}' for i in range(6)], 2)), lambda o: o[0][0] == 'D' and o[1][0] == 'D')
+    E['s2-l4-c2'] = prob([(c, b) for c in 'HT' for b in (['W', 'W', 'B', 'B'] if c == 'H' else ['W', 'B', 'B', 'B'])], lambda o: o[1] == 'W')
+    E['s2-l4-p'] = [F(1, 3), F(1, 2), F(1)].index(prob(list(it.permutations(['T', 'N1', 'N2'])), lambda o: o[2] == 'T'))
+    tk = ['T1', 'T2'] + [f'N{i}' for i in range(8)]
+    E['s2-l4-de1'] = prob(list(it.permutations(tk, 3)), lambda o: o[2][0] == 'T')
+    E['s2-l4-de2'] = prob([(c, b) for c in 'HT' for b in (['W', 'W', 'W', 'B'] if c == 'H' else ['W', 'B', 'W', 'B'])], lambda o: o[1] == 'W')
+    tk = ['T1', 'T2', 'T3'] + [f'N{i}' for i in range(9)]
+    E['s2-l4-d1'] = prob(list(it.permutations(tk, 2)), lambda o: o[1][0] == 'T')
+    E['s2-l4-d2'] = prob([(d, b) for d in range(1, 7) for b in (['W'] * 2 + ['B'] * 3 if d == 6 else ['W'] + ['B'] * 4)], lambda o: o[1] == 'W')
+    # ── s2-l5 독립과 종속, 독립시행
+    pa, pb = F(1, 3), F(1, 4)
+    E['s2-l5-e1'] = pa + pb - indep_intersection(pa, pb)
+    E['s2-l5-e2'] = prob(list(it.product(range(1, 7), repeat=4)), lambda o: o.count(1) == 2)
+    E['s2-l5-e3'] = single([F(k, 60) for k in range(1, 60) if indep_intersection(F(1, 2), F(k, 60)) == F(1, 6)])
+    E['s2-l5-c1'] = indep_intersection(F(2, 3), 1 - F(1, 2))
+    E['s2-l5-c2'] = trials(F(2, 3), 3, lambda k: k == 2)
+    die = range(1, 7)
+    same = cond(die, lambda v: v % 2 == 0, lambda v: v % 3 == 0) == prob(die, lambda v: v % 3 == 0)
+    E['s2-l5-p'] = 0 if same else (1 if cond(die, lambda v: v % 2 == 0, lambda v: v % 3 == 0) > prob(die, lambda v: v % 3 == 0) else 2)
+    E['s2-l5-de1'] = cond(DICE2, lambda o: o[0] % 2 == 0, lambda o: sum(o) == 7)
+    E['s2-l5-de2'] = prob(list(it.product('HT', repeat=5)), lambda o: o.count('H') >= 4)
+    E['s2-l5-d1'] = cond(DICE2, lambda o: o[0] % 2 == 1, lambda o: sum(o) == 6)
+    E['s2-l5-d2'] = trials(F(1, 3), 3, lambda k: k >= 2)
     return E
 
 
@@ -209,6 +271,16 @@ def expected_statistics_cq():
     C['s2-l2-q4'] = 0 if prob(DICE2, lambda o: 6 in o) == 1 - prob(DICE2, lambda o: 6 not in o) else None
     C['s2-l3-q3'] = [F(1, 3), F(1, 6), F(1, 2)].index(cond(range(1, 7), lambda v: v % 2 == 1, lambda v: v == 1))
     stu = [('m', 'g')] * 10 + [('m', '-')] * 12 + [('f', 'g')] * 6 + [('f', '-')] * 12
+    # 곱셈정리·독립
+    perm2 = list(it.permutations(['W1', 'W2', 'B1'], 2))
+    C['s2-l4-q2'] = 0 if cond(perm2, lambda o: o[0][0] == 'W', lambda o: o[1][0] == 'W') != cond(perm2, lambda o: o[0][0] == 'B', lambda o: o[1][0] == 'W') else None
+    tk = ['T1', 'T2'] + [f'N{i}' for i in range(4)]
+    C['s2-l4-q3'] = 0 if len({prob(list(it.permutations(tk, 3)), lambda o, i=i: o[i][0] == 'T') for i in range(3)}) == 1 else None
+    C['s2-l5-q2'] = 0 if prob(range(1, 7), lambda v: v == 1 and v == 2) == 0 != prob(range(1, 7), lambda v: v == 1) * prob(range(1, 7), lambda v: v == 2) else None
+    die = range(1, 7)
+    a_, b_ = (lambda v: v % 2 == 0), (lambda v: v % 3 == 0)
+    C['s2-l5-q3'] = 0 if prob(die, lambda v: a_(v) and b_(v)) == prob(die, a_) * prob(die, b_) and prob(die, lambda v: a_(v) and not b_(v)) == prob(die, a_) * (1 - prob(die, b_)) else None
+    C['s2-l5-q4'] = 0 if all(trials(F(1, 3), n, lambda k, r=r: k == r) == comb(n, r) * F(1, 3) ** r * F(2, 3) ** (n - r) for n in range(1, 6) for r in range(n + 1)) else None
     C['s2-l3-q2'] = 0 if cond(stu, lambda s: s[1] == 'g', lambda s: s[0] == 'f') != cond(stu, lambda s: s[0] == 'f', lambda s: s[1] == 'g') else None
     return {k: v for k, v in C.items() if v is not None}
 

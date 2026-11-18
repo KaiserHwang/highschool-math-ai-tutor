@@ -93,7 +93,7 @@ export function renderUnit(view, { args: [unitId] }) {
             <span class="lt-st">${tag}<span class="lt-ck">혼자 맞힘 ${pr.independent}/${pr.total}</span></span>
           </a></li>`;
         }).join('')}</ol>
-        <section class="c-sec next-sec"><h3 class="c-h">이 단원이 이어지는 곳</h3><ul>${u.next.map((n) => `<li><strong>${esc(n.subject)}</strong> ${esc(n.what)}</li>`).join('')}</ul><p class="hint-text">${esc(NEXT_SUBJECTS_NOTE)}</p></section>
+        <section class="c-sec next-sec"><h3 class="c-h">이 단원이 이어지는 곳</h3><ul>${u.next.map((n) => `<li><strong>${esc(n.subject)}</strong> ${tex(esc(n.what))}</li>`).join('')}</ul><p class="hint-text">${esc(NEXT_SUBJECTS_NOTE)}</p></section>
         <section class="c-sec traps"><h3 class="c-h">이 단원에서 자주 하는 실수</h3><ul>${u.traps.map((t) => `<li>${tex(esc(t))}</li>`).join('')}</ul></section>
         <p class="std">성취기준 ${u.standards.join(', ')}</p>
       </article>

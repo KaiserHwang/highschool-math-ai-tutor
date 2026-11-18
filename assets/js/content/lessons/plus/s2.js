@@ -11,6 +11,8 @@ function frac(p, q) {
 }
 const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
 const multiples = (k, n) => range(1, n).filter((v) => v % k === 0);
+const fact = (n) => (n <= 1 ? 1 : n * fact(n - 1));
+const C = (n, r) => (r < 0 || r > n ? 0 : fact(n) / (fact(r) * fact(n - r)));
 
 export default {
   's2-l1': {
@@ -256,6 +258,177 @@ export default {
       prompt: t`조건부확률 $\mathrm{P}(B\,|\,A)$를 "표본공간이 줄어든다"는 말로 설명해 보세요.`,
       model: t`$A$가 일어났다는 정보를 알면, 일어날 수 있는 결과는 $A$ 안의 것들뿐입니다. 그래서 원래 표본공간 $S$ 대신 $A$를 새 표본공간으로 봅니다. 그 안에서 $B$가 일어나는 결과는 $A\cap B$이므로, $\mathrm{P}(B\,|\,A)$는 $A$ 안에서 $A\cap B$가 차지하는 비율 $\dfrac{n(A\cap B)}{n(A)}=\dfrac{\mathrm{P}(A\cap B)}{\mathrm{P}(A)}$입니다.`,
       keys: [t`조건 $A$가 새 표본공간`, t`그 안의 $B$는 $A\cap B$`, '비율로 확률을 구한다'],
+    },
+  },
+
+  's2-l4': {
+    pre: ['s2-l3'],
+    predict: {
+      q: t`당첨 제비 $1$개가 든 제비 $3$개를 세 사람이 차례로 하나씩 뽑습니다(뽑은 제비는 되돌려 놓지 않음). 마지막 사람이 당첨될 확률은?`,
+      options: [t`$\dfrac13$`, t`$\dfrac12$`, t`$1$`],
+      answer: 0,
+      explain: t`마지막 사람이 당첨되려면 앞의 두 사람이 모두 꽝이어야 합니다: $\dfrac23\times\dfrac12\times1=\dfrac13$. 순서와 관계없이 세 사람 모두 당첨 확률이 $\dfrac13$입니다. 제비뽑기가 공정한 이유입니다.`,
+    },
+    explore: [{
+      title: '되돌려 놓을 때와 놓지 않을 때',
+      intro: t`흰 공 $w$개, 검은 공 $b$개에서 두 번 꺼내 모두 흰 공일 확률을, 꺼낸 공을 되돌려 놓을 때와 놓지 않을 때로 비교합니다.`,
+      params: [
+        { k: 'w', label: t`흰 공 $w$`, min: 1, max: 5, step: 1, value: 1 },
+        { k: 'b', label: t`검은 공 $b$`, min: 1, max: 5, step: 1, value: 2 },
+      ],
+      fig: ({ w, b }) => ({
+        x: [-0.5, 10.5], y: [-0.8, 1.0], w: 300, h: 100, equal: false, axes: false,
+        alt: `흰 공 ${w}개(빈 점)와 검은 공 ${b}개(채운 점)`,
+        items: [
+          ...range(1, w + b).map((i) => ({ t: 'pt', p: [i, 0], open: i <= w })),
+          { t: 'text', p: [5, 0.65], s: '빈 점: 흰 공 / 채운 점: 검은 공' },
+        ],
+      }),
+      read: ({ w, b }) => {
+        const n = w + b;
+        return [['되돌려 놓지 않을 때', `$\\dfrac{${w}}{${n}}\\times\\dfrac{${w - 1}}{${n - 1}}=${frac(w * (w - 1), n * (n - 1))}$`], ['되돌려 놓을 때', `$\\left(\\dfrac{${w}}{${n}}\\right)^2=${frac(w * w, n * n)}$`]];
+      },
+      goals: [
+        { text: t`되돌려 놓지 않을 때의 확률이 $\dfrac1{10}$이 되게 해 보세요.`, test: ({ w, b }) => w * (w - 1) * 10 === (w + b) * (w + b - 1) },
+        { text: t`되돌려 놓지 않을 때의 확률이 $\dfrac12$이 되게 해 보세요.`, test: ({ w, b }) => w * (w - 1) * 2 === (w + b) * (w + b - 1) },
+        { text: t`되돌려 놓을 때의 확률이 $\dfrac49$이 되게 해 보세요.`, test: ({ w, b }) => w * w * 9 === 4 * (w + b) * (w + b) },
+      ],
+      note: t`되돌려 놓지 않으면 두 번째에는 흰 공도 전체도 하나씩 줄어 확률이 더 작아집니다. 두 번째 확률이 첫 번째 결과에 따라 바뀌므로 조건부확률이고, 곱셈정리로 계산합니다.`,
+    }],
+    derive: {
+      title: t`곱셈정리 $\mathrm{P}(A\cap B)=\mathrm{P}(A)\mathrm{P}(B\,|\,A)$`,
+      steps: [
+        { ask: '조건부확률의 정의는?', line: t`$\mathrm{P}(B\,|\,A)=\dfrac{\mathrm{P}(A\cap B)}{\mathrm{P}(A)}$` },
+        { ask: t`양변에 $\mathrm{P}(A)$를 곱하면?`, line: t`$\mathrm{P}(A\cap B)=\mathrm{P}(A)\mathrm{P}(B\,|\,A)$` },
+        { ask: t`$A$와 $B$의 역할을 바꾸면?`, line: t`$\mathrm{P}(A\cap B)=\mathrm{P}(B)\mathrm{P}(A\,|\,B)$` },
+        { ask: '어디에 쓸까요?', line: t`$\mathrm{P}(A)$와 "$A$가 일어났을 때 $B$의 확률"을 알면 둘 다 일어날 확률을 바로 구합니다.` },
+      ],
+    },
+    traps: {
+      's2-l4-c1': { '1/16': t`$\dfrac28\times\dfrac28$은 꺼낸 것을 되돌려 놓을 때입니다. 두 번째에는 불량품 $1$개, 전체 $7$개가 남습니다.` },
+      's2-l4-c2': { '3/4': t`두 상자의 흰 공 확률을 그냥 더했습니다. 각 상자를 고를 확률 $\dfrac12$을 곱한 뒤 더합니다.`, '1/8': t`앞면일 때의 경우를 빠뜨렸습니다. 두 경우를 모두 더합니다.` },
+    },
+    deep: {
+      intro: t`곱셈정리의 심화는 <strong>뽑는 순서와 당첨 확률</strong>과 <strong>여러 경로를 나누어 더하기</strong>입니다.`,
+      ideas: [
+        {
+          title: '제비뽑기는 순서와 관계없다',
+          body: t`<p>몇 번째로 뽑든, 경우를 나누어 곱셈정리로 계산하면 당첨 확률은 (당첨 제비 수)$\div$(전체 제비 수)로 같습니다.</p>`,
+          example: {
+            q: t`당첨 제비 $2$개를 포함한 $10$개의 제비를 세 사람이 차례로 하나씩 뽑을 때, 세 번째 사람이 당첨 제비를 뽑을 확률을 구하시오. (단, 뽑은 제비는 다시 넣지 않는다)`,
+            think: [t`앞의 두 사람의 결과(당첨 $0$, $1$, $2$개)로 경우를 나눕니다.`],
+            steps: [t`$\dfrac{8}{10}\cdot\dfrac79\cdot\dfrac28+2\cdot\dfrac{2}{10}\cdot\dfrac89\cdot\dfrac18+\dfrac2{10}\cdot\dfrac19\cdot0=\dfrac{112+32}{720}=\dfrac15$`],
+            answer: '1/5',
+          },
+        },
+        {
+          title: '두 갈래로 나누어 더하기',
+          body: t`<p>"어디서 꺼냈는지"가 여러 갈래이면 갈래마다 (그 갈래로 갈 확률)$\times$(그 갈래에서 일어날 확률)을 구해 더합니다.</p>`,
+          example: {
+            q: t`동전을 던져 앞면이면 흰 공 $3$개, 검은 공 $1$개가 든 주머니에서, 뒷면이면 흰 공 $1$개, 검은 공 $1$개가 든 주머니에서 공을 한 개 꺼낼 때, 흰 공일 확률을 구하시오.`,
+            think: [t`앞면 갈래 $\dfrac12\times\dfrac34$, 뒷면 갈래 $\dfrac12\times\dfrac12$`],
+            steps: [t`$\dfrac38+\dfrac14=\dfrac58$`],
+            answer: '5/8',
+          },
+        },
+      ],
+      checks: [
+        { id: 's2-l4-d1', type: 'short', q: t`당첨 제비 $3$개를 포함한 $12$개의 제비를 두 사람이 차례로 하나씩 뽑을 때, 두 번째 사람이 당첨 제비를 뽑을 확률을 구하시오. (단, 뽑은 제비는 다시 넣지 않는다)`, answer: '1/4', solution: t`$\dfrac3{12}\cdot\dfrac2{11}+\dfrac9{12}\cdot\dfrac3{11}=\dfrac{6+27}{132}=\dfrac14$` },
+        { id: 's2-l4-d2', type: 'short', q: t`주사위를 던져 $6$의 눈이 나오면 흰 공 $2$개, 검은 공 $3$개가 든 상자에서, 그 외의 눈이 나오면 흰 공 $1$개, 검은 공 $4$개가 든 상자에서 공을 한 개 꺼낼 때, 흰 공일 확률을 구하시오.`, answer: '7/30', solution: t`$\dfrac16\times\dfrac25+\dfrac56\times\dfrac15=\dfrac2{30}+\dfrac5{30}=\dfrac7{30}$` },
+      ],
+    },
+    explain: {
+      prompt: '꺼낸 공을 되돌려 놓지 않을 때 두 번째 확률을 조건부확률로 보아야 하는 이유를 설명해 보세요.',
+      model: t`되돌려 놓지 않으면 첫 번째에 무엇을 꺼냈는지에 따라 주머니에 남은 공의 개수와 색의 구성이 달라집니다. 그래서 첫 번째 공의 색이 주어졌을 때 두 번째에 흰 공이 나올 확률은 그 조건에서의 확률, 곧 조건부확률입니다. 두 번 모두 흰 공일 확률은 곱셈정리로 (첫 번째 흰 공의 확률)$\times$(첫 번째가 흰 공일 때 두 번째도 흰 공일 확률)입니다.`,
+      keys: ['첫 결과에 따라 남은 공이 달라진다', '두 번째 확률은 조건부확률', '곱셈정리로 곱한다'],
+    },
+  },
+
+  's2-l5': {
+    pre: ['s2-l4', 's1-l3'],
+    predict: {
+      q: t`주사위 한 개를 던질 때 $A$: 짝수의 눈, $B$: $3$의 배수의 눈. $A$가 일어났다는 것을 알면 $B$의 확률이 바뀔까요?`,
+      options: [t`바뀌지 않는다(둘 다 $\dfrac13$)`, '커진다', '작아진다'],
+      answer: 0,
+      explain: t`$\mathrm{P}(B)=\dfrac26=\dfrac13$이고, 짝수 $\{2,\ 4,\ 6\}$ 중 $3$의 배수는 $6$ 하나라 $\mathrm{P}(B\,|\,A)=\dfrac13$입니다. $A$라는 정보가 $B$의 확률을 바꾸지 않으므로 $A$와 $B$는 서로 독립입니다.`,
+    },
+    explore: [{
+      title: '독립시행에서 성공 횟수의 확률',
+      intro: t`성공 확률이 $\dfrac13$인 시행을 $n$번 반복할 때, 성공이 정확히 $r$번일 확률 $_n\mathrm{C}_r\left(\dfrac13\right)^r\left(\dfrac23\right)^{n-r}$을 막대로 봅니다.`,
+      params: [
+        { k: 'n', label: t`시행 횟수 $n$`, min: 1, max: 5, step: 1, value: 3 },
+        { k: 'r', label: t`성공 횟수 $r$`, min: 0, max: 5, step: 1, value: 0 },
+      ],
+      fig: ({ n, r }) => ({
+        x: [-0.7, 5.7], y: [-0.14, 0.75], w: 300, h: 220, equal: false, axes: false,
+        alt: r > n
+          ? `성공 확률 1/3인 시행 ${n}번에서 성공 횟수 0~${n}의 확률 막대그래프. 성공 ${r}번은 시행 횟수를 넘어 확률 0`
+          : `성공 확률 1/3인 시행 ${n}번에서 성공 횟수 0~${n}의 확률 막대그래프, 성공 ${r}번 막대 강조`,
+        items: [
+          { t: 'seg', p: [-0.6, 0], q: [5.6, 0] },
+          ...range(0, 5).map((k) => ({ t: 'text', p: [k, -0.07], s: String(k) })),
+          ...range(0, n).map((k) => {
+            const h = (C(n, k) * 2 ** (n - k)) / 3 ** n;
+            return { t: 'poly', pts: [[k - 0.35, 0], [k + 0.35, 0], [k + 0.35, h], [k - 0.35, h]], fill: k === r, style: k === r ? 'red' : 'main' };
+          }),
+          // 막대가 아주 낮아도 선택한 칸이 보이도록 위에 표시한다
+          ...(r <= n ? [{ t: 'pt', p: [r, (C(n, r) * 2 ** (n - r)) / 3 ** n + 0.04], style: 'red', label: '▼', pos: 'n' }] : []),
+        ],
+      }),
+      read: ({ n, r }) => [[t`$\mathrm{P}(\text{성공 }r\text{번})$`, r > n ? '$0$ (성공 횟수는 시행 횟수를 넘을 수 없음)' : `$_{${n}}\\mathrm{C}_{${r}}\\left(\\dfrac13\\right)^{${r}}\\left(\\dfrac23\\right)^{${n - r}}=${frac(C(n, r) * 2 ** (n - r), 3 ** n)}$`]],
+      goals: [
+        { text: t`확률이 $\dfrac49$이 되게 해 보세요.`, test: ({ n, r }) => r <= n && C(n, r) * 2 ** (n - r) * 9 === 4 * 3 ** n },
+        { text: t`확률이 $\dfrac1{27}$이 되게 해 보세요.`, test: ({ n, r }) => r <= n && C(n, r) * 2 ** (n - r) * 27 === 3 ** n },
+        { text: '확률이 0이 되게 해 보세요.', test: ({ n, r }) => r > n },
+      ],
+      note: t`막대의 높이를 모두 더하면 $1$입니다(이항정리 $\left(\dfrac13+\dfrac23\right)^n=1$). 성공 확률이 $\dfrac13$이라 성공이 적은 쪽 막대가 더 높습니다.`,
+    }],
+    derive: {
+      title: t`독립시행의 확률 $_n\mathrm{C}_rp^r(1-p)^{n-r}$`,
+      steps: [
+        { ask: t`$n$번 중 처음 $r$번만 성공하는 한 가지 순서의 확률은? (각 시행은 독립)`, line: t`$p^r(1-p)^{n-r}$` },
+        { ask: t`성공이 $r$번인 순서는 몇 가지일까요?`, line: t`$n$번 중 성공할 회차 $r$개를 고르는 $_n\mathrm{C}_r$가지` },
+        { ask: '각 순서의 확률은?', line: t`어느 순서든 성공 $r$번, 실패 $n-r$번이라 모두 $p^r(1-p)^{n-r}$` },
+        { ask: '결론은?', line: t`서로 배반인 순서들의 확률을 더하면 $_n\mathrm{C}_rp^r(1-p)^{n-r}$` },
+      ],
+    },
+    traps: {
+      's2-l5-c1': { '1/6': t`$\mathrm{P}(A\cap B^C)$은 $\mathrm{P}(A)-\mathrm{P}(B)$가 아니라 $\mathrm{P}(A)-\mathrm{P}(A\cap B)=\mathrm{P}(A)\mathrm{P}(B^C)$입니다.`, '2/3': t`$\mathrm{P}(A\cap B^C)$는 $A$와 $B^C$이 함께 일어날 확률이라 $\mathrm{P}(A)$보다 작거나 같습니다. $\mathrm{P}(B^C)=\dfrac12$을 곱합니다.` },
+      's2-l5-c2': { '4/27': t`$\dfrac49\times\dfrac13$은 명중하는 회차가 정해진 한 가지 순서입니다. $_3\mathrm{C}_2=3$을 곱합니다.`, '2/3': t`명중률 자체가 아니라 "정확히 2번"의 확률입니다. 독립시행의 확률을 씁니다.` },
+    },
+    deep: {
+      intro: t`독립의 심화는 <strong>표본공간에서 독립인지 판정하기</strong>와 <strong>독립시행의 "이상" 확률</strong>입니다.`,
+      ideas: [
+        {
+          title: '두 주사위에서 독립 판정',
+          body: t`<p>독립인지는 직관이 아니라 계산으로 판정합니다. $\mathrm{P}(B\,|\,A)$와 $\mathrm{P}(B)$를 각각 구해 비교합니다.</p>`,
+          example: {
+            q: t`서로 다른 두 개의 주사위를 던질 때, $A$: 첫째 주사위의 눈이 짝수, $B$: 두 눈의 합이 $7$이다. $\mathrm{P}(B\,|\,A)$를 구하시오.`,
+            think: [t`$A\cap B$: $(2,5),\ (4,3),\ (6,1)$`],
+            steps: [t`$\mathrm{P}(B\,|\,A)=\dfrac{3}{18}=\dfrac16$`, t`$\mathrm{P}(B)=\dfrac6{36}=\dfrac16$과 같으므로 $A$와 $B$는 독립`],
+            answer: '1/6',
+          },
+        },
+        {
+          title: '"이상"은 경우를 나누어 더한다',
+          body: t`<p>"$r$번 이상"은 $r$번, $r+1$번, $\cdots$, $n$번의 확률을 더합니다. 더할 것이 많으면 여사건으로 바꿉니다.</p>`,
+          example: {
+            q: t`동전 한 개를 $5$번 던질 때, 앞면이 $4$번 이상 나올 확률을 구하시오.`,
+            think: [t`$4$번 또는 $5$번`],
+            steps: [t`$\dfrac{_5\mathrm{C}_4+{}_5\mathrm{C}_5}{2^5}=\dfrac6{32}=\dfrac3{16}$`],
+            answer: '3/16',
+          },
+        },
+      ],
+      checks: [
+        { id: 's2-l5-d1', type: 'short', q: t`서로 다른 두 개의 주사위를 던질 때, $A$: 첫째 주사위의 눈이 홀수, $B$: 두 눈의 합이 $6$이다. $\mathrm{P}(B\,|\,A)$를 구하시오.`, answer: '1/6', solution: t`$A\cap B$: $(1,5),\ (3,3),\ (5,1)$이므로 $\dfrac3{18}=\dfrac16$. $\mathrm{P}(B)=\dfrac5{36}$과 다르므로 두 사건은 종속입니다.` },
+        { id: 's2-l5-d2', type: 'short', q: t`자유투 성공률이 $\dfrac13$인 농구 선수가 자유투를 $3$번 던질 때, $2$번 이상 넣을 확률을 구하시오. (단, 매번의 결과는 서로 영향을 주지 않는다)`, answer: '7/27', solution: t`$_3\mathrm{C}_2\left(\dfrac13\right)^2\dfrac23+\left(\dfrac13\right)^3=\dfrac6{27}+\dfrac1{27}=\dfrac7{27}$` },
+      ],
+    },
+    explain: {
+      prompt: '확률이 0이 아닌 두 사건이 서로 배반이면 독립이 될 수 없는 이유를 설명해 보세요.',
+      model: t`배반이면 두 사건이 함께 일어나지 않으므로 $\mathrm{P}(A\cap B)=0$입니다. 한편 두 사건의 확률이 모두 양수이면 $\mathrm{P}(A)\mathrm{P}(B)>0$입니다. 그래서 $\mathrm{P}(A\cap B)=\mathrm{P}(A)\mathrm{P}(B)$가 성립하지 않아 독립이 아닙니다. 말로 하면, $A$가 일어났다는 것을 알면 $B$는 절대 일어나지 않으므로 $A$의 정보가 $B$의 확률을 $0$으로 바꿉니다.`,
+      keys: [t`배반이면 $\mathrm{P}(A\cap B)=0$`, t`두 확률이 양수이면 곱도 양수`, t`$A$의 정보가 $B$의 확률을 $0$으로 바꾼다`],
     },
   },
 };
