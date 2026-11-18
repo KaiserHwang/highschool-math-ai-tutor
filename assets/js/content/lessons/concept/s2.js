@@ -53,7 +53,7 @@ export default {
       options: [t`$1-\mathrm{P}(A)$`, t`$\dfrac1{\mathrm{P}(A)}$`, t`$-\mathrm{P}(A)$`], answer: 0,
       reasons: [t`$A$와 $A^C$은 배반이고 합치면 표본공간이다`, '여사건은 역수이다', '여사건은 부호를 바꾼 것이다', '여사건의 확률은 항상 1/2이다'],
       reason: 0, mis: [null, 'formula', 'sign', 'overgen'],
-      note: t`확률은 $0$ 이상이므로 $-\mathrm{P}(A)$는 확률이 될 수 없습니다.`,
+      note: t`$\mathrm{P}(A)$가 양수이면 $-\mathrm{P}(A)$는 음수가 되어 확률이 될 수 없습니다. $A$와 $A^C$의 확률을 더하면 언제나 $1$입니다.`,
     },
     {
       id: 's2-l2-q4', q: '"적어도 한 번 6의 눈이 나온다"의 여사건은?',
@@ -73,11 +73,11 @@ export default {
       note: t`세로선 오른쪽($A$)이 조건이자 분모입니다.`,
     },
     {
-      id: 's2-l3-q2', q: t`$\mathrm{P}(A\,|\,B)$와 $\mathrm{P}(B\,|\,A)$는?`,
+      id: 's2-l3-q2', q: t`$\mathrm{P}(A)>0$, $\mathrm{P}(B)>0$일 때 $\mathrm{P}(A\,|\,B)$와 $\mathrm{P}(B\,|\,A)$는?`,
       options: ['일반적으로 다르다', '항상 같다', '항상 합이 1이다'], answer: 0,
       reasons: [t`분자 $\mathrm{P}(A\cap B)$는 같지만 분모가 $\mathrm{P}(B)$와 $\mathrm{P}(A)$로 다르다`, '같은 두 사건이므로 순서와 관계없다', '두 조건부확률은 서로 여사건이다', '조건부확률은 항상 1/2이다'],
       reason: 0, mis: [null, 'converse', 'transfer', 'overgen'],
-      note: t`$\mathrm{P}(A)=\mathrm{P}(B)$일 때만 같습니다.`,
+      note: t`두 값이 같은 것은 $\mathrm{P}(A)=\mathrm{P}(B)$이거나 $\mathrm{P}(A\cap B)=0$(둘 다 $0$)인 경우뿐입니다.`,
     },
     {
       id: 's2-l3-q3', q: t`한 개의 주사위를 던져 홀수의 눈이 나왔을 때, 그 눈이 $1$일 확률은?`,

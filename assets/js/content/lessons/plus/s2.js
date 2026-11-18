@@ -107,13 +107,15 @@ export default {
         { k: 'q', label: t`$q$`, min: 2, max: 6, step: 1, value: 5 },
       ],
       fig: ({ p, q }) => ({
-        x: [0, 31], y: [-0.5, 2.5], w: 320, h: 110, equal: false, axes: false,
+        x: [0, 31], y: [-0.7, 2.9], w: 320, h: 140, equal: false, axes: false,
         alt: `1부터 30까지 중 ${p}의 배수(위 줄)와 ${q}의 배수(아래 줄)를 표시한 그림`,
         items: [
           ...range(1, 30).map((v) => ({ t: 'pt', p: [v, 2], open: v % p !== 0 })),
           ...range(1, 30).map((v) => ({ t: 'pt', p: [v, 1], open: v % q !== 0 })),
           ...range(1, 30).filter((v) => v % p === 0 && v % q === 0).map((v) => ({ t: 'seg', p: [v, 0.6], q: [v, 2.4], dash: true })),
-          { t: 'text', p: [15.5, 0], s: '점선: 두 줄 모두에 있는 수' },
+          ...[1, 10, 20, 30].map((v) => ({ t: 'text', p: [v, 0.35], s: String(v) })),
+          { t: 'text', p: [15.5, 2.55], s: `위 줄: ${p}의 배수 / 아래 줄: ${q}의 배수` },
+          { t: 'text', p: [15.5, -0.3], s: '점선: 두 줄 모두에 있는 수' },
         ],
       }),
       read: ({ p, q }) => {
@@ -166,7 +168,7 @@ export default {
       ],
       checks: [
         { id: 's2-l2-d1', type: 'short', q: t`남학생 $4$명과 여학생 $3$명 중에서 $3$명을 뽑을 때, 여학생이 적어도 $1$명 포함될 확률을 구하시오.`, answer: '31/35', solution: t`$1-\dfrac{_4\mathrm{C}_3}{_7\mathrm{C}_3}=1-\dfrac4{35}=\dfrac{31}{35}$` },
-        { id: 's2-l2-d2', type: 'short', q: t`두 사건 $A,\ B$에 대하여 $\mathrm{P}(A)=\dfrac35$, $\mathrm{P}(B)=\dfrac12$일 때, $\mathrm{P}(A\cap B)$의 최솟값을 구하시오.`, answer: '1/10', solution: t`$\mathrm{P}(A\cup B)\le1$이므로 $\mathrm{P}(A\cap B)\ge\dfrac35+\dfrac12-1=\dfrac1{10}$` },
+        { id: 's2-l2-d2', type: 'short', q: t`두 사건 $A,\ B$에 대하여 $\mathrm{P}(A)=\dfrac35$, $\mathrm{P}(B)=\dfrac12$일 때, $\mathrm{P}(A\cap B)$의 최솟값을 구하시오.`, answer: '1/10', solution: t`$\mathrm{P}(A\cup B)\le1$이므로 $\mathrm{P}(A\cap B)\ge\dfrac35+\dfrac12-1=\dfrac1{10}$. 이 값은 실제로 가능합니다: 똑같이 일어나는 결과 $10$개 중 $A$에 $6$개, $B$에 $5$개를 주고 하나만 겹치게 하면 $\mathrm{P}(A\cap B)=\dfrac1{10}$입니다.` },
       ],
     },
     explain: {
