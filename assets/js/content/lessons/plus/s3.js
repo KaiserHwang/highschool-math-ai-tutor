@@ -13,10 +13,14 @@ const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
 const fact = (n) => (n <= 1 ? 1 : n * fact(n - 1));
 const C = (n, r) => (r < 0 || r > n ? 0 : fact(n) / (fact(r) * fact(n - r)));
 
-/** 막대그래프 그림: bars = [[x, 높이]], hi = 강조할 x */
-function bars(list, hi, { x, y, ticks }) {
+/** 막대그래프 그림: bars = [[x, 높이]], hi = 강조할 x, yt = 세로축 확률 눈금, m = 왼쪽 눈금 글자 자리(그림 단위) */
+function bars(list, hi, { x, y, ticks, yt, m }) {
+  const x0 = x[0] + m;
   return [
-    { t: 'seg', p: [x[0] + 0.1, 0], q: [x[1] - 0.1, 0] },
+    { t: 'seg', p: [x0, 0], q: [x[1] - 0.1, 0] },
+    { t: 'seg', p: [x0, 0], q: [x0, yt[yt.length - 1]] },
+    ...yt.flatMap((v) => [{ t: 'seg', p: [x0 - m / 8, v], q: [x0 + m / 8, v] }, { t: 'text', p: [x[0] + m / 2, v], s: String(v) }]),
+    { t: 'text', p: [x[0] + m / 2, y[1] * 0.96], s: '확률' },
     ...ticks.map((k) => ({ t: 'text', p: [k, y[0] / 2], s: String(k) })),
     ...list.filter(([, h]) => h > 0).map(([k, h]) => ({ t: 'poly', pts: [[k - 0.35, 0], [k + 0.35, 0], [k + 0.35, h], [k - 0.35, h]], fill: k === hi, style: k === hi ? 'red' : 'main' })),
   ];
@@ -36,9 +40,9 @@ export default {
       intro: t`서로 다른 두 주사위를 던져 나온 두 눈 중 크거나 같은 쪽을 $X$라 합니다. $X=k$의 확률을 막대로 봅니다.`,
       params: [{ k: 'k', label: t`값 $k$`, min: 1, max: 6, step: 1, value: 1 }],
       fig: ({ k }) => ({
-        x: [0.3, 6.7], y: [-0.05, 0.36], w: 300, h: 200, equal: false, axes: false,
+        x: [-0.5, 6.7], y: [-0.05, 0.42], w: 300, h: 220, equal: false, axes: false,
         alt: `두 주사위의 큰 눈 X의 확률분포 막대그래프, X=${k} 막대 강조`,
-        items: bars(range(1, 6).map((v) => [v, (2 * v - 1) / 36]), k, { x: [0.3, 6.7], y: [-0.05, 0.36], ticks: range(1, 6) }),
+        items: bars(range(1, 6).map((v) => [v, (2 * v - 1) / 36]), k, { x: [-0.5, 6.7], y: [-0.05, 0.42], ticks: range(1, 6), yt: [0.1, 0.2, 0.3], m: 0.7 }),
       }),
       read: ({ k }) => [[t`$\mathrm{P}(X=k)$`, `$\\dfrac{${2 * k - 1}}{36}${2 * k - 1 === 9 ? '=\\dfrac14' : ''}$`], [t`$\mathrm{P}(X\le k)$`, `$\\dfrac{${k * k}}{36}=${frac(k * k, 36)}$`]],
       goals: [
@@ -109,9 +113,9 @@ export default {
       intro: t`$X$가 $1,\ 2,\ 3$을 가지고 $\mathrm{P}(X=1)=\mathrm{P}(X=3)=\dfrac q{10}$, $\mathrm{P}(X=2)=1-\dfrac{2q}{10}$입니다. $q$를 바꾸며 평균과 분산을 봅니다.`,
       params: [{ k: 'q', label: t`$q$`, min: 0, max: 5, step: 1, value: 1 }],
       fig: ({ q }) => ({
-        x: [0.3, 3.7], y: [-0.1, 1.05], w: 260, h: 200, equal: false, axes: false,
-        alt: `X=1, 2, 3의 확률이 ${q}/10, ${10 - 2 * q}/10, ${q}/10인 확률분포 막대그래프`,
-        items: bars([[1, q / 10], [2, 1 - (2 * q) / 10], [3, q / 10]], 2, { x: [0.3, 3.7], y: [-0.1, 1.05], ticks: [1, 2, 3] }),
+        x: [-0.4, 3.7], y: [-0.1, 1.2], w: 260, h: 220, equal: false, axes: false,
+        alt: `X=1, 2, 3의 확률이 ${q}/10, ${10 - 2 * q}/10, ${q}/10인 확률분포 막대그래프, 평균은 늘 2`,
+        items: bars([[1, q / 10], [2, 1 - (2 * q) / 10], [3, q / 10]], null, { x: [-0.4, 3.7], y: [-0.1, 1.2], ticks: [1, 2, 3], yt: [0.5, 1], m: 0.5 }),
       }),
       read: ({ q }) => [[t`$\mathrm{E}(X)$`, '$2$'], [t`$\mathrm{V}(X)$`, `$${frac(2 * q, 10)}$`]],
       goals: [
@@ -132,7 +136,7 @@ export default {
     },
     traps: {
       's3-l2-c1': { '21': t`눈의 수를 모두 더하기만 했습니다. 각 눈의 확률 $\dfrac16$을 곱해서 더합니다.` },
-      's3-l2-c2': { '3': t`$\mathrm{V}(aX+b)=a^2\mathrm{V}(X)$입니다. $a$를 제곱해야 합니다.`, '8': t`분산에서 $b=-1$은 사라집니다. 값을 모두 $1$씩 옮겨도 흩어진 정도는 같습니다.`, '5': t`$\mathrm{E}(X^2)=5$는 분산이 아닙니다. $\mathrm{V}(X)=5-2^2=1$부터 구합니다.` },
+      's3-l2-c2': { '3': t`$\mathrm{V}(aX+b)=a^2\mathrm{V}(X)$입니다. $a$를 제곱해야 합니다.`, '8': t`분산에서 $b=-1$은 사라집니다. 값을 모두 $1$씩 옮겨도 흩어진 정도는 같습니다.`, '5': t`$\mathrm{E}(X^2)=5$는 분산이 아닙니다. $\mathrm{V}(X)=5-2^2=1$부터 구합니다.`, '45': t`$\mathrm{E}(X^2)=5$를 분산으로 보고 $9\times5$를 했습니다. 분산은 $\mathrm{V}(X)=\mathrm{E}(X^2)-\{\mathrm{E}(X)\}^2=5-4=1$입니다.` },
     },
     deep: {
       intro: t`기댓값의 심화는 <strong>시행에서 직접 기댓값 구하기</strong>와 <strong>$\mathrm{E}(X^2)=\mathrm{V}(X)+\{\mathrm{E}(X)\}^2$ 활용</strong>입니다.`,
@@ -186,9 +190,9 @@ export default {
         { k: 'k', label: t`성공 확률 $p=\dfrac k{10}$의 $k$`, min: 1, max: 9, step: 1, value: 2 },
       ],
       fig: ({ n, k }) => ({
-        x: [-0.7, 10.7], y: [-0.1, 0.95], w: 320, h: 220, equal: false, axes: false,
+        x: [-1.8, 10.7], y: [-0.1, 1.05], w: 320, h: 230, equal: false, axes: false,
         alt: `이항분포 B(${n}, ${k}/10)의 확률분포 막대그래프`,
-        items: bars(range(0, n).map((r) => [r, C(n, r) * (k / 10) ** r * (1 - k / 10) ** (n - r)]), null, { x: [-0.7, 10.7], y: [-0.1, 0.95], ticks: range(0, 10) }),
+        items: bars(range(0, n).map((r) => [r, C(n, r) * (k / 10) ** r * (1 - k / 10) ** (n - r)]), null, { x: [-1.8, 10.7], y: [-0.1, 1.05], ticks: range(0, 10), yt: [0.25, 0.5, 0.75], m: 1.3 }),
       }),
       read: ({ n, k }) => [[t`$\mathrm{E}(X)=np$`, `$${frac(n * k, 10)}$`], [t`$\mathrm{V}(X)=npq$`, `$${frac(n * k * (10 - k), 100)}$`]],
       goals: [
