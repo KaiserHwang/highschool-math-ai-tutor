@@ -451,8 +451,8 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   ok(routeRe(ids.ID_PART.problem).test('/p/u1-05') && routeRe(ids.ID_PART.problem).test('/p/a10-01') && !routeRe(ids.ID_PART.problem).test('/p/g-sym') && !routeRe(ids.ID_PART.problem).test('/p/u1-05/x'),
     '주소 규칙 조각은 문제 주소와 생성기 주소를 구분한다');
   // 융합 단원을 id가 아니라 단원의 종류로 구분해도 결과가 같다
-  ok(UNITS.filter((u) => isFusionUnit(u.id)).map((u) => u.id).join() === 'u8' && REGULAR_UNITS.map((u) => u.id).join() === 'u1,u2,u3,u4,u5,u6,u7,a1,a2,a3,c1,c2,c3,s1,s2' && !isFusionUnit('__proto__') && !isFusionUnit('u9'),
-    '융합 단원은 u8 하나이고 교과서 단원은 u1~u7, a1~a3, c1~c3, s1~s2이다');
+  ok(UNITS.filter((u) => isFusionUnit(u.id)).map((u) => u.id).join() === 'u8' && REGULAR_UNITS.map((u) => u.id).join() === 'u1,u2,u3,u4,u5,u6,u7,a1,a2,a3,c1,c2,c3,s1,s2,s3' && !isFusionUnit('__proto__') && !isFusionUnit('u9'),
+    '융합 단원은 u8 하나이고 교과서 단원은 u1~u7, a1~a3, c1~c3, s1~s3이다');
   store.resetAll();
   ok(model.studiedUnits().join() === 'u1,u2,u3,u4,u5,u6,u7', '공부한 흔적이 없으면 혼합 평가 범위는 교과서 단원 전체다');
   store.update((s) => {
@@ -571,6 +571,13 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
     '진단은 묶음 문항만 채점하고 기록에 묶음을 남긴다');
   ok(Object.values(gc.skills).every((v) => typeof v === 'number') && Object.values(ga.skills).some((v) => v === null) && ga.track === 'killer',
     '진단이 다루지 않은 역량은 0점이 아니라 근거 없음(null)으로 남기고, 트랙 기준은 묶음의 심화 문항 수에 맞춘다');
+  {
+    const gs = model.gradeDiagnosis(right(DIAGNOSIS), 'statistics');
+    const old = { ...gs, items: gs.items.slice(0, 8) }; // 문항이 8개였을 때 본 진단 기록
+    const shownOld = model.diagResultItems(old), shownNow = model.diagResultItems(gs);
+    ok(shownOld.length === 8 && shownOld.every((q, i) => q.id === gs.items[i].id) && shownNow.length === sta.length && model.diagResultItems({ set: 'statistics' }).length === sta.length,
+      '진단 결과에는 그때 채점한 문항만 보이고, 나중에 추가된 문항은 예전 결과에 끼지 않는다(문항 기록이 없으면 묶음 전체)');
+  }
   store.resetAll();
   store.update((s) => { s.profile.courses = ['common1', 'common2', 'algebra']; });
   ok(model.missingDiagSets().map((x) => x.id).join() === 'common,algebra' && model.latestDiagnosis() === null && model.unitReadiness('u1') === null, '진단을 보지 않았으면 기준 진단과 준비도가 없다');

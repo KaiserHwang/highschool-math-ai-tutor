@@ -233,6 +233,16 @@ export function gradeDiagnosis(responses, setId = 'common') {
 // 기준 진단: 공부하는 과목의 묶음 중 앞쪽(공통수학 → 대수 …) 묶음의 최근 진단. 뒤 과목 진단을 새로 봤다고
 // 앞 과목에서 정한 트랙·역량이 덮어쓰이지 않게 한다.
 export const diagSetOf = (d) => (d && d.set) || 'common';
+/** 진단 결과에 보일 문항: 그 진단에서 실제로 채점한 문항만, 지금 묶음의 순서대로.
+ *  진단 묶음에 문항이 나중에 추가되어도 예전 결과에 응시하지 않은 문항이 오답으로 끼지 않는다.
+ *  문항 기록이 없는 아주 예전 결과는 묶음 전체를 보인다. */
+export function diagResultItems(d) {
+  const qs = diagItems(diagSetOf(d));
+  const its = (d && d.items) || [];
+  if (!its.length) return qs;
+  const taken = new Set(its.map((i) => i.id));
+  return qs.filter((q) => taken.has(q.id));
+}
 export function latestDiagnosisOf(setId) {
   const ds = getState().diagnoses.filter((d) => diagSetOf(d) === setId);
   return ds.length ? ds[ds.length - 1] : null;

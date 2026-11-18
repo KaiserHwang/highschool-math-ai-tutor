@@ -2,7 +2,7 @@
 import { DIAG_SET_BY_ID, isDiagSetId, diagItems } from '../content/diagnosis.js';
 import { UNIT_BY_ID, UNITS, TRACKS, SKILLS, LEVELS, unitLabel, courseTitle } from '../content/units.js';
 import { getState, update } from '../store.js';
-import { gradeDiagnosis, latestDiagnosis, latestDiagnosisOf, activeDiagSets, diagSetOf, activeTrack, saveDiagnosis, chooseTrack, isCorrect, normalizeAnswer, diagUnitReadiness, practiceTarget } from '../model.js';
+import { gradeDiagnosis, latestDiagnosis, latestDiagnosisOf, activeDiagSets, diagSetOf, activeTrack, saveDiagnosis, chooseTrack, isCorrect, normalizeAnswer, diagUnitReadiness, diagResultItems, practiceTarget } from '../model.js';
 import { LESSON_BY_ID } from '../content/lessons/index.js';
 import { newSeed } from '../content/generators.js';
 import { tex, esc, CIRCLED, fmtDate, gradeMark, toast, optionsClass } from '../lib/ui.js';
@@ -176,8 +176,8 @@ function finish(view) {
 }
 
 function renderResult(view, d) {
-  // 이 진단 묶음의 문항(예전 진단은 공통수학 묶음). 문항 번호는 묶음 안의 순서다
-  const QS = diagItems(diagSetOf(d));
+  // 이 진단에서 실제로 채점한 문항(예전 진단은 공통수학 묶음). 나중에 추가된 문항은 예전 결과에 넣지 않는다
+  const QS = diagResultItems(d);
   const setTitle = DIAG_SET_BY_ID[diagSetOf(d)].title;
   // 진단이 다루지 않은 역량(값이 null)은 약점 판단과 차트에서 0으로 보지 않고 따로 알린다
   const covered = SKILLS.filter((s) => d.skills[s.key] != null);
