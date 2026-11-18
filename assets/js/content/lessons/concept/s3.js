@@ -94,4 +94,97 @@ export default {
       note: t`$p=\dfrac12$이면 분포가 좌우 대칭이고, 평균 $np=2$에서 확률이 가장 큽니다.`,
     },
   ],
+
+  's3-l4': [
+    {
+      id: 's3-l4-q1', q: t`연속확률변수 $X$의 확률밀도함수가 $f(x)$일 때, $\mathrm{P}(a\le X\le b)$는?`,
+      options: [t`$y=f(x)$의 그래프와 $x$축, 두 직선 $x=a,\ x=b$로 둘러싸인 부분의 넓이`, t`$f(b)-f(a)$`, t`$f(a)+f(b)$`], answer: 0,
+      reasons: ['연속확률변수의 확률은 구간에 대해 넓이로 정한다', '확률은 양 끝의 함숫값의 차이다', '양 끝 값에서의 확률을 더하면 된다', '확률밀도함수의 값이 곧 확률이다'],
+      reason: 0, mis: [null, 'formula', 'transfer', 'def'],
+      note: t`$f(x)$의 값 자체는 확률이 아니어서 $1$보다 클 수도 있습니다.`,
+    },
+    {
+      id: 's3-l4-q2', q: t`연속확률변수 $X$에 대하여 $\mathrm{P}(X=a)$는?`,
+      options: [t`$0$`, t`$f(a)$`, '구할 수 없다'], answer: 0,
+      reasons: ['한 점 위의 넓이는 0이다', '확률밀도함수에 a를 넣은 값이 확률이다', '연속확률변수는 한 값의 확률이 정의되지 않는다', '값이 무수히 많으므로 1/(값의 개수)이다'],
+      reason: 0, mis: [null, 'def', 'def', 'count'],
+      note: t`그래서 $\mathrm{P}(a\le X\le b)=\mathrm{P}(a<X<b)$입니다.`,
+    },
+    {
+      id: 's3-l4-q3', q: t`$X$가 $\mathrm{N}(m,\ \sigma^2)$을 따를 때, 확률변수 $Z=\dfrac{X-m}{\sigma}$이 따르는 분포는?`,
+      options: [t`$\mathrm{N}(0,\ 1)$`, t`$\mathrm{N}(m,\ 1)$`, t`$\mathrm{N}(0,\ \sigma^2)$`], answer: 0,
+      reasons: [t`$\mathrm{E}(Z)=\dfrac{m-m}\sigma=0$, $\mathrm{V}(Z)=\dfrac{\sigma^2}{\sigma^2}=1$이다`, '평균은 그대로이고 표준편차만 1이 된다', '평균만 0이 되고 분산은 그대로이다', '표준화하면 분포가 정규분포가 아니게 된다'],
+      reason: 0, mis: [null, 'formula', 'formula', 'overgen'],
+      note: t`$m$을 빼면 평균이 $0$, $\sigma$로 나누면 표준편차가 $1$이 됩니다.`,
+    },
+    {
+      id: 's3-l4-q4', q: t`$X$가 $\mathrm{N}(m,\ \sigma^2)$을 따를 때 $\mathrm{P}(X\le m-k)$와 $\mathrm{P}(X\ge m+k)$의 관계는? ($k>0$)`,
+      options: ['같다', t`$\mathrm{P}(X\le m-k)$가 더 크다`, t`$\mathrm{P}(X\ge m+k)$가 더 크다`], answer: 0,
+      reasons: [t`곡선이 직선 $x=m$에 대하여 대칭이다`, '왼쪽 꼬리가 더 두껍다', '오른쪽 꼬리가 더 두껍다', 'σ에 따라 달라진다'],
+      reason: 0, mis: [null, 'visual', 'visual', 'cond'],
+      note: t`예제처럼 $\mathrm{P}(X\le10)=\mathrm{P}(X\ge14)$이면 $m$은 $10$과 $14$의 한가운데입니다.`,
+    },
+  ],
+
+  's3-l5': [
+    {
+      id: 's3-l5-q1', q: t`$X$가 $\mathrm{B}(n,\ p)$를 따르고 $n$이 충분히 클 때, $X$가 근사적으로 따르는 분포는? ($q=1-p$)`,
+      options: [t`$\mathrm{N}(np,\ npq)$`, t`$\mathrm{N}(np,\ \sqrt{npq})$`, t`$\mathrm{N}(n,\ p)$`], answer: 0,
+      reasons: ['평균과 분산이 이항분포와 같은 정규분포에 가까워진다', '정규분포의 두 번째 자리는 표준편차이다', '이항분포의 두 값을 그대로 옮긴다', '근사하면 평균이 0이 된다'],
+      reason: 0, mis: [null, 'formula', 'transfer', 'formula'],
+      note: t`$\mathrm{N}(m,\ \sigma^2)$의 두 번째 자리는 분산입니다. 표준화할 때는 $\sqrt{npq}$로 나눕니다.`,
+    },
+    {
+      id: 's3-l5-q2', q: t`$X$가 $\mathrm{B}\left(100,\ \dfrac12\right)$을 따를 때 근사적으로 따르는 정규분포는?`,
+      options: [t`$\mathrm{N}(50,\ 5^2)$`, t`$\mathrm{N}(50,\ 25^2)$`, t`$\mathrm{N}(100,\ 5^2)$`], answer: 0,
+      reasons: [t`$np=50$, $npq=25$이므로 표준편차는 $5$이다`, t`분산 $25$를 표준편차로 본다`, t`평균은 시행 횟수 $100$이다`, t`$p=\dfrac12$이므로 평균은 $\dfrac12$이다`],
+      reason: 0, mis: [null, 'formula', 'formula', 'def'],
+      note: t`$\mathrm{N}(50,\ 5^2)=\mathrm{N}(50,\ 25)$입니다.`,
+    },
+    {
+      id: 's3-l5-q3', q: '이항분포를 정규분포로 근사하여 확률을 구하는 주된 이유는?',
+      options: ['많은 항을 더하는 계산을 피하려고', '정확한 확률을 얻으려고', '이항분포는 확률의 합이 1이 아니어서'], answer: 0,
+      reasons: [t`$_n\mathrm{C}_rp^rq^{n-r}$을 많이 더하는 대신 표준정규분포표를 쓴다`, '정규분포로 구한 값이 이항분포의 참값이다', '이항분포는 확률분포가 아니다', '시행 횟수가 많으면 이항분포를 쓸 수 없다'],
+      reason: 0, mis: [null, 'overgen', 'def', 'cond'],
+      note: t`정규분포로 구한 값은 근삿값입니다.`,
+    },
+    {
+      id: 's3-l5-q4', q: t`$\mathrm{B}(n,\ p)$의 막대그래프가 정규분포의 곡선에 잘 맞으려면?`,
+      options: [t`$n$이 충분히 커야 한다`, t`$p$가 $0$에 가까워야 한다`, t`$n$이 작아야 한다`], answer: 0,
+      reasons: ['시행 횟수가 많을수록 평균을 중심으로 한 종 모양이 된다', 'p가 작을수록 좌우 대칭이 된다', '막대가 적을수록 곡선과 비슷하다', 'n, p와 관계없이 항상 잘 맞는다'],
+      reason: 0, mis: [null, 'converse', 'visual', 'overgen'],
+      note: t`$p$가 $0$이나 $1$에 가까우면 막대가 한쪽으로 치우쳐 $n$이 더 커야 합니다.`,
+    },
+  ],
+
+  's3-l6': [
+    {
+      id: 's3-l6-q1', q: '전구의 수명을 조사할 때 전수조사 대신 표본조사를 하는 이유는?',
+      options: ['조사하면 전구를 쓸 수 없게 되므로', '표본조사가 항상 더 정확하므로', '전수조사는 법으로 금지되어 있으므로'], answer: 0,
+      reasons: ['끝까지 켜 보아야 수명을 알 수 있어 조사한 전구는 팔 수 없다', '일부만 조사하면 오차가 없다', '조사 대상이 많으면 전수조사를 할 수 없다', '모집단과 표본은 같은 것이다'],
+      reason: 0, mis: [null, 'overgen', 'overgen', 'def'],
+      note: t`비용과 시간이 많이 들거나 조사하면 대상이 망가지는 경우 표본조사를 합니다.`,
+    },
+    {
+      id: 's3-l6-q2', q: '임의추출이란?',
+      options: ['모집단의 각 대상이 같은 확률로 뽑히도록 추출하는 것', '조사하는 사람이 대표적이라고 생각하는 대상을 고르는 것', '조사하기 쉬운 대상부터 뽑는 것'], answer: 0,
+      reasons: ['뽑는 사람의 판단이 들어가지 않아야 표본이 치우치지 않는다', '대표적인 대상을 골라야 정확하다', '쉽게 만날 수 있는 대상이 모집단을 대표한다', '아무렇게나 뽑으면 임의추출이다'],
+      reason: 0, mis: [null, 'def', 'overgen', 'def'],
+      note: t`제비뽑기, 난수표, 공학 도구의 난수 생성으로 임의추출을 합니다.`,
+    },
+    {
+      id: 's3-l6-q3', q: t`크기가 $5$인 모집단에서 크기가 $2$인 표본을 복원추출할 때, 순서를 생각한 표본의 개수는?`,
+      options: [t`$25$`, t`$20$`, t`$10$`], answer: 0,
+      reasons: ['되돌려 놓으므로 매번 5가지이다', '두 번째에는 하나가 줄어든다', '순서를 생각하지 않고 2개를 고른다', '5와 2를 곱한다'],
+      reason: 0, mis: [null, 'transfer', 'count', 'formula'],
+      note: t`$20={}_5\mathrm{P}_2$는 비복원추출, $10={}_5\mathrm{C}_2$는 순서를 생각하지 않는 비복원추출입니다.`,
+    },
+    {
+      id: 's3-l6-q4', q: t`$50$명 중에서 $5$명을 임의추출할 때 특정한 학생 A가 뽑힐 확률은?`,
+      options: [t`$\dfrac1{10}$`, t`$\dfrac1{50}$`, t`$\dfrac15$`], answer: 0,
+      reasons: [t`$\dfrac{_{49}\mathrm{C}_4}{_{50}\mathrm{C}_5}=\dfrac5{50}$이다`, '한 명이 뽑힐 확률은 모집단의 크기로 나눈다', '5명 중 1명이므로 1/5이다', '뽑는 방법에 따라 정해지지 않는다'],
+      reason: 0, mis: [null, 'count', 'count', 'cond'],
+      note: t`크기 $N$인 모집단에서 $n$명을 임의추출하면 각 대상이 뽑힐 확률은 $\dfrac nN$입니다.`,
+    },
+  ],
 };
