@@ -466,6 +466,22 @@ export const DIAGNOSIS = [
     skills: { concept: 1 },
     hint: t`A를 포함하는 표본은 나머지 $23$명 중 $5$명을 뽑는 경우입니다.`,
     solution: t`$\dfrac{_{23}\mathrm{C}_5}{_{24}\mathrm{C}_6}=\dfrac6{24}=\dfrac14$`,
+  },
+  {
+    id: 'd57', unit: 's3', level: 'basic', type: 'short', sec: 60, lesson: 's3-l7',
+    q: t`모표준편차가 $10$인 모집단에서 크기가 $25$인 표본을 복원추출로 임의추출할 때, 표본평균 $\overline{X}$의 표준편차를 구하시오.`,
+    answer: '2',
+    skills: { concept: 1 },
+    hint: t`$\sigma(\overline{X})=\dfrac{\sigma}{\sqrt n}$`,
+    solution: t`$\dfrac{10}{\sqrt{25}}=2$`,
+  },
+  {
+    id: 'd58', unit: 's3', level: 'basic', type: 'short', sec: 90, lesson: 's3-l8',
+    q: t`어느 공장에서 만드는 과자 한 봉지의 무게(g)는 표준편차가 $15$인 정규분포를 따른다. 과자 $25$봉지를 임의추출하여 무게의 평균을 구하고, 이를 이용해 이 공장 과자 한 봉지의 평균 무게 $m$에 대한 신뢰도 $95\%$의 신뢰구간 $a\le m\le b$를 구하였다. $100(b-a)$의 값을 구하시오. (단, $\mathrm{P}(0\le Z\le1.96)=0.475$)`,
+    answer: '1176',
+    skills: { concept: 1, calc: 0.5 },
+    hint: t`$b-a=2\times1.96\times\dfrac{\sigma}{\sqrt n}$`,
+    solution: t`$2\times1.96\times\dfrac{15}5=11.76$이므로 $1176$`,
   },];
 
 // ── 진단 묶음 ─────────────────────────────────────
@@ -476,7 +492,7 @@ export const DIAG_SETS = [
   { id: 'common', title: '공통수학1·2', courses: ['common1', 'common2'], minutes: 35 },
   { id: 'algebra', title: '대수', courses: ['algebra'], minutes: 28 },
   { id: 'calculus1', title: '미적분Ⅰ', courses: ['calculus1'], minutes: 42 },
-  { id: 'statistics', title: '확률과 통계', courses: ['statistics'], minutes: 42 },
+  { id: 'statistics', title: '확률과 통계', courses: ['statistics'], minutes: 48 },
 ];
 export const DIAG_SET_BY_ID = Object.fromEntries(DIAG_SETS.map((s) => [s.id, s]));
 export const isDiagSetId = (id) => typeof id === 'string' && Object.hasOwn(DIAG_SET_BY_ID, id);

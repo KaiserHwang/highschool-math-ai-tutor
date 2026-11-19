@@ -501,4 +501,217 @@ export default {
       keys: ['표본이 모집단을 대표해야 한다', '마음대로 고르면 치우친다', '모든 대상이 같은 확률로 뽑히게 한다'],
     },
   },
+
+  's3-l7': {
+    pre: ['s3-l6', 's3-l4'],
+    predict: {
+      q: '같은 모집단에서 뽑는 표본의 크기를 크게 하면, 표본평균의 분포는 어떻게 될까요?',
+      options: ['평균은 그대로이고 모평균 가까이에 더 모인다', '평균이 커진다', '더 넓게 흩어진다'],
+      answer: 0,
+      explain: t`표본평균의 평균은 표본의 크기와 관계없이 모평균 $m$이고, 분산은 $\dfrac{\sigma^2}n$이라 $n$이 클수록 작아집니다. 그래서 표본이 클수록 표본평균이 모평균 가까이에 모입니다.`,
+    },
+    explore: [{
+      title: '표본의 크기와 표본평균의 분포',
+      intro: t`모집단은 $1,\ 2,\ 3$이 각각 $\dfrac13$인 분포입니다($m=2$, $\sigma^2=\dfrac23$). 크기가 $n$인 표본을 복원추출할 때 나올 수 있는 표본을 모두 나열해 표본평균 $\overline{X}$의 분포를 그립니다.`,
+      params: [{ k: 'n', label: t`표본의 크기 $n$`, min: 1, max: 4, step: 1, value: 1 }],
+      fig: ({ n }) => {
+        // 3^n개 표본의 합을 세어 표본평균의 분포를 만든다
+        let cnt = { 0: 1 };
+        for (let i = 0; i < n; i++) {
+          const nx = {};
+          for (const [s, c] of Object.entries(cnt)) for (const v of [1, 2, 3]) nx[+s + v] = (nx[+s + v] || 0) + c;
+          cnt = nx;
+        }
+        const total = 3 ** n, w = 0.4 / n;
+        const x = [0.2, 3.5], y = [-0.1, 0.8];
+        return {
+          x, y, w: 300, h: 210, equal: false, axes: false,
+          alt: `모집단 1, 2, 3에서 크기 ${n}인 표본을 복원추출할 때 표본평균의 분포 막대그래프`,
+          items: [
+            { t: 'seg', p: [0.6, 0], q: [3.4, 0] },
+            { t: 'seg', p: [0.6, 0], q: [0.6, 0.6] },
+            ...[0.3, 0.6].flatMap((v) => [{ t: 'seg', p: [0.55, v], q: [0.65, v] }, { t: 'text', p: [0.38, v], s: String(v) }]),
+            { t: 'text', p: [0.38, 0.75], s: '확률' },
+            ...[1, 2, 3].map((v) => ({ t: 'text', p: [v, -0.05], s: String(v) })),
+            ...Object.entries(cnt).map(([s, c]) => { const xb = +s / n, h = c / total; return { t: 'poly', pts: [[xb - w, 0], [xb + w, 0], [xb + w, h], [xb - w, h]], fill: false, style: 'main' }; }),
+          ],
+        };
+      },
+      read: ({ n }) => [[t`$\mathrm{E}(\overline{X})$`, '$2$'], [t`$\mathrm{V}(\overline{X})=\dfrac{\sigma^2}n$`, `$${frac(2, 3 * n)}$`]],
+      goals: [
+        { text: t`$\mathrm{V}(\overline{X})=\dfrac13$이 되게 해 보세요.`, test: ({ n }) => n === 2 },
+        { text: t`$\mathrm{V}(\overline{X})=\dfrac29$이 되게 해 보세요.`, test: ({ n }) => n === 3 },
+        { text: t`$\mathrm{V}(\overline{X})=\dfrac16$이 되게 해 보세요.`, test: ({ n }) => n === 4 },
+      ],
+      note: t`$n$이 커질수록 막대가 모평균 $2$ 가까이에 모이고, 모양이 종 모양에 가까워집니다. 모집단은 정규분포가 아니지만 표본평균의 분포는 정규분포에 가까워지는 것을 볼 수 있습니다.`,
+    }],
+    derive: {
+      title: t`표본평균의 표준화 $Z=\dfrac{\overline{X}-m}{\sigma/\sqrt n}$`,
+      steps: [
+        { ask: t`$\overline{X}$의 평균과 표준편차는?`, line: t`$\mathrm{E}(\overline{X})=m$, $\sigma(\overline{X})=\dfrac{\sigma}{\sqrt n}$` },
+        { ask: '정규분포의 표준화는?', line: t`(확률변수 $-$ 평균) $\div$ 표준편차` },
+        { ask: t`$\overline{X}$에 쓰면?`, line: t`$Z=\dfrac{\overline{X}-m}{\sigma/\sqrt n}$` },
+        { ask: '주의할 점은?', line: t`모표준편차 $\sigma$가 아니라 $\dfrac{\sigma}{\sqrt n}$으로 나눈다` },
+      ],
+    },
+    traps: {
+      's3-l7-c1': { '144': t`$144$는 모분산입니다. 표본평균의 분산은 모분산을 표본의 크기 $36$으로 나눕니다.`, '2': t`$\dfrac{12}{\sqrt{36}}=2$는 표준편차입니다. 묻는 것은 분산 $2^2=4$입니다.` },
+      's3-l7-c2': { '1/625': t`$\dfrac{0.2\times0.8}{100}=0.0016$은 분산입니다. 표준편차는 그 양의 제곱근 $0.04$입니다.`, '2/5': t`$\sqrt{0.2\times0.8}=0.4$는 모집단 한 사람의 표준편차입니다. 표본의 크기 $100$으로 나눈 뒤 제곱근을 씌웁니다.` },
+    },
+    deep: {
+      intro: t`표본분포의 심화는 <strong>표본비율의 확률</strong>과 <strong>표본의 크기 정하기</strong>입니다.`,
+      ideas: [
+        {
+          title: '표본비율의 확률',
+          body: t`<p>$n$이 충분히 크면 $\hat p$는 근사적으로 $\mathrm{N}\left(p,\ \dfrac{pq}n\right)$을 따르므로 표준화하여 확률을 구합니다.</p>`,
+          example: {
+            q: t`모비율이 $\dfrac12$인 모집단에서 크기가 $100$인 표본을 복원추출로 임의추출할 때, 표본비율 $\hat p$가 $0.6$ 이상일 확률을 정규분포로 근사하여 구하시오. (단, 연속성 보정 없이 계산하고, $\mathrm{P}(0\le Z\le2)=0.4772$로 계산하고, 답은 소수로 써도 된다)`,
+            think: [t`$\sigma(\hat p)=\sqrt{\dfrac{0.5\times0.5}{100}}=0.05$`],
+            steps: [t`$\mathrm{P}(\hat p\ge0.6)\approx\mathrm{P}(Z\ge2)=0.0228$`],
+            answer: '57/2500',
+          },
+        },
+        {
+          title: '표본의 크기 정하기',
+          body: t`<p>$\sigma(\overline{X})=\dfrac{\sigma}{\sqrt n}$이 주어진 값 이하가 되는 $n$을 부등식으로 구합니다.</p>`,
+          example: {
+            q: t`모표준편차가 $10$인 모집단에서 크기가 $n$인 표본을 임의추출할 때, 표본평균의 표준편차가 $2$ 이하가 되는 $n$의 최솟값을 구하시오.`,
+            think: [t`$\dfrac{10}{\sqrt n}\le2$`],
+            steps: [t`$\sqrt n\ge5$이므로 $n\ge25$, 최솟값 $25$`],
+            answer: '25',
+          },
+        },
+      ],
+      checks: [
+        { id: 's3-l7-d1', type: 'short', q: t`정규분포 $\mathrm{N}(50,\ 6^2)$을 따르는 모집단에서 크기가 $9$인 표본을 임의추출할 때, $\mathrm{P}(\overline{X}\le52)$를 구하시오. (단, $\mathrm{P}(0\le Z\le1)=0.3413$으로 계산하고, 답은 소수로 써도 된다)`, answer: '8413/10000', solution: t`$\overline{X}$는 $\mathrm{N}(50,\ 2^2)$을 따르므로 $\mathrm{P}(Z\le1)=0.8413$` },
+        { id: 's3-l7-d2', type: 'short', q: t`모표준편차가 $12$인 모집단에서 크기가 $n$인 표본을 임의추출할 때, 표본평균의 표준편차가 $2$ 이하가 되도록 하는 $n$의 최솟값을 구하시오.`, answer: '36', solution: t`$\dfrac{12}{\sqrt n}\le2$에서 $n\ge36$` },
+      ],
+    },
+    explain: {
+      prompt: '표본의 크기가 커질수록 표본평균이 모평균에 가까이 모이는 이유를 설명해 보세요.',
+      model: t`표본평균의 평균은 늘 모평균 $m$이고, 분산은 $\dfrac{\sigma^2}n$입니다. 표본이 크면 큰 값과 작은 값이 함께 들어가 서로 상쇄되므로, 표본평균이 극단적인 값이 되기 어렵습니다. 그래서 $n$이 커질수록 분산 $\dfrac{\sigma^2}n$이 작아지고 표본평균이 모평균 가까이에 모입니다.`,
+      keys: [t`$\mathrm{E}(\overline{X})=m$`, t`분산 $\dfrac{\sigma^2}n$은 $n$이 클수록 작다`, '큰 값과 작은 값이 상쇄된다'],
+    },
+  },
+
+  's3-l8': {
+    pre: ['s3-l7'],
+    predict: {
+      q: t`같은 표본으로 모평균을 추정할 때, 신뢰도를 $95\%$에서 $99\%$로 높이면 신뢰구간의 길이는?`,
+      options: ['길어진다', '짧아진다', '그대로이다'],
+      answer: 0,
+      explain: t`더 확실하게 모평균을 포함하려면 구간을 넓혀야 합니다. 신뢰구간의 길이는 $2\times1.96\dfrac{\sigma}{\sqrt n}$에서 $2\times2.58\dfrac{\sigma}{\sqrt n}$으로 길어집니다.`,
+    },
+    explore: [{
+      title: '신뢰구간의 길이',
+      intro: t`모표준편차 $\sigma=10$인 정규분포에서 크기가 $n=k^2$인 표본의 표본평균이 $50$일 때, 모평균 $m$의 신뢰구간을 수직선에 그립니다.`,
+      params: [
+        { k: 'k', label: t`$\sqrt n=k$`, min: 2, max: 20, step: 1, value: 4 },
+        { k: 'c', label: '신뢰도 (0: 95%, 1: 99%)', min: 0, max: 1, step: 1, value: 0 },
+      ],
+      fig: ({ k, c }) => {
+        const z = c ? 2.58 : 1.96, h = (z * 10) / k;
+        return {
+          x: [36, 64], y: [-1, 1], w: 320, h: 90, equal: false, axes: false,
+          alt: `표본평균 50을 중심으로 길이 ${(2 * h).toFixed(2)}인 신뢰구간을 수직선에 나타낸 그림`,
+          items: [
+            { t: 'seg', p: [37, 0], q: [63, 0] },
+            ...[40, 45, 50, 55, 60].map((v) => ({ t: 'text', p: [v, -0.55], s: String(v) })),
+            { t: 'seg', p: [50 - h, 0.25], q: [50 + h, 0.25], style: 'red' },
+            { t: 'pt', p: [50 - h, 0.25], style: 'red' },
+            { t: 'pt', p: [50 + h, 0.25], style: 'red' },
+            { t: 'pt', p: [50, 0.25], open: true },
+          ],
+        };
+      },
+      read: ({ k, c }) => {
+        const z = c ? 2.58 : 1.96, h = (z * 10) / k;
+        return [['신뢰구간(끝값은 소수 셋째 자리에서 반올림)', `$${(50 - h).toFixed(2)}\\le m\\le${(50 + h).toFixed(2)}$`], ['길이(반올림 전 값으로 계산)', `$${(2 * h).toFixed(2)}$`]];
+      },
+      goals: [
+        { text: '신뢰도 95%에서 길이가 3.92가 되게 해 보세요.', test: ({ k, c }) => c === 0 && k === 10 },
+        { text: '신뢰도 99%에서 길이가 5.16이 되게 해 보세요.', test: ({ k, c }) => c === 1 && k === 10 },
+        { text: '신뢰도 95%에서 길이가 2보다 짧아지게 해 보세요.', test: ({ k, c }) => c === 0 && 2 * 1.96 * 10 < 2 * k },
+      ],
+      note: t`표본의 크기 $n$을 $4$배로 하면($k$를 $2$배) 구간의 길이는 절반이 됩니다. 신뢰도를 높이면 같은 $n$에서 구간이 길어집니다.`,
+    }, {
+      title: '조사 결과로 모비율 추정하기',
+      intro: t`어느 도시 고등학생 $400$명을 임의추출하여 아침을 먹는지 물었습니다. "먹는다"고 답한 학생 수 $x$를 넣으면, 이 도시 고등학생 전체(모집단)에서 아침을 먹는 학생의 비율 $p$에 대한 신뢰도 $95\%$의 신뢰구간을 계산합니다. 스프레드시트라면 아래쪽 끝값을 =p-1.96*SQRT(p*(1-p)/400)처럼 입력해 같은 계산을 할 수 있습니다.`,
+      params: [{ k: 'x', label: t`"먹는다"고 답한 학생 수 $x$`, min: 40, max: 360, step: 40, value: 120 }],
+      fig: ({ x }) => {
+        const p = x / 400, h = 1.96 * Math.sqrt((p * (1 - p)) / 400);
+        return {
+          x: [-0.05, 1.05], y: [-1, 1], w: 320, h: 90, equal: false, axes: false,
+          alt: `표본비율 ${p}을 중심으로 한 모비율의 신뢰구간과 기준선 0.5를 수직선에 나타낸 그림`,
+          items: [
+            { t: 'seg', p: [0, 0], q: [1, 0] },
+            ...[0, 0.25, 0.5, 0.75, 1].map((v) => ({ t: 'text', p: [v, -0.55], s: String(v) })),
+            { t: 'seg', p: [0.5, -0.2], q: [0.5, 0.6], dash: true },
+            { t: 'seg', p: [p - h, 0.25], q: [p + h, 0.25], style: 'red' },
+            { t: 'pt', p: [p - h, 0.25], style: 'red' },
+            { t: 'pt', p: [p + h, 0.25], style: 'red' },
+            { t: 'pt', p: [p, 0.25], open: true },
+          ],
+        };
+      },
+      read: ({ x }) => {
+        const p = x / 400, h = 1.96 * Math.sqrt((p * (1 - p)) / 400);
+        const where = p - h > 0.5 ? '절반보다 많다고 볼 수 있음' : p + h < 0.5 ? '절반보다 적다고 볼 수 있음' : '절반보다 많은지 적은지 판단하기 어려움';
+        return [[t`표본비율 $\hat p$`, `$${p}$`], ['신뢰구간(끝값은 반올림)', `$${(p - h).toFixed(3)}\\le p\\le${(p + h).toFixed(3)}$`], ['해석', `이 도시 고등학생 전체의 비율이 ${where}`]];
+      },
+      goals: [
+        { text: t`신뢰구간의 길이가 $0.098$이 되게 해 보세요.`, test: ({ x }) => x === 200 },
+        { text: t`신뢰구간 전체가 $0.5$보다 크게 해 보세요.`, test: ({ x }) => x / 400 - 1.96 * Math.sqrt(((x / 400) * (1 - x / 400)) / 400) > 0.5 },
+        { text: '신뢰구간의 길이가 가장 짧아지게 해 보세요.', test: ({ x }) => x === 40 || x === 360 },
+      ],
+      note: t`이 구간은 조사한 $400$명이 아니라 이 도시 고등학생 전체의 비율 $p$에 대한 추정입니다. 구간이 $0.5$를 포함하면 "절반보다 많다"고 말할 근거가 부족합니다. 표본비율이 $0.5$에서 멀수록 $\hat p\hat q$가 작아져 구간이 짧아집니다. (모집단은 $400$명보다 충분히 크다고 봅니다.)`,
+    }],
+    derive: {
+      title: t`신뢰도 $95\%$의 신뢰구간`,
+      steps: [
+        { ask: t`표준정규분포에서 $\mathrm{P}(-1.96\le Z\le1.96)$은?`, line: t`$2\times0.475=0.95$` },
+        { ask: t`$Z=\dfrac{\overline{X}-m}{\sigma/\sqrt n}$을 넣으면?`, line: t`$\mathrm{P}\left(-1.96\le\dfrac{\overline{X}-m}{\sigma/\sqrt n}\le1.96\right)=0.95$` },
+        { ask: t`괄호 안을 $m$에 대하여 정리하면?`, line: t`$\overline{X}-1.96\dfrac{\sigma}{\sqrt n}\le m\le\overline{X}+1.96\dfrac{\sigma}{\sqrt n}$` },
+        { ask: t`표본평균의 값 $\overline{x}$를 넣으면?`, line: t`신뢰도 $95\%$의 신뢰구간 $\overline{x}-1.96\dfrac{\sigma}{\sqrt n}\le m\le\overline{x}+1.96\dfrac{\sigma}{\sqrt n}$` },
+      ],
+    },
+    traps: {
+      's3-l8-c1': { '392': t`신뢰도 $99\%$이므로 $1.96$이 아니라 $2.58$을 씁니다.`, '258': t`$2.58\times\dfrac6{\sqrt{36}}$은 구간의 절반입니다. 길이는 그 $2$배입니다.` },
+      's3-l8-c2': { '10': t`$\sqrt n=10$에서 멈췄습니다. $n=100$입니다.`, '25': t`길이는 $2\times1.96\dfrac{\sigma}{\sqrt n}$입니다. 앞의 $2$를 빠뜨리지 않았는지 확인합니다.` },
+    },
+    deep: {
+      intro: t`추정의 심화는 <strong>표본의 크기와 구간의 길이</strong>와 <strong>모비율 추정에서 표본의 크기 정하기</strong>입니다.`,
+      ideas: [
+        {
+          title: t`$n$을 $4$배로 하면`,
+          body: t`<p>신뢰구간의 길이는 $\dfrac1{\sqrt n}$에 비례하므로 $n$을 $4$배로 하면 길이는 $\dfrac12$배가 됩니다.</p>`,
+          example: {
+            q: t`모표준편차가 $10$인 정규분포를 따르는 모집단에서, 크기가 $100$인 표본으로 구한 모평균의 신뢰도 $95\%$의 신뢰구간의 길이는 크기가 $25$인 표본으로 구한 길이의 몇 배인지 구하시오.`,
+            think: [t`길이 $2\times1.96\times\dfrac{10}{\sqrt n}$`],
+            steps: [t`$\dfrac{1/\sqrt{100}}{1/\sqrt{25}}=\dfrac5{10}=\dfrac12$`],
+            answer: '1/2',
+          },
+        },
+        {
+          title: '모비율 추정의 표본 크기',
+          body: t`<p>표본비율 $\hat p$를 알 때 $2\times1.96\sqrt{\dfrac{\hat p\hat q}n}$이 주어진 길이 이하가 되는 $n$을 구합니다.</p>`,
+          example: {
+            q: t`크기가 $n$인 표본에서 구한 표본비율이 $\dfrac12$일 때, 모비율에 대한 신뢰도 $95\%$의 신뢰구간의 길이가 $0.098$ 이하가 되도록 하는 $n$의 최솟값을 구하시오. (단, $\mathrm{P}(0\le Z\le1.96)=0.475$)`,
+            think: [t`$2\times1.96\sqrt{\dfrac{0.25}n}=\dfrac{1.96}{\sqrt n}\le0.098$`],
+            steps: [t`$\sqrt n\ge20$이므로 $n\ge400$, 최솟값 $400$`],
+            answer: '400',
+          },
+        },
+      ],
+      checks: [
+        { id: 's3-l8-d1', type: 'short', q: t`정규분포 $\mathrm{N}(m,\ 10^2)$을 따르는 모집단에서 크기가 $n$인 표본을 임의추출하여 구한 $m$에 대한 신뢰도 $95\%$의 신뢰구간이 $46.08\le m\le53.92$일 때, $n$의 값을 구하시오. (단, $\mathrm{P}(0\le Z\le1.96)=0.475$)`, answer: '25', solution: t`구간의 절반이 $3.92=1.96\times\dfrac{10}{\sqrt n}$이므로 $\sqrt n=5$, $n=25$` },
+        { id: 's3-l8-d2', type: 'short', q: t`어느 회사에 들어온 주문 중 $1600$건을 임의추출하여 조사하였더니 $320$건이 재구매 고객의 주문이었다. 전체 주문 중 재구매 고객의 주문 비율 $p$에 대한 신뢰도 $95\%$의 신뢰구간이 $a\le p\le b$일 때, $10000(b-a)$의 값을 구하시오. (단, $\mathrm{P}(0\le Z\le1.96)=0.475$)`, answer: '392', solution: t`$\hat p=0.2$, $\sqrt{\dfrac{0.2\times0.8}{1600}}=0.01$이므로 $b-a=2\times1.96\times0.01=0.0392$, $10000(b-a)=392$` },
+      ],
+    },
+    explain: {
+      prompt: '"신뢰도 95%의 신뢰구간"의 뜻을 설명해 보세요.',
+      model: t`모평균 $m$은 정해진 값이고, 표본을 뽑을 때마다 표본평균과 신뢰구간이 달라집니다. 같은 방법으로 표본을 여러 번 뽑아 구간을 만들면 그중 약 $95\%$의 구간이 $m$을 포함한다는 뜻입니다. 이미 구한 하나의 구간에 대해 "$m$이 이 안에 있을 확률이 $95\%$"라고 말하는 것은 아닙니다.`,
+      keys: [t`$m$은 정해진 값이고 구간이 달라진다`, '여러 번 만들면 약 95%가 m을 포함', '하나의 구간에 대한 확률이 아니다'],
+    },
+  },
 };

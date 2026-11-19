@@ -94,6 +94,10 @@ TABLE = {F(0): F(0), F(1, 2): F(1915, 10000), F(1): F(3413, 10000), F(3, 2): F(4
 for _z, _v in TABLE.items():  # 표 값이 실제 P(0<=Z<=z)를 반올림한 값인지
     assert abs(mpmath.quad(lambda t: mpmath.exp(-t * t / 2) / mpmath.sqrt(2 * mpmath.pi), [0, _z]) - _v) < 5e-5, _z
 INF = None
+# 신뢰구간에 쓰는 값: P(0<=Z<=1.96)=0.475, P(0<=Z<=2.58)=0.495 (2.58은 반올림 값이라 허용 오차를 1e-4로 둔다)
+Z95, Z99 = F(196, 100), F(258, 100)
+for _z, _v in ((Z95, F(475, 1000)), (Z99, F(495, 1000))):
+    assert abs(mpmath.quad(lambda t: mpmath.exp(-t * t / 2) / mpmath.sqrt(2 * mpmath.pi), [0, _z]) - _v) < 1e-4, _z
 
 
 def density_prob(m, s, a, b):
@@ -189,6 +193,19 @@ def s3_bank():
     E['d54'] = normal_ans(70, 10, 60, 80)
     E['d55'] = approx_ans(400, F(1, 2), None, 180)
     E['d56'] = prob(it.combinations(range(24), 6), lambda o: 0 in o)
+    # ── 표본분포와 추정
+    E['s3-17'] = 20 + F(36, 9)
+    E['s3-18'] = rsqrt(var(transform(binom(25, F(1, 2)), lambda x: F(x, 25))))
+    E['s3-19'] = 100 * 2 * Z95 * 8 / rsqrt(16)
+    E['s3-20'] = 1000 * 2 * Z95 * rsqrt(F(50, 100) * F(50, 100) / 100)
+    E['s3-21'] = normal_ans(80, rsqrt(F(144, 16)), 77, 86)
+    E['s3-22'] = single([n for n in range(1, 2000) if (2 * Z99 * 12) ** 2 / n <= F(516, 100) ** 2][:1])
+    pop = [0, 1, 1, 2]  # 0, 1, 2의 확률 1/4, 1/2, 1/4를 같은 가능성의 4개로 펼침
+    E['s3-23'] = mean(dist(it.product(pop, repeat=4), lambda o: F(sum(o), 4) ** 2))
+    l = 2 * Z95 * 7 / rsqrt(49)
+    E['s3-24'] = [n for n in range(1, 5000) if (2 * Z99 * 7) ** 2 / n <= (l / 2) ** 2][0]
+    E['d57'] = rsqrt(F(100, 25))
+    E['d58'] = 100 * 2 * Z95 * 15 / rsqrt(25)
     return E
 
 
@@ -290,6 +307,34 @@ def s3_lessons():
     E['s3-l6-de2'] = prob(it.combinations(range(40), 4), lambda o: 0 in o and 1 in o)
     E['s3-l6-d1'] = prob(it.product(range(1, 5), repeat=2), lambda o: o[0] == o[1])
     E['s3-l6-d2'] = prob(it.combinations(range(10), 3), lambda o: 0 in o or 1 in o)
+    # s3-l7 표본평균과 표본비율 (복원추출 표본을 모두 나열해 표본평균의 분포를 만든다)
+    xbar = lambda pop, n: dist(it.product(pop, repeat=n), lambda o: F(sum(o), n))  # noqa: E731
+    E['s3-l7-e1'] = var(xbar([1, 2, 3], 2))
+    # 표본평균의 분산이 모분산/n인 것을 나열로 확인한 뒤 정규모집단의 값에 쓴다
+    assert all(var(xbar([1, 2, 3], n)) == F(2, 3) / n for n in (1, 2, 3, 4))
+    E['s3-l7-e2'] = rsqrt(F(8 * 8, 16))
+    E['s3-l7-e3'] = normal_ans(100, rsqrt(F(100, 25)), 104, INF)
+    E['s3-l7-c1'] = F(12 * 12, 36)
+    E['s3-l7-c2'] = rsqrt(var(transform(binom(100, F(1, 5)), lambda x: F(x, 100))))
+    E['s3-l7-p'] = 0 if mean(xbar([1, 2, 3], 4)) == mean(xbar([1, 2, 3], 1)) and var(xbar([1, 2, 3], 4)) < var(xbar([1, 2, 3], 1)) else None
+    E['s3-l7-de1'] = approx_ans(100, F(1, 2), 60, INF)  # 표본비율 0.6 이상 = 100명 중 60명 이상
+    E['s3-l7-de2'] = [n for n in range(1, 1000) if F(100, n) <= 4][0]
+    E['s3-l7-d1'] = normal_ans(50, rsqrt(F(36, 9)), INF, 52)
+    E['s3-l7-d2'] = [n for n in range(1, 1000) if F(144, n) <= 4][0]
+    # s3-l8 추정
+    E['s3-l8-e1'] = 100 * 2 * Z95 * 10 / rsqrt(100)
+    h = Z95 * 4 / rsqrt(64)
+    E['s3-l8-e2'] = (30 - h) + (30 + h)
+    ph = F(200, 400)
+    E['s3-l8-e3'] = 1000 * 2 * Z95 * rsqrt(ph * (1 - ph) / 400)
+    E['s3-l8-c1'] = 100 * 2 * Z99 * 6 / rsqrt(36)
+    E['s3-l8-c2'] = single(n for n in range(1, 2000) if rsqrt(n) is not None and 2 * Z95 * 5 / rsqrt(n) == F(196, 100))
+    E['s3-l8-p'] = 0 if Z99 > Z95 else None
+    E['s3-l8-de1'] = (1 / rsqrt(100)) / (1 / rsqrt(25))
+    E['s3-l8-de2'] = [n for n in range(1, 5000) if (2 * Z95) ** 2 * F(1, 4) / n <= F(98, 1000) ** 2][0]
+    E['s3-l8-d1'] = single(n for n in range(1, 2000) if rsqrt(n) is not None and Z95 * 10 / rsqrt(n) == (F(5392, 100) - F(4608, 100)) / 2)
+    ph = F(320, 1600)
+    E['s3-l8-d2'] = 10000 * 2 * Z95 * rsqrt(ph * (1 - ph) / 1600)
     return {k: v for k, v in E.items() if v is not None}
 
 
@@ -323,4 +368,11 @@ def s3_cq():
     C['s3-l5-q2'] = 0 if (mean(d), rsqrt(var(d))) == (50, 5) else None
     C['s3-l6-q3'] = [25, 20, 10].index(len(list(it.product(range(5), repeat=2))))
     C['s3-l6-q4'] = [F(1, 10), F(1, 50), F(1, 5)].index(F(comb(49, 4), comb(50, 5)))
+    xbar = lambda pop, n: dist(it.product(pop, repeat=n), lambda o: F(sum(o), n))  # noqa: E731
+    C['s3-l7-q1'] = 0 if all(mean(xbar([1, 2, 6], n)) == 3 for n in (1, 2, 3)) else None
+    C['s3-l7-q2'] = 0 if all(var(xbar([1, 2, 6], n)) == var(xbar([1, 2, 6], 1)) / n for n in (2, 3)) else None
+    C['s3-l7-q3'] = [F(1, 2), F(1, 4), F(1)].index(rsqrt(var(xbar([0, 2], 4))) / rsqrt(var(xbar([0, 2], 1))))
+    C['s3-l7-q4'] = 0 if mean(transform(binom(10, F(1, 3)), lambda x: F(x, 10))) == F(1, 3) else None
+    C['s3-l8-q1'] = 0 if 2 * Z99 > 2 * Z95 else None
+    C['s3-l8-q2'] = 0 if 2 * Z95 * 10 / rsqrt(100) < 2 * Z95 * 10 / rsqrt(25) else None
     return {k: v for k, v in C.items() if v is not None}

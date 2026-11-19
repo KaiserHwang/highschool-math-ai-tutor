@@ -187,4 +187,66 @@ export default {
       note: t`크기 $N$인 모집단에서 $n$명을 비복원추출로 임의추출하면 각 대상이 뽑힐 확률은 $\dfrac nN$입니다.`,
     },
   ],
+
+  's3-l7': [
+    {
+      id: 's3-l7-q1', q: t`모평균이 $m$인 모집단에서 크기가 $n$인 표본을 임의추출할 때, 표본평균 $\overline{X}$의 평균은?`,
+      options: [t`$m$`, t`$\dfrac mn$`, t`$nm$`], answer: 0,
+      reasons: ['표본평균들은 모평균을 중심으로 흩어진다', '표본평균은 n으로 나누므로 평균도 n으로 나뉜다', 'n개를 더하므로 평균이 n배가 된다', '표본마다 달라서 평균을 말할 수 없다'],
+      reason: 0, mis: [null, 'transfer', 'formula', 'def'],
+      note: t`$n$으로 나뉘는 것은 분산 $\dfrac{\sigma^2}n$입니다.`,
+    },
+    {
+      id: 's3-l7-q2', q: t`모분산이 $\sigma^2$인 모집단에서 크기가 $n$인 표본을 복원추출할 때, 표본평균의 분산은?`,
+      options: [t`$\dfrac{\sigma^2}n$`, t`$\sigma^2$`, t`$\dfrac{\sigma^2}{\sqrt n}$`], answer: 0,
+      reasons: ['표본이 클수록 큰 값과 작은 값이 상쇄되어 n에 반비례한다', '모집단과 같은 분산을 가진다', '표준편차처럼 √n으로 나눈다', '분산은 n에 비례해 커진다'],
+      reason: 0, mis: [null, 'overgen', 'formula', 'converse'],
+      note: t`표준편차는 $\dfrac{\sigma}{\sqrt n}$, 분산은 그 제곱 $\dfrac{\sigma^2}n$입니다.`,
+    },
+    {
+      id: 's3-l7-q3', q: '표본의 크기를 4배로 늘리면 표본평균의 표준편차는?',
+      options: [t`$\dfrac12$배`, t`$\dfrac14$배`, '그대로'], answer: 0,
+      reasons: [t`$\dfrac{\sigma}{\sqrt{4n}}=\dfrac12\times\dfrac{\sigma}{\sqrt n}$이다`, '표본 크기에 반비례하므로 1/4배이다', '모표준편차가 같으므로 그대로이다', '표본이 커지면 표준편차도 커진다'],
+      reason: 0, mis: [null, 'formula', 'overgen', 'converse'],
+      note: t`분산은 $\dfrac14$배, 표준편차는 $\dfrac12$배입니다.`,
+    },
+    {
+      id: 's3-l7-q4', q: t`모비율이 $p$인 모집단에서 크기가 $n$인 표본을 임의추출할 때, 표본비율 $\hat p$의 평균은?`,
+      options: [t`$p$`, t`$np$`, t`$\dfrac pn$`], answer: 0,
+      reasons: [t`$\hat p=\dfrac Xn$이고 $\mathrm{E}(X)=np$이다`, t`표본에서 그 성질을 가진 대상의 수의 평균이 $np$이다`, '표본비율은 n으로 나누므로 평균도 p/n이다', '표본마다 달라 평균이 없다'],
+      reason: 0, mis: [null, 'def', 'formula', 'def'],
+      note: t`$np$는 개수 $X$의 평균이고, 비율 $\hat p=\dfrac Xn$의 평균은 $p$입니다.`,
+    },
+  ],
+
+  's3-l8': [
+    {
+      id: 's3-l8-q1', q: '같은 표본에서 신뢰도를 95%에서 99%로 높이면 신뢰구간의 길이는?',
+      options: ['길어진다', '짧아진다', '그대로이다'], answer: 0,
+      reasons: ['1.96 대신 더 큰 2.58을 곱한다', '더 정확해지므로 구간이 좁아진다', '표본이 같으므로 구간도 같다', '신뢰도와 구간의 길이는 관계없다'],
+      reason: 0, mis: [null, 'converse', 'overgen', 'def'],
+      note: t`더 확실하게 포함하려면 구간을 넓혀야 합니다.`,
+    },
+    {
+      id: 's3-l8-q2', q: '모표준편차를 아는 정규모집단에서 모평균을 추정할 때, 신뢰도는 그대로 두고 표본의 크기를 늘리면 신뢰구간의 길이는?',
+      options: ['짧아진다', '길어진다', '그대로이다'], answer: 0,
+      reasons: [t`길이 $2z\dfrac{\sigma}{\sqrt n}$은 $\sqrt n$에 반비례한다`, '표본이 많으면 값이 더 흩어진다', '신뢰도가 같으면 길이도 같다', '표본평균이 커져서 구간이 옮겨 간다'],
+      reason: 0, mis: [null, 'converse', 'overgen', 'transfer'],
+      note: t`$n$을 $4$배로 하면 길이는 절반이 됩니다.`,
+    },
+    {
+      id: 's3-l8-q3', q: '모평균에 대한 신뢰도 95%의 신뢰구간을 바르게 해석한 것은?',
+      options: ['같은 방법으로 구간을 여러 번 만들면 그중 약 95%가 모평균을 포함한다', '모평균이 이 구간 안에 있을 확률이 95%이다', '표본의 95%가 이 구간 안에 있다'], answer: 0,
+      reasons: ['모평균은 정해진 값이고 표본마다 구간이 달라진다', '모평균이 확률적으로 움직인다', '신뢰구간은 표본 값들의 범위이다', '모집단의 95%가 구간 안에 있다'],
+      reason: 0, mis: [null, 'def', 'def', 'transfer'],
+      note: t`확률적으로 달라지는 것은 모평균이 아니라 구간입니다.`,
+    },
+    {
+      id: 's3-l8-q4', q: '모비율의 신뢰구간을 구할 때 근호 안에 쓰는 값은?',
+      options: ['표본비율', '모비율', '신뢰도'], answer: 0,
+      reasons: ['모비율은 모르는 값이므로 표본비율로 대신한다', '모비율의 분산이므로 모비율을 넣는다', '신뢰도 0.95를 넣는다', '표본의 크기만 넣는다'],
+      reason: 0, mis: [null, 'cond', 'formula', 'formula'],
+      note: t`$n$이 충분히 크면 $\hat p$가 $p$에 가까우므로 $\sqrt{\dfrac{\hat p\hat q}n}$을 씁니다.`,
+    },
+  ],
 };
