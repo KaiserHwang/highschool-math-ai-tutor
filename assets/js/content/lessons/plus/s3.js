@@ -12,6 +12,8 @@ function frac(p, q) {
 const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
 const fact = (n) => (n <= 1 ? 1 : n * fact(n - 1));
 const C = (n, r) => (r < 0 || r > n ? 0 : fact(n) / (fact(r) * fact(n - r)));
+/** 정규분포 N(m, s^2)의 확률밀도함수를 a~b에서 꺾은선으로 근사한 그림 함수(plot.js는 함수 대신 꺾은선 pl을 받는다) */
+const normalPl = (m, s, a, b, N = 160) => ({ pl: range(0, N).map((i) => { const x = a + ((b - a) * i) / N; return [x, Math.exp(-((x - m) ** 2) / (2 * s * s)) / (Math.sqrt(2 * Math.PI) * s)]; }) });
 
 /** 막대그래프 그림: bars = [[x, 높이]], hi = 강조할 x, yt = 세로축 확률 눈금, m = 왼쪽 눈금 글자 자리(그림 단위) */
 function bars(list, hi, { x, y, ticks, yt, m }) {
@@ -247,6 +249,256 @@ export default {
       prompt: '어떤 확률변수가 이항분포를 따른다고 할 수 있는 조건을 설명해 보세요.',
       model: t`같은 시행을 $n$번 반복하고, 각 시행의 결과가 서로 영향을 주지 않으며(독립시행), 매번 사건 $A$가 일어날 확률이 $p$로 같아야 합니다. 이때 $A$가 일어나는 횟수 $X$는 $\mathrm{P}(X=r)={}_n\mathrm{C}_rp^r(1-p)^{n-r}$이 되어 이항분포 $\mathrm{B}(n,\ p)$를 따릅니다. 꺼낸 공을 되돌려 놓지 않으면 매번 확률이 달라지므로 이항분포가 아닙니다.`,
       keys: ['같은 시행을 독립적으로 반복', t`매번 확률이 $p$로 같다`, '되돌려 놓지 않으면 이항분포가 아니다'],
+    },
+  },
+
+  's3-l4': {
+    pre: ['s3-l2', 'c3-l4'],
+    predict: {
+      q: t`정규분포 $\mathrm{N}(m,\ \sigma^2)$에서 평균 $m$은 그대로 두고 표준편차 $\sigma$를 크게 하면 곡선은 어떻게 될까요?`,
+      options: ['낮아지고 옆으로 퍼진다', '높아지고 좁아진다', '모양은 그대로이고 오른쪽으로 옮겨 간다'],
+      answer: 0,
+      explain: t`곡선 아래의 넓이는 늘 $1$입니다. 값이 평균에서 더 멀리 흩어지면(σ가 크면) 곡선이 옆으로 퍼지고, 넓이를 $1$로 유지하려면 높이가 낮아져야 합니다. 곡선을 옆으로 옮기는 것은 $m$입니다.`,
+    },
+    explore: [{
+      title: t`정규분포 $\mathrm{N}(m,\ \sigma^2)$의 곡선`,
+      intro: t`평균 $m$과 표준편차 $\sigma$를 바꾸며 곡선의 위치와 모양을 봅니다. 색칠한 부분은 $m-\sigma\le X\le m+\sigma$입니다.`,
+      params: [
+        { k: 'm', label: t`평균 $m$`, min: -2, max: 2, step: 1, value: 0 },
+        { k: 's', label: t`표준편차 $\sigma$`, min: 0.5, max: 2, step: 0.5, value: 1 },
+      ],
+      fig: ({ m, s }) => {
+        const f = normalPl(m, s, -6, 6);
+        return {
+          x: [-6, 6], y: [-0.08, 0.9], w: 320, h: 220, equal: false,
+          xt: [-4, -2, 2, 4].map((v) => [v, String(v)]), yt: [[0.4, '0.4'], [0.8, '0.8']],
+          alt: `평균 ${m}, 표준편차 ${s}인 정규분포 곡선과 평균에서 표준편차 1배 안쪽을 색칠한 그림`,
+          items: [
+            { t: 'shade', f, from: m - s, to: m + s },
+            { t: 'fn', f },
+            { t: 'vl', x: m, label: 'x=m', at: 0.6, pos: 'e' }, // y축 이름(위)·0.4·0.8 눈금과 겹치지 않는 높이
+          ],
+        };
+      },
+      read: ({ s }) => [['곡선의 최댓값', `약 $${(1 / (Math.sqrt(2 * Math.PI) * s)).toFixed(3)}$`], [t`$\mathrm{P}(m-\sigma\le X\le m+\sigma)$`, '약 $0.6826$ ($m$, $\\sigma$와 관계없음)']],
+      goals: [
+        { text: t`대칭축이 $x=2$가 되게 해 보세요.`, test: ({ m }) => m === 2 },
+        { text: '곡선이 가장 낮고 넓게 퍼지게 해 보세요.', test: ({ s }) => s === 2 },
+        { text: '곡선의 최댓값이 약 0.8이 되게 해 보세요.', test: ({ s }) => s === 0.5 },
+      ],
+      note: t`$m$을 바꾸면 곡선이 옆으로 옮겨 가기만 하고, $\sigma$를 바꾸면 폭과 높이가 바뀝니다. 색칠한 부분의 넓이는 $m$, $\sigma$와 관계없이 약 $0.6826$으로 같습니다. 이것이 표준화로 모든 정규분포를 표준정규분포 하나로 다룰 수 있는 이유입니다.`,
+    }],
+    derive: {
+      title: t`표준화 $Z=\dfrac{X-m}{\sigma}$`,
+      steps: [
+        { ask: t`$\mathrm{E}(Z)$는? ($\mathrm{E}(aX+b)=a\mathrm{E}(X)+b$)`, line: t`$\dfrac{\mathrm{E}(X)-m}{\sigma}=\dfrac{m-m}\sigma=0$` },
+        { ask: t`$\mathrm{V}(Z)$는? ($\mathrm{V}(aX+b)=a^2\mathrm{V}(X)$)`, line: t`$\dfrac{\mathrm{V}(X)}{\sigma^2}=\dfrac{\sigma^2}{\sigma^2}=1$` },
+        { ask: t`$a\le X\le b$를 $Z$로 바꾸면?`, line: t`각 변에서 $m$을 빼고 $\sigma(>0)$로 나누어 $\dfrac{a-m}\sigma\le Z\le\dfrac{b-m}\sigma$` },
+        { ask: '결론은?', line: t`$Z$는 $\mathrm{N}(0,\ 1)$을 따르고, $\mathrm{P}(a\le X\le b)=\mathrm{P}\left(\dfrac{a-m}\sigma\le Z\le\dfrac{b-m}\sigma\right)$` },
+      ],
+    },
+    traps: {
+      's3-l4-c1': { '1/2': t`구간의 길이가 전체의 절반이라고 확률도 절반은 아닙니다. 확률밀도함수가 $x$에 따라 커지므로 넓이로 계산합니다.` },
+      's3-l4-c2': { '1359/10000': t`$Z$의 범위 $-1\le Z\le2$가 $0$의 양쪽에 걸쳐 있으므로 두 값을 더합니다. $0.4772-0.3413$은 한쪽에 있을 때입니다.`, '3413/10000': t`$16$은 평균보다 $\sigma$만큼, $28$은 $2\sigma$만큼 떨어져 있습니다. 두 구간의 확률을 모두 더합니다.` },
+    },
+    deep: {
+      intro: t`정규분포의 심화는 <strong>대칭을 이용한 확률 계산</strong>과 <strong>확률에서 평균·표준편차 구하기</strong>입니다.`,
+      ideas: [
+        {
+          title: '평균보다 작은 쪽의 확률',
+          body: t`<p>$\mathrm{P}(Z\le z)\ (z>0)$는 $\mathrm{P}(Z\le0)=0.5$에 $\mathrm{P}(0\le Z\le z)$를 더한 것입니다.</p>`,
+          example: {
+            q: t`확률변수 $X$가 정규분포 $\mathrm{N}(30,\ 5^2)$을 따를 때, $\mathrm{P}(X\le35)$를 구하시오. (단, $\mathrm{P}(0\le Z\le1)=0.3413$으로 계산하고, 답은 소수로 써도 된다)`,
+            think: [t`$\mathrm{P}(X\le35)=\mathrm{P}(Z\le1)$`],
+            steps: [t`$0.5+0.3413=0.8413$`],
+            answer: '8413/10000',
+          },
+        },
+        {
+          title: '확률에서 표준편차 구하기',
+          body: t`<p>주어진 확률을 표에서 찾아 $\dfrac{a-m}\sigma$의 값을 정하고, 그 식에서 모르는 값을 구합니다.</p>`,
+          example: {
+            q: t`확률변수 $X$가 정규분포 $\mathrm{N}(60,\ \sigma^2)$을 따르고 $\mathrm{P}(X\ge64)=0.0228$일 때, $\sigma$의 값을 구하시오. (단, $\mathrm{P}(0\le Z\le2)=0.4772$)`,
+            think: [t`$\mathrm{P}(Z\ge z)=0.0228$이면 $0.5-0.0228=0.4772$이므로 $z=2$`],
+            steps: [t`$\dfrac{64-60}\sigma=2$이므로 $\sigma=2$`],
+            answer: '2',
+          },
+        },
+      ],
+      checks: [
+        { id: 's3-l4-d1', type: 'short', q: t`확률변수 $X$가 정규분포 $\mathrm{N}(100,\ 10^2)$을 따를 때, $\mathrm{P}(85\le X\le115)$를 구하시오. (단, $\mathrm{P}(0\le Z\le1.5)=0.4332$로 계산하고, 답은 소수로 써도 된다)`, answer: '1083/1250', solution: t`$\mathrm{P}(-1.5\le Z\le1.5)=2\times0.4332=0.8664$` },
+        { id: 's3-l4-d2', type: 'short', q: t`확률변수 $X$가 정규분포 $\mathrm{N}(m,\ 4^2)$을 따르고 $\mathrm{P}(X\ge36)=0.1587$일 때, $m$의 값을 구하시오. (단, $\mathrm{P}(0\le Z\le1)=0.3413$)`, answer: '32', solution: t`$0.5-0.1587=0.3413$이므로 $\dfrac{36-m}4=1$, $m=32$` },
+      ],
+    },
+    explain: {
+      prompt: '서로 다른 정규분포의 확률을 표준정규분포표 하나로 구할 수 있는 이유를 설명해 보세요.',
+      model: t`$X$가 $\mathrm{N}(m,\ \sigma^2)$을 따르면 $Z=\dfrac{X-m}\sigma$는 평균이 $0$, 표준편차가 $1$인 표준정규분포를 따릅니다. $a\le X\le b$는 $\dfrac{a-m}\sigma\le Z\le\dfrac{b-m}\sigma$와 같은 사건이므로 확률도 같습니다. 곧 확률은 "평균에서 표준편차의 몇 배만큼 떨어져 있는가"로만 정해지므로, 표준정규분포표 하나로 모든 정규분포의 확률을 구할 수 있습니다.`,
+      keys: [t`$Z=\dfrac{X-m}\sigma$는 $\mathrm{N}(0,\ 1)$을 따른다`, '같은 사건이므로 확률이 같다', '표준편차의 몇 배 떨어져 있는지로 정해진다'],
+    },
+  },
+
+  's3-l5': {
+    pre: ['s3-l3', 's3-l4'],
+    predict: {
+      q: t`동전을 던지는 횟수 $n$을 크게 할수록, 앞면의 횟수의 확률분포를 나타낸 막대그래프의 모양은 어떻게 될까요?`,
+      options: ['평균을 중심으로 한 종 모양에 가까워진다', '모든 막대의 높이가 같아진다', '한쪽 끝으로 몰린다'],
+      answer: 0,
+      explain: t`앞면의 횟수 $X$는 $\mathrm{B}\left(n,\ \dfrac12\right)$을 따릅니다. $n$이 커질수록 막대들이 평균 $\dfrac n2$을 중심으로 좌우 대칭인 종 모양을 이루어, 정규분포의 곡선에 가까워집니다.`,
+    },
+    explore: [{
+      title: '이항분포와 정규분포 곡선',
+      intro: t`$\mathrm{B}\left(n,\ \dfrac k{10}\right)$의 막대그래프 위에 평균과 분산이 같은 정규분포의 곡선을 겹쳐 봅니다.`,
+      params: [
+        { k: 'n', label: t`시행 횟수 $n$`, min: 5, max: 50, step: 5, value: 10 },
+        { k: 'k', label: t`성공 확률 $p=\dfrac k{10}$의 $k$`, min: 1, max: 9, step: 1, value: 5 },
+      ],
+      fig: ({ n, k }) => {
+        const p = k / 10, mu = n * p, sd = Math.sqrt(n * p * (1 - p));
+        const mg = 0.12 * (n + 2.5);
+        const x = [-1 - mg, n + 1.5], y = [-0.07, 0.7];
+        return {
+          x, y, w: 320, h: 220, equal: false, axes: false,
+          alt: `이항분포 B(${n}, ${k}/10)의 막대그래프와 정규분포 N(${mu}, ${(n * p * (1 - p)).toFixed(2)}) 곡선`,
+          items: [
+            ...bars(range(0, n).map((r) => [r, C(n, r) * p ** r * (1 - p) ** (n - r)]), null, { x, y, ticks: range(0, n).filter((v) => v % (n <= 10 ? 1 : 5) === 0), yt: [0.2, 0.4], m: mg }),
+            { t: 'fn', f: normalPl(mu, sd, -0.5, n + 0.5), style: 'red' },
+          ],
+        };
+      },
+      read: ({ n, k }) => [[t`평균 $np$`, `$${frac(n * k, 10)}$`], [t`표준편차 $\sqrt{npq}$`, n * k * (10 - k) % 100 === 0 && Number.isInteger(Math.sqrt(n * k * (10 - k) / 100)) ? `$${Math.sqrt(n * k * (10 - k) / 100)}$` : `$\\sqrt{${frac(n * k * (10 - k), 100)}}$`]],
+      goals: [
+        { text: '평균이 10이 되게 해 보세요.', test: ({ n, k }) => n * k === 100 },
+        { text: '표준편차가 2가 되게 해 보세요.', test: ({ n, k }) => n * k * (10 - k) === 400 },
+        { text: '평균이 40이 되게 해 보세요.', test: ({ n, k }) => n * k === 400 },
+      ],
+      note: t`$n$이 클수록 막대의 꼭대기가 곡선에 잘 맞습니다. $p$가 $0$이나 $1$에 가까우면 막대가 한쪽으로 치우쳐, 곡선과 잘 맞으려면 $n$이 더 커야 합니다.`,
+    }],
+    derive: {
+      title: '이항분포를 정규분포로 바꾸는 순서',
+      steps: [
+        { ask: t`$X$가 $\mathrm{B}(n,\ p)$를 따를 때 평균과 분산은?`, line: t`$\mathrm{E}(X)=np$, $\mathrm{V}(X)=npq$` },
+        { ask: t`$n$이 충분히 크면 $X$의 분포는?`, line: t`평균과 분산이 같은 정규분포 $\mathrm{N}(np,\ npq)$에 가까워짐` },
+        { ask: '표준화하면?', line: t`$Z=\dfrac{X-np}{\sqrt{npq}}$가 근사적으로 $\mathrm{N}(0,\ 1)$을 따름` },
+        { ask: '어디에 쓸까요?', line: t`많은 항의 합 대신 표준정규분포표로 확률의 근삿값을 구한다` },
+      ],
+    },
+    traps: {
+      's3-l5-c1': { '144': t`$\mathrm{N}(m,\ \sigma^2)$의 두 번째 자리는 분산 $64$입니다. 표준편차는 $\sigma=8$입니다.` },
+      's3-l5-c2': { '3413/10000': t`$\mathrm{P}(0\le Z\le1)$이 아니라 $\mathrm{P}(Z\ge1)=0.5-0.3413$입니다.`, '8413/10000': t`$210$개 "이상"이므로 $Z\ge1$쪽입니다. $\mathrm{P}(Z\le1)$을 구하지 않았는지 확인합니다.` },
+    },
+    deep: {
+      intro: t`이항분포 근사의 심화는 <strong>문장에서 이항분포를 찾아 근사하기</strong>와 <strong>확률에서 시행 횟수 구하기</strong>입니다.`,
+      ideas: [
+        {
+          title: '평균보다 작거나 같을 확률',
+          body: t`<p>$X$가 근사적으로 $\mathrm{N}(m,\ \sigma^2)$을 따르면 $\mathrm{P}(X\le a)=\mathrm{P}\left(Z\le\dfrac{a-m}\sigma\right)$입니다.</p>`,
+          example: {
+            q: t`확률변수 $X$가 이항분포 $\mathrm{B}\left(100,\ \dfrac15\right)$을 따를 때, $\mathrm{P}(X\le26)$을 정규분포로 근사하여 구하시오. (단, 연속성 보정 없이 계산하고, $\mathrm{P}(0\le Z\le1.5)=0.4332$로 계산하고, 답은 소수로 써도 된다)`,
+            think: [t`$m=20$, $\sigma^2=16$이므로 $\sigma=4$`],
+            steps: [t`$\mathrm{P}(Z\le1.5)=0.5+0.4332=0.9332$`],
+            answer: '2333/2500',
+          },
+        },
+        {
+          title: '확률에서 시행 횟수 구하기',
+          body: t`<p>표에서 $z$를 찾아 $\dfrac{a-np}{\sqrt{npq}}=z$를 세우고 $n$을 구합니다.</p>`,
+          example: {
+            q: t`확률변수 $X$가 이항분포 $\mathrm{B}\left(n,\ \dfrac12\right)$을 따르고, 정규분포로 근사하여 구한 $\mathrm{P}\left(X\ge\dfrac n2+5\right)$의 값이 $0.1587$일 때, $n$의 값을 구하시오. (단, $\mathrm{P}(0\le Z\le1)=0.3413$)`,
+            think: [t`$\mathrm{P}(Z\ge1)=0.1587$이므로 $\dfrac{5}{\sigma}=1$`],
+            steps: [t`$\sigma=\sqrt{\dfrac n4}=5$이므로 $n=100$`],
+            answer: '100',
+          },
+        },
+      ],
+      checks: [
+        { id: 's3-l5-d1', type: 'short', q: t`어느 공장에서 만드는 제품은 각각 서로 독립적으로 $\dfrac1{10}$의 확률로 불량품이다. 이 공장 제품 $900$개 중 불량품이 $81$개 이상일 확률을 정규분포로 근사하여 구하시오. (단, 연속성 보정 없이 계산하고, $\mathrm{P}(0\le Z\le1)=0.3413$으로 계산하고, 답은 소수로 써도 된다)`, answer: '8413/10000', solution: t`$m=90$, $\sigma^2=81$이므로 $\mathrm{P}(X\ge81)\approx\mathrm{P}(Z\ge-1)=0.5+0.3413=0.8413$` },
+        { id: 's3-l5-d2', type: 'short', q: t`확률변수 $X$가 이항분포 $\mathrm{B}\left(n,\ \dfrac15\right)$을 따르고, $X$가 근사적으로 따르는 정규분포의 표준편차가 $4$일 때, $n$의 값을 구하시오.`, answer: '100', solution: t`$n\times\dfrac15\times\dfrac45=\dfrac{4n}{25}=16$이므로 $n=100$` },
+      ],
+    },
+    explain: {
+      prompt: '시행 횟수가 많은 이항분포의 확률을 정규분포로 어림하는 이유를 설명해 보세요.',
+      model: t`이항분포로 "$a$번 이상"의 확률을 정확히 구하려면 $_n\mathrm{C}_rp^rq^{n-r}$을 많이 더해야 해서 계산이 어렵습니다. 그런데 $n$이 충분히 크면 이항분포의 막대그래프가 평균 $np$, 분산 $npq$인 정규분포의 곡선에 가까워집니다. 그래서 막대의 합 대신 곡선 아래의 넓이를 표준화하여 표준정규분포표로 구하면 확률의 근삿값을 쉽게 얻을 수 있습니다.`,
+      keys: ['많은 항을 더해야 해서 어렵다', t`$n$이 크면 $\mathrm{N}(np,\ npq)$에 가까워진다`, '표준정규분포표로 근삿값을 구한다'],
+    },
+  },
+
+  's3-l6': {
+    pre: ['s1-l1', 's2-l1'],
+    predict: {
+      q: t`$1,\ 2,\ 3$이 적힌 공 $3$개에서 크기가 $2$인 표본을 순서를 생각하여 뽑을 때, 되돌려 놓고 뽑는 경우(복원추출)와 되돌려 놓지 않고 뽑는 경우(비복원추출) 중 나올 수 있는 표본이 더 많은 쪽은?`,
+      options: ['복원추출', '비복원추출', '같다'],
+      answer: 0,
+      explain: t`복원추출은 $(1,\ 1)$처럼 같은 공이 두 번 나올 수 있어 $3^2=9$가지, 비복원추출은 $3\times2=6$가지입니다. 같은 공이 다시 뽑힐 수 있는 만큼 복원추출의 표본이 더 많습니다.`,
+    },
+    explore: [{
+      title: '복원추출과 비복원추출의 경우의 수',
+      intro: t`크기가 $N$인 모집단에서 크기가 $n$인 표본을 순서를 생각하여 뽑는 경우의 수를 비교합니다. 빨간 점은 표본으로 뽑은 자리의 예입니다.`,
+      params: [
+        { k: 'N', label: t`모집단의 크기 $N$`, min: 2, max: 6, step: 1, value: 4 },
+        { k: 'n', label: t`표본의 크기 $n$`, min: 1, max: 4, step: 1, value: 2 },
+      ],
+      fig: ({ N, n }) => ({
+        x: [0.3, 6.7], y: [-0.8, 0.8], w: 260, h: 80, equal: false, axes: false,
+        alt: `모집단 ${N}개 중 표본 ${Math.min(n, N)}개를 빨간 점으로 표시한 그림`,
+        items: range(1, N).map((i) => ({ t: 'pt', p: [i, 0], style: i <= n ? 'red' : 'main' })),
+      }),
+      read: ({ N, n }) => {
+        let np = 1;
+        for (let i = 0; i < n; i++) np *= N - i;
+        return [['복원추출', `$${N}^${n}=${N ** n}$`], ['비복원추출', n > N ? '$0$ (모집단보다 많이 뽑을 수 없음)' : `$_{${N}}\\mathrm{P}_{${n}}=${np}$`]];
+      },
+      goals: [
+        { text: '복원추출의 경우의 수가 27이 되게 해 보세요.', test: ({ N, n }) => N ** n === 27 },
+        { text: '비복원추출이 불가능하게 해 보세요.', test: ({ N, n }) => n > N },
+        { text: '두 경우의 수가 같아지게 해 보세요.', test: ({ n }) => n === 1 },
+      ],
+      note: t`복원추출은 같은 대상이 다시 뽑힐 수 있어 매번 $N$가지이고, 비복원추출은 한 번 뽑을 때마다 하나씩 줄어듭니다. 그래서 $n\ge2$이면 복원추출의 경우의 수가 더 많고, $n=1$일 때만 같습니다.`,
+    }],
+    derive: {
+      title: t`임의추출에서 한 대상이 뽑힐 확률 $\dfrac nN$`,
+      steps: [
+        { ask: t`크기 $N$인 모집단에서 크기 $n$인 표본(비복원, 순서 무시)의 수는?`, line: t`$_N\mathrm{C}_n$` },
+        { ask: '특정한 대상 A가 들어 있는 표본의 수는?', line: t`A를 넣고 나머지 $N-1$개 중 $n-1$개: $_{N-1}\mathrm{C}_{n-1}$` },
+        { ask: '확률은?', line: t`$\dfrac{_{N-1}\mathrm{C}_{n-1}}{_N\mathrm{C}_n}=\dfrac{(N-1)!\,n!\,(N-n)!}{(n-1)!\,(N-n)!\,N!}=\dfrac nN$` },
+      ],
+    },
+    traps: {
+      's3-l6-c1': { '10': t`$_5\mathrm{C}_3$은 되돌려 놓지 않고 순서 없이 뽑을 때입니다. 복원추출이면 매번 $5$가지입니다.`, '60': t`$_5\mathrm{P}_3$은 비복원추출입니다. 복원추출은 같은 카드가 다시 나올 수 있습니다.` },
+      's3-l6-c2': { '1/200': t`$\dfrac1{200}$은 한 명만 뽑을 때입니다. $20$명을 뽑으므로 $\dfrac{20}{200}$입니다.` },
+    },
+    deep: {
+      intro: t`표본추출의 심화는 <strong>추출 방법에 따른 표본의 확률</strong>과 <strong>여러 대상이 함께 뽑힐 확률</strong>입니다.`,
+      ideas: [
+        {
+          title: '비복원추출한 표본의 확률',
+          body: t`<p>비복원추출이면 같은 대상이 두 번 나오지 않으므로, 표본공간을 순열로 셉니다.</p>`,
+          example: {
+            q: t`$1,\ 2,\ 3$의 숫자가 하나씩 적힌 공 $3$개에서 크기가 $2$인 표본을 비복원추출할 때, 표본의 두 수의 합이 $4$일 확률을 구하시오. (단, 뽑는 순서를 생각한다)`,
+            think: [t`표본은 $_3\mathrm{P}_2=6$가지`],
+            steps: [t`합이 $4$인 것은 $(1,\ 3),\ (3,\ 1)$이므로 $\dfrac26=\dfrac13$`],
+            answer: '1/3',
+          },
+        },
+        {
+          title: '두 대상이 함께 뽑힐 확률',
+          body: t`<p>두 대상을 먼저 넣고 나머지를 고르는 경우를 셉니다.</p>`,
+          example: {
+            q: t`$40$명의 학생 중에서 $4$명을 비복원추출로 임의추출할 때, 특정한 두 학생 A, B가 모두 뽑힐 확률을 구하시오.`,
+            think: [t`A, B를 넣고 나머지 $38$명 중 $2$명`],
+            steps: [t`$\dfrac{_{38}\mathrm{C}_2}{_{40}\mathrm{C}_4}=\dfrac{703}{91390}=\dfrac1{130}$`],
+            answer: '1/130',
+          },
+        },
+      ],
+      checks: [
+        { id: 's3-l6-d1', type: 'short', q: t`$1,\ 2,\ 3,\ 4$의 숫자가 하나씩 적힌 공 $4$개에서 크기가 $2$인 표본을 복원추출할 때, 표본의 두 수가 같을 확률을 구하시오. (단, 뽑는 순서를 생각한다)`, answer: '1/4', solution: t`표본은 $4^2=16$가지이고 두 수가 같은 것은 $4$가지이므로 $\dfrac14$` },
+        { id: 's3-l6-d2', type: 'short', q: t`$10$명 중에서 $3$명을 비복원추출로 임의추출할 때, 특정한 두 사람 A, B 중 적어도 한 명이 뽑힐 확률을 구하시오.`, answer: '8/15', solution: t`둘 다 뽑히지 않을 확률은 $\dfrac{_8\mathrm{C}_3}{_{10}\mathrm{C}_3}=\dfrac{56}{120}=\dfrac7{15}$이므로 $1-\dfrac7{15}=\dfrac8{15}$` },
+      ],
+    },
+    explain: {
+      prompt: '표본을 뽑을 때 임의추출을 해야 하는 이유를 설명해 보세요.',
+      model: t`표본조사는 일부를 조사해 모집단 전체의 성질을 추측하는 것이므로, 표본이 모집단을 잘 대표해야 합니다. 조사하는 사람이 마음대로 고르면 특정한 성질을 가진 대상이 많이 뽑혀 결과가 한쪽으로 치우칠 수 있습니다. 모든 대상이 같은 확률로 뽑히도록 임의추출을 하면 이런 치우침을 막을 수 있습니다.`,
+      keys: ['표본이 모집단을 대표해야 한다', '마음대로 고르면 치우친다', '모든 대상이 같은 확률로 뽑히게 한다'],
     },
   },
 };

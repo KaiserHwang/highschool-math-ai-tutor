@@ -87,7 +87,7 @@ function renderQuestion(view) {
   const unit = UNIT_BY_ID[q.unit];
   const answerUI = q.type === 'mc'
     ? `<div class="options${optionsClass(q.options)}" role="radiogroup" aria-label="보기">${q.options.map((o, k) => `<button type="button" class="opt" role="radio" aria-checked="${r.response === k}" data-opt="${k}"><span class="opt-n">${CIRCLED[k]}</span><span class="opt-t">${tex(o)}</span></button>`).join('')}</div>`
-    : `<label class="short"><span class="short-l">답</span><input class="short-in" inputmode="text" autocomplete="off" value="${esc(r.response ?? '')}" placeholder="정수 또는 분수(예: 10/3)"></label>`;
+    : `<label class="short"><span class="short-l">답</span><input class="short-in" inputmode="text" autocomplete="off" value="${esc(r.response ?? '')}" placeholder="정수, 분수, 소수(예: 10/3, 0.25)"></label>`;
 
   view.innerHTML = `
   <section class="page narrow diag">
@@ -152,7 +152,7 @@ function renderQuestion(view) {
     if (act === 'next') {
       const empty = r.response == null || (q.type === 'short' && !String(r.response).trim());
       if (empty) return toast('답을 고르거나 입력하세요. 모르면 "모르겠어요"를 누르세요.');
-      if (q.type === 'short' && normalizeAnswer(r.response) === null) return toast('정수나 분수(예: -3, 10/3)로 입력하세요.');
+      if (q.type === 'short' && normalizeAnswer(r.response) === null) return toast('정수, 분수, 소수(예: -3, 10/3, 0.25)로 입력하세요.');
       if (!r.conf) return toast('확신 정도를 골라 주세요.');
       return go(1);
     }

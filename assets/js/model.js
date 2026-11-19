@@ -35,6 +35,21 @@ function gcd(a, b) {
   return a || 1;
 }
 
+/** 단답 정답을 화면에 보일 수식(TeX). 분모가 10의 거듭제곱의 약수이고 소수 셋째 자리 이상까지 가는 값
+ *  (정규분포표로 구한 0.0228 같은 확률)은 소수를 먼저 보이고 기약분수를 함께 적는다. 그 밖의 값은 그대로. */
+export function answerTex(ans) {
+  const m = String(ans).match(/^(-?)(\d+)\/(\d+)$/);
+  if (!m) return String(ans);
+  let d = Number(m[3]), k = 0, t = d;
+  while (t % 2 === 0 || t % 5 === 0) { t /= t % 2 === 0 ? 2 : 5; }
+  if (t !== 1) return String(ans);
+  while (10 ** k % d !== 0) k++;
+  if (k < 3) return String(ans);
+  const n = Number(m[2]) * (10 ** k / d);
+  const s = String(n).padStart(k + 1, '0');
+  return `${m[1]}${s.slice(0, -k)}.${s.slice(-k)}\\left(=${m[1]}\\dfrac{${m[2]}}{${m[3]}}\\right)`;
+}
+
 /** 학생 입력을 기약분수 문자열로 바꾼다. 해석할 수 없으면 null */
 export function normalizeAnswer(raw) {
   if (raw == null) return null;

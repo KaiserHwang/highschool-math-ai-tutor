@@ -5,7 +5,7 @@ import { LESSONS, LESSON_BY_ID, lessonsOfUnit, allChecks } from '../content/less
 import { UNIT_BY_ID, LEVELS, unitLabel } from '../content/units.js';
 import { PROBLEM_BY_ID } from '../content/problems.js';
 import { getState, update, today, logActivity } from '../store.js';
-import { isCorrect, normalizeAnswer, statusOf, lessonProgress, blankLessonRec, recordCheck, markCheckSolution, LESSON_STATE, lessonCQs, lessonCQAnswer, lastCQ, lessonActivity, recordPredict, recordGoal, recordDerive, recordKeys } from '../model.js';
+import { isCorrect, normalizeAnswer, answerTex, statusOf, lessonProgress, blankLessonRec, recordCheck, markCheckSolution, LESSON_STATE, lessonCQs, lessonCQAnswer, lastCQ, lessonActivity, recordPredict, recordGoal, recordDerive, recordKeys } from '../model.js';
 import { cqHTML, cqClick, newCQSeed, seedOf } from './cq.js';
 import { tex, esc, CIRCLED, gradeMark, statusGlyph, optionsClass, toast, fmtDate } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
@@ -40,7 +40,7 @@ function checkHTML(c, i, rec, label = '') {
   const answer = c.type === 'mc'
     ? `<div class="options${optionsClass(c.options)}" role="radiogroup" aria-label="보기">${c.options.map((o, k) => `<button type="button" class="opt" role="radio" aria-checked="false" data-opt="${k}"><span class="opt-n">${CIRCLED[k]}</span><span class="opt-t">${tex(o)}</span></button>`).join('')}</div>
        <div class="row"><button type="button" class="btn btn-primary" data-act="check">채점하기</button></div>`
-    : `<form class="short-form" data-form="check"><label class="short"><span class="short-l">답</span><input class="short-in" name="ans" inputmode="text" autocomplete="off" placeholder="정수 또는 분수(예: -3, 10/3)"></label><button class="btn btn-primary" type="submit">채점하기</button></form>`;
+    : `<form class="short-form" data-form="check"><label class="short"><span class="short-l">답</span><input class="short-in" name="ans" inputmode="text" autocomplete="off" placeholder="정수, 분수, 소수(예: -3, 10/3, 0.25)"></label><button class="btn btn-primary" type="submit">채점하기</button></form>`;
   return `<li class="ck${right ? ' is-right' : ''}" data-check="${esc(c.id)}">
     <div class="q-row"><span class="q-num ck-num">${label}${i + 1}<span class="mark-slot">${right ? gradeMark('right').replace('class="mark mark-right"', 'class="mark mark-right static"') : ''}</span></span><div class="q-text compact">${tex(c.q)}</div></div>
     ${c.fig ? figure(c.fig) : ''}
@@ -278,7 +278,7 @@ export function renderLesson(view, { args: [lessonId] }) {
   function grade(li, response) {
     const c = checks.find((x) => x.id === li.dataset.check);
     if (response === null || response === undefined || response === '') { toast(c.type === 'mc' ? '보기를 하나 고르세요.' : '답을 입력하세요.'); return; }
-    if (c.type === 'short' && normalizeAnswer(response) === null) { toast('정수나 분수(예: -3, 10/3)로 입력하세요.'); return; }
+    if (c.type === 'short' && normalizeAnswer(response) === null) { toast('정수, 분수, 소수(예: -3, 10/3, 0.25)로 입력하세요.'); return; }
     const ok = isCorrect(c, response);
     const isDeep = c.tier === 'deep';
     update((s) => {
@@ -352,7 +352,7 @@ export function renderLesson(view, { args: [lessonId] }) {
       if (!left) {
         const key = ex.dataset.ex;
         const src = key[0] === 'e' ? L.examples[Number(key.slice(1))] : deep.ideas[Number(key.slice(1))].example;
-        ex.querySelector('.ex-ctl').outerHTML = src.answer !== undefined ? `<p class="ex-ans">답 <strong>${tex(`$${src.answer}$`)}</strong></p>` : '';
+        ex.querySelector('.ex-ctl').outerHTML = src.answer !== undefined ? `<p class="ex-ans">답 <strong>${tex(`$${answerTex(src.answer)}$`)}</strong></p>` : '';
         const th = ex.querySelector('.think');
         if (th) th.hidden = false;
       } else {
