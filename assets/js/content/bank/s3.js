@@ -189,7 +189,7 @@ export default [
   },
   {
     id: 's3-17', unit: 's3', level: 'basic', topic: '표본평균의 평균과 분산', type: 'short',
-    q: t`모평균이 $20$, 모분산이 $36$인 모집단에서 크기가 $9$인 표본을 임의추출할 때, 표본평균 $\overline{X}$에 대하여 $\mathrm{E}(\overline{X})+\mathrm{V}(\overline{X})$의 값을 구하시오.`,
+    q: t`모평균이 $20$, 모분산이 $36$인 모집단에서 크기가 $9$인 표본을 복원추출로 임의추출할 때, 표본평균 $\overline{X}$에 대하여 $\mathrm{E}(\overline{X})+\mathrm{V}(\overline{X})$의 값을 구하시오.`,
     answer: '24',
     skills: { concept: 1 },
     hints: [
@@ -200,7 +200,7 @@ export default [
   },
   {
     id: 's3-18', unit: 's3', level: 'basic', topic: '표본비율의 표준편차', type: 'short',
-    q: t`모비율이 $\dfrac12$인 모집단에서 크기가 $25$인 표본을 임의추출할 때, 표본비율 $\hat p$의 표준편차를 구하시오.`,
+    q: t`모비율이 $\dfrac12$인 모집단에서 크기가 $25$인 표본을 복원추출로 임의추출할 때, 표본비율 $\hat p$의 표준편차를 구하시오.`,
     answer: '1/10',
     skills: { concept: 1 },
     hints: [
@@ -222,7 +222,7 @@ export default [
   },
   {
     id: 's3-20', unit: 's3', level: 'basic', topic: '모비율의 신뢰구간', type: 'short',
-    q: t`어느 지역 유권자 $100$명을 임의추출하여 조사하였더니 $50$명이 어떤 정책에 찬성하였다. 이 지역 유권자의 찬성 비율 $p$에 대한 신뢰도 $95\%$의 신뢰구간이 $a\le p\le b$일 때, $1000(b-a)$의 값을 구하시오. (단, $\mathrm{P}(0\le Z\le1.96)=0.475$)`,
+    q: t`어느 지역 유권자 $100$명을 임의추출하여 조사하였더니(단, 유권자 수는 $100$보다 충분히 많다) $50$명이 어떤 정책에 찬성하였다. 이 지역 유권자의 찬성 비율 $p$에 대한 신뢰도 $95\%$의 신뢰구간이 $a\le p\le b$일 때, $1000(b-a)$의 값을 구하시오. (단, $\mathrm{P}(0\le Z\le1.96)=0.475$)`,
     answer: '196',
     skills: { concept: 1, calc: 0.5 },
     hints: [

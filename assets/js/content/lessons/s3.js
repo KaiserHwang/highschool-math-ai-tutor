@@ -358,8 +358,8 @@ export default [
       },
     ],
     checks: [
-      { id: 's3-l7-c1', type: 'short', q: t`모평균이 $50$, 모표준편차가 $12$인 모집단에서 크기가 $36$인 표본을 임의추출할 때, 표본평균 $\overline{X}$의 분산을 구하시오.`, answer: '4', solution: t`$\mathrm{V}(\overline{X})=\dfrac{12^2}{36}=4$` },
-      { id: 's3-l7-c2', type: 'short', q: t`어느 지역 주민의 $20\%$가 자전거로 출퇴근한다. 이 지역 주민 중에서 $100$명을 임의추출할 때, 자전거로 출퇴근하는 주민의 비율인 표본비율 $\hat p$의 표준편차를 구하시오.`, answer: '1/25', solution: t`$\sigma(\hat p)=\sqrt{\dfrac{0.2\times0.8}{100}}=\sqrt{0.0016}=0.04=\dfrac1{25}$` },
+      { id: 's3-l7-c1', type: 'short', q: t`모평균이 $50$, 모표준편차가 $12$인 모집단에서 크기가 $36$인 표본을 복원추출로 임의추출할 때, 표본평균 $\overline{X}$의 분산을 구하시오.`, answer: '4', solution: t`$\mathrm{V}(\overline{X})=\dfrac{12^2}{36}=4$` },
+      { id: 's3-l7-c2', type: 'short', q: t`어느 지역 주민의 $20\%$가 자전거로 출퇴근한다. 이 지역 주민 중에서 $100$명을 임의추출할 때(단, 주민 수는 $100$보다 충분히 많아 복원추출로 볼 수 있다), 자전거로 출퇴근하는 주민의 비율인 표본비율 $\hat p$의 표준편차를 구하시오.`, answer: '1/25', solution: t`$\sigma(\hat p)=\sqrt{\dfrac{0.2\times0.8}{100}}=\sqrt{0.0016}=0.04=\dfrac1{25}$` },
     ],
     tips: [
       t`표본평균의 분산은 모분산을 $n$으로, 표준편차는 모표준편차를 $\sqrt n$으로 나눕니다. 둘을 섞지 않습니다.`,
@@ -371,7 +371,7 @@ export default [
     id: 's3-l8', unit: 's3', title: '모평균과 모비율의 추정',
     summary: t`신뢰도 $95\%$의 신뢰구간 $\overline{x}-1.96\dfrac{\sigma}{\sqrt n}\le m\le\overline{x}+1.96\dfrac{\sigma}{\sqrt n}$, 모비율의 신뢰구간`,
     core: t`<div class="box"><p class="box-t">모평균의 추정</p>
-<p>정규분포 $\mathrm{N}(m,\ \sigma^2)$을 따르는 모집단에서 크기가 $n$인 표본을 임의추출하여 구한 표본평균이 $\overline{x}$일 때, 모평균 $m$의 신뢰구간은</p>
+<p>모표준편차 $\sigma$를 아는 정규분포 $\mathrm{N}(m,\ \sigma^2)$을 따르는 모집단에서 크기가 $n$인 표본을 임의추출(복원추출, 또는 모집단이 충분히 커서 복원추출로 볼 수 있는 경우)하여 구한 표본평균이 $\overline{x}$일 때, 모평균 $m$의 신뢰구간은</p>
 <ul>
 <li>신뢰도 $95\%$: $\overline{x}-1.96\dfrac{\sigma}{\sqrt n}\le m\le\overline{x}+1.96\dfrac{\sigma}{\sqrt n}$</li>
 <li>신뢰도 $99\%$: $\overline{x}-2.58\dfrac{\sigma}{\sqrt n}\le m\le\overline{x}+2.58\dfrac{\sigma}{\sqrt n}$</li>

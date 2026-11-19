@@ -469,14 +469,14 @@ export const DIAGNOSIS = [
   },
   {
     id: 'd57', unit: 's3', level: 'basic', type: 'short', sec: 60, lesson: 's3-l7',
-    q: t`모표준편차가 $10$인 모집단에서 크기가 $25$인 표본을 임의추출할 때, 표본평균 $\overline{X}$의 표준편차를 구하시오.`,
+    q: t`모표준편차가 $10$인 모집단에서 크기가 $25$인 표본을 복원추출로 임의추출할 때, 표본평균 $\overline{X}$의 표준편차를 구하시오.`,
     answer: '2',
     skills: { concept: 1 },
     hint: t`$\sigma(\overline{X})=\dfrac{\sigma}{\sqrt n}$`,
     solution: t`$\dfrac{10}{\sqrt{25}}=2$`,
   },
   {
-    id: 'd58', unit: 's3', level: 'core', type: 'short', sec: 120, lesson: 's3-l8',
+    id: 'd58', unit: 's3', level: 'basic', type: 'short', sec: 90, lesson: 's3-l8',
     q: t`어느 공장에서 만드는 과자 한 봉지의 무게(g)는 표준편차가 $15$인 정규분포를 따른다. 과자 $25$봉지를 임의추출하여 무게의 평균을 구하고, 이를 이용해 이 공장 과자 한 봉지의 평균 무게 $m$에 대한 신뢰도 $95\%$의 신뢰구간 $a\le m\le b$를 구하였다. $100(b-a)$의 값을 구하시오. (단, $\mathrm{P}(0\le Z\le1.96)=0.475$)`,
     answer: '1176',
     skills: { concept: 1, calc: 0.5 },
