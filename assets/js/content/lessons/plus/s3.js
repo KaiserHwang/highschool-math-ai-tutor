@@ -276,7 +276,7 @@ export default {
           items: [
             { t: 'shade', f, from: m - s, to: m + s },
             { t: 'fn', f },
-            { t: 'vl', x: m, label: 'x=m', at: 0.85 },
+            { t: 'vl', x: m, label: 'x=m', at: 0.6, pos: 'e' }, // y축 이름(위)·0.4·0.8 눈금과 겹치지 않는 높이
           ],
         };
       },
