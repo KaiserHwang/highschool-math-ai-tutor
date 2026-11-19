@@ -1,6 +1,7 @@
-// 확률과 통계 Ⅲ. 통계 — 소단원별 개념 학습(확률변수와 확률분포, 이산확률변수의 기댓값과 표준편차, 이항분포)
-// 정규분포, 모집단과 표본, 통계적 추정 소단원은 이어서 추가한다.
-// 2022 개정 적용 시 고려 사항: 이항분포의 평균과 분산 공식의 증명은 다루지 않는다.
+// 확률과 통계 Ⅲ. 통계 — 소단원별 개념 학습(확률변수와 확률분포, 기댓값과 표준편차, 이항분포, 정규분포,
+// 이항분포와 정규분포의 관계, 모집단과 표본, 표본평균과 표본비율의 분포, 모평균과 모비율의 추정)
+// 2022 개정 적용 시 고려 사항: 이항분포의 평균과 분산 공식의 증명은 다루지 않는다. 모평균의 추정은 모집단이
+// 정규분포를 따르고 모표준편차를 아는 경우, 모비율의 추정은 표본이 충분히 큰 경우만 다루고 복잡한 계산은 피한다.
 const t = String.raw;
 
 export default [
@@ -312,5 +313,112 @@ export default [
       t`크기 $N$인 모집단에서 크기 $n$인 표본을 비복원추출로 임의추출하면 각 대상이 뽑힐 확률은 $\dfrac nN$입니다.`,
     ],
     related: ['s3-11', 's3-14'],
+  },
+  {
+    id: 's3-l7', unit: 's3', title: '표본평균과 표본비율의 분포',
+    summary: t`$\mathrm{E}(\overline{X})=m$, $\mathrm{V}(\overline{X})=\dfrac{\sigma^2}n$, 표본비율 $\hat p$의 평균 $p$와 분산 $\dfrac{pq}n$`,
+    core: t`<div class="box"><p class="box-t">표본평균의 분포</p>
+<p>모평균이 $m$, 모표준편차가 $\sigma$인 모집단에서 크기가 $n$인 표본을 임의추출할 때, 표본평균 $\overline{X}$에 대하여</p>
+<p>$\mathrm{E}(\overline{X})=m$, $\mathrm{V}(\overline{X})=\dfrac{\sigma^2}n$, $\sigma(\overline{X})=\dfrac{\sigma}{\sqrt n}$</p>
+<ul>
+<li>모집단이 정규분포 $\mathrm{N}(m,\ \sigma^2)$을 따르면 $\overline{X}$는 정규분포 $\mathrm{N}\left(m,\ \dfrac{\sigma^2}n\right)$을 따른다.</li>
+<li>모집단이 정규분포가 아니어도 $n$이 충분히 크면 $\overline{X}$는 근사적으로 $\mathrm{N}\left(m,\ \dfrac{\sigma^2}n\right)$을 따른다.</li>
+</ul></div>
+<div class="box"><p class="box-t">표본비율의 분포</p>
+<p>모비율이 $p$인 모집단에서 크기가 $n$인 표본을 임의추출할 때, 표본비율 $\hat p$에 대하여 ($q=1-p$)</p>
+<p>$\mathrm{E}(\hat p)=p$, $\mathrm{V}(\hat p)=\dfrac{pq}n$, $\sigma(\hat p)=\sqrt{\dfrac{pq}n}$이고, $n$이 충분히 크면 $\hat p$는 근사적으로 $\mathrm{N}\left(p,\ \dfrac{pq}n\right)$을 따른다.</p></div>
+<p class="hint-text">이 소단원의 공식은 복원추출로 뽑은 표본(또는 모집단이 표본보다 매우 커서 복원추출로 볼 수 있는 경우)을 기준으로 한다.</p>`,
+    why: t`<p>표본을 뽑을 때마다 표본평균은 조금씩 달라지므로 표본평균도 확률변수입니다. 표본평균들은 모평균 $m$을 중심으로 흩어지고, 그 평균은 $m$입니다.</p>
+<p>표본의 크기가 커지면 큰 값과 작은 값이 서로 상쇄되어 표본평균이 모평균 가까이에 모입니다. 그래서 분산이 $\dfrac{\sigma^2}n$으로 줄어듭니다. 표준편차는 $\dfrac{\sigma}{\sqrt n}$이므로, 표본평균의 흩어진 정도를 절반으로 줄이려면 표본의 크기를 $4$배로 늘려야 합니다.</p>
+<p>표본비율은 크기가 $n$인 표본에서 어떤 성질을 가진 대상의 수 $X$를 $n$으로 나눈 $\hat p=\dfrac Xn$입니다. $X$는 이항분포 $\mathrm{B}(n,\ p)$를 따르므로 $\mathrm{E}(\hat p)=\dfrac{np}n=p$, $\mathrm{V}(\hat p)=\dfrac{npq}{n^2}=\dfrac{pq}n$입니다.</p>`,
+    examples: [
+      {
+        q: t`$1,\ 2,\ 3$의 숫자가 하나씩 적힌 공 $3$개가 들어 있는 주머니에서 크기가 $2$인 표본을 복원추출할 때, 표본평균 $\overline{X}$의 분산을 구하시오.`,
+        steps: [
+          t`모집단은 $1,\ 2,\ 3$이 각각 $\dfrac13$이므로 $m=2$, $\sigma^2=\dfrac{1+0+1}3=\dfrac23$`,
+          t`$\mathrm{V}(\overline{X})=\dfrac{\sigma^2}{2}=\dfrac13$`,
+        ],
+        answer: '1/3',
+      },
+      {
+        q: t`정규분포 $\mathrm{N}(60,\ 8^2)$을 따르는 모집단에서 크기가 $16$인 표본을 임의추출할 때, 표본평균 $\overline{X}$의 표준편차를 구하시오.`,
+        steps: [
+          t`$\sigma(\overline{X})=\dfrac{8}{\sqrt{16}}$`,
+          t`$=2$`,
+        ],
+        answer: '2',
+      },
+      {
+        q: t`정규분포 $\mathrm{N}(100,\ 10^2)$을 따르는 모집단에서 크기가 $25$인 표본을 임의추출할 때, $\mathrm{P}(\overline{X}\ge104)$를 구하시오. (단, $\mathrm{P}(0\le Z\le2)=0.4772$로 계산하고, 답은 소수로 써도 된다)`,
+        steps: [
+          t`$\overline{X}$는 $\mathrm{N}\left(100,\ \dfrac{10^2}{25}\right)=\mathrm{N}(100,\ 2^2)$을 따릅니다.`,
+          t`$\mathrm{P}(\overline{X}\ge104)=\mathrm{P}(Z\ge2)=0.5-0.4772=0.0228$`,
+        ],
+        answer: '57/2500',
+      },
+    ],
+    checks: [
+      { id: 's3-l7-c1', type: 'short', q: t`모평균이 $50$, 모표준편차가 $12$인 모집단에서 크기가 $36$인 표본을 임의추출할 때, 표본평균 $\overline{X}$의 분산을 구하시오.`, answer: '4', solution: t`$\mathrm{V}(\overline{X})=\dfrac{12^2}{36}=4$` },
+      { id: 's3-l7-c2', type: 'short', q: t`어느 지역 주민의 $20\%$가 자전거로 출퇴근한다. 이 지역 주민 중에서 $100$명을 임의추출할 때, 자전거로 출퇴근하는 주민의 비율인 표본비율 $\hat p$의 표준편차를 구하시오.`, answer: '1/25', solution: t`$\sigma(\hat p)=\sqrt{\dfrac{0.2\times0.8}{100}}=\sqrt{0.0016}=0.04=\dfrac1{25}$` },
+    ],
+    tips: [
+      t`표본평균의 분산은 모분산을 $n$으로, 표준편차는 모표준편차를 $\sqrt n$으로 나눕니다. 둘을 섞지 않습니다.`,
+      t`표본평균의 확률을 구할 때는 $Z=\dfrac{\overline{X}-m}{\sigma/\sqrt n}$으로 표준화합니다.`,
+    ],
+    related: ['s3-17', 's3-18', 's3-21', 's3-23'],
+  },
+  {
+    id: 's3-l8', unit: 's3', title: '모평균과 모비율의 추정',
+    summary: t`신뢰도 $95\%$의 신뢰구간 $\overline{x}-1.96\dfrac{\sigma}{\sqrt n}\le m\le\overline{x}+1.96\dfrac{\sigma}{\sqrt n}$, 모비율의 신뢰구간`,
+    core: t`<div class="box"><p class="box-t">모평균의 추정</p>
+<p>정규분포 $\mathrm{N}(m,\ \sigma^2)$을 따르는 모집단에서 크기가 $n$인 표본을 임의추출하여 구한 표본평균이 $\overline{x}$일 때, 모평균 $m$의 신뢰구간은</p>
+<ul>
+<li>신뢰도 $95\%$: $\overline{x}-1.96\dfrac{\sigma}{\sqrt n}\le m\le\overline{x}+1.96\dfrac{\sigma}{\sqrt n}$</li>
+<li>신뢰도 $99\%$: $\overline{x}-2.58\dfrac{\sigma}{\sqrt n}\le m\le\overline{x}+2.58\dfrac{\sigma}{\sqrt n}$</li>
+</ul>
+<p>신뢰구간의 길이는 $2\times1.96\dfrac{\sigma}{\sqrt n}$(신뢰도 $95\%$), $2\times2.58\dfrac{\sigma}{\sqrt n}$(신뢰도 $99\%$)이다.</p></div>
+<div class="box"><p class="box-t">모비율의 추정</p>
+<p>크기가 $n$인 표본의 표본비율이 $\hat p$이고 $n$이 충분히 클 때, 모비율 $p$의 신뢰도 $95\%$의 신뢰구간은 ($\hat q=1-\hat p$)</p>
+<p>$\hat p-1.96\sqrt{\dfrac{\hat p\hat q}n}\le p\le\hat p+1.96\sqrt{\dfrac{\hat p\hat q}n}$ (신뢰도 $99\%$이면 $1.96$ 대신 $2.58$)</p></div>
+<div class="box"><p class="box-t">신뢰도의 뜻</p>
+<p>같은 방법으로 표본을 여러 번 뽑아 신뢰구간을 각각 만들면, 그중 약 $95\%$가 모평균 $m$을 포함한다. 공학 도구로 표본추출을 여러 번 되풀이해 보면 이를 확인할 수 있다.</p></div>`,
+    why: t`<p>표본평균 $\overline{X}$는 $\mathrm{N}\left(m,\ \dfrac{\sigma^2}n\right)$을 따르고, $\mathrm{P}(-1.96\le Z\le1.96)=0.95$입니다. $Z=\dfrac{\overline{X}-m}{\sigma/\sqrt n}$을 넣어 $m$에 대하여 정리하면 신뢰구간이 나옵니다.</p>
+<p>모평균 $m$은 정해진 값이고, 표본마다 달라지는 것은 구간입니다. 그래서 "$m$이 이 구간에 있을 확률이 $95\%$"가 아니라 "이런 방법으로 만든 구간 중 약 $95\%$가 $m$을 포함한다"로 해석합니다.</p>
+<p>신뢰도를 높이면($1.96\to2.58$) 구간이 길어지고, 표본의 크기를 늘리면 $\sqrt n$에 반비례하여 구간이 짧아집니다.</p>`,
+    examples: [
+      {
+        q: t`정규분포 $\mathrm{N}(m,\ 10^2)$을 따르는 모집단에서 크기가 $100$인 표본을 임의추출하여 구한 표본평균이 $50$이다. 이를 이용하여 구한 $m$에 대한 신뢰도 $95\%$의 신뢰구간이 $a\le m\le b$일 때, $100(b-a)$의 값을 구하시오. (단, $\mathrm{P}(0\le Z\le1.96)=0.475$)`,
+        steps: [
+          t`$1.96\times\dfrac{10}{\sqrt{100}}=1.96$이므로 $a=48.04$, $b=51.96$`,
+          t`$b-a=3.92$이므로 $100(b-a)=392$`,
+        ],
+        answer: '392',
+      },
+      {
+        q: t`정규분포 $\mathrm{N}(m,\ 4^2)$을 따르는 모집단에서 크기가 $64$인 표본을 임의추출하여 구한 표본평균이 $30$이다. 이를 이용하여 구한 $m$에 대한 신뢰도 $95\%$의 신뢰구간이 $a\le m\le b$일 때, $a+b$의 값을 구하시오. (단, $\mathrm{P}(0\le Z\le1.96)=0.475$)`,
+        steps: [
+          t`신뢰구간은 표본평균 $30$을 중심으로 좌우 대칭`,
+          t`$a+b=2\times30=60$`,
+        ],
+        answer: '60',
+      },
+      {
+        q: t`어느 도시의 고등학생 $400$명을 임의추출하여 조사하였더니 $200$명이 아침을 먹는다고 답하였다. 이 도시 고등학생 중 아침을 먹는 학생의 비율 $p$에 대한 신뢰도 $95\%$의 신뢰구간이 $a\le p\le b$일 때, $1000(b-a)$의 값을 구하시오. (단, $\mathrm{P}(0\le Z\le1.96)=0.475$)`,
+        steps: [
+          t`$\hat p=\dfrac12$이고 $1.96\sqrt{\dfrac{0.5\times0.5}{400}}=1.96\times0.025=0.049$`,
+          t`$b-a=0.098$이므로 $1000(b-a)=98$`,
+        ],
+        answer: '98',
+      },
+    ],
+    checks: [
+      { id: 's3-l8-c1', type: 'short', q: t`정규분포 $\mathrm{N}(m,\ 6^2)$을 따르는 모집단에서 크기가 $36$인 표본을 임의추출하여 구한 $m$에 대한 신뢰도 $99\%$의 신뢰구간이 $a\le m\le b$일 때, $100(b-a)$의 값을 구하시오. (단, $\mathrm{P}(0\le Z\le2.58)=0.495$)`, answer: '516', solution: t`$b-a=2\times2.58\times\dfrac6{\sqrt{36}}=5.16$이므로 $516$` },
+      { id: 's3-l8-c2', type: 'short', q: t`정규분포 $\mathrm{N}(m,\ 5^2)$을 따르는 모집단에서 크기가 $n$인 표본을 임의추출하여 구한 $m$에 대한 신뢰도 $95\%$의 신뢰구간의 길이가 $1.96$일 때, $n$의 값을 구하시오. (단, $\mathrm{P}(0\le Z\le1.96)=0.475$)`, answer: '100', solution: t`$2\times1.96\times\dfrac5{\sqrt n}=1.96$에서 $\sqrt n=10$, $n=100$` },
+    ],
+    tips: [
+      t`신뢰구간의 길이는 표본평균과 관계없이 $\sigma$, $n$, 신뢰도로만 정해집니다.`,
+      t`길이를 $\dfrac12$로 줄이려면 $n$을 $4$배로 늘립니다.`,
+    ],
+    related: ['s3-19', 's3-20', 's3-22', 's3-24'],
   },
 ];
