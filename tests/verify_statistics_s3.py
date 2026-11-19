@@ -259,7 +259,7 @@ def s3_lessons():
     E['s3-l4-d1'] = normal_ans(100, 10, 85, 115)
     E['s3-l4-d2'] = single(mm for mm in range(0, 61) if table_prob(mm, 4, 36, None) == F(1587, 10000))
     # s3-l5 이항분포와 정규분포
-    E['s3-l5-e1'] = rsqrt(var(binom(100, F(1, 2))))
+    E['s3-l5-e1'] = rsqrt(var(repeat(dist(range(1, 7), lambda v: int(v == 6)), 720)))
     E['s3-l5-e2'] = approx_ans(100, F(1, 2), 60, INF)
     E['s3-l5-e3'] = approx_ans(180, F(1, 6), INF, 25)
     d = binom(400, F(1, 5))
@@ -281,6 +281,8 @@ def s3_lessons():
     E['s3-l6-e2'] = len(list(it.permutations(range(4), 2)))
     E['s3-l6-e3'] = prob(it.combinations(range(30), 5), lambda o: 0 in o)
     E['s3-l6-c1'] = len(list(it.product(range(5), repeat=3)))
+    rep, nrep = len(list(it.product(range(3), repeat=2))), len(list(it.permutations(range(3), 2)))
+    E['s3-l6-p'] = 0 if rep > nrep else 1 if nrep > rep else 2
     # 200명 중 20명은 나열하기에 너무 많아, A를 포함하는 표본의 수를 세는 조합으로 확인한다(작은 경우로 같은 방법을 대조)
     assert F(comb(29, 4), comb(30, 5)) == prob(it.combinations(range(30), 5), lambda o: 0 in o)
     E['s3-l6-c2'] = F(comb(199, 19), comb(200, 20))
