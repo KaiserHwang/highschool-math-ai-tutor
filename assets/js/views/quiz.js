@@ -5,7 +5,7 @@ import { PROBLEM_BY_ID } from '../content/problems.js';
 import { makeVariant, GENERATORS } from '../content/generators.js';
 import { lessonForProblem } from '../content/lessons/index.js';
 import { getState, update, logActivity } from '../store.js';
-import { isCorrect, normalizeAnswer, addWrong, makeQuiz, studiedUnits, activeRegularUnits, activeCourseTitles, activeCourses } from '../model.js';
+import { isCorrect, normalizeAnswer, answerTex, addWrong, makeQuiz, studiedUnits, activeRegularUnits, activeCourseTitles, activeCourses } from '../model.js';
 import { tex, esc, CIRCLED, toast, gradeMark, fmtDate, fmtMinutes, optionsClass } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 
@@ -75,7 +75,7 @@ function renderItem(view) {
   run.shownAt = Date.now();
   const answerUI = p.type === 'mc'
     ? `<div class="options${optionsClass(p.options)}" role="radiogroup" aria-label="보기">${p.options.map((o, k) => `<button type="button" class="opt" role="radio" aria-checked="${resp === k}" data-opt="${k}"><span class="opt-n">${CIRCLED[k]}</span><span class="opt-t">${tex(o)}</span></button>`).join('')}</div>`
-    : `<label class="short"><span class="short-l">답</span><input class="short-in" inputmode="text" autocomplete="off" value="${esc(resp ?? '')}" placeholder="정수 또는 분수(예: 10/3)"></label>`;
+    : `<label class="short"><span class="short-l">답</span><input class="short-in" inputmode="text" autocomplete="off" value="${esc(resp ?? '')}" placeholder="정수, 분수, 소수(예: 10/3, 0.25)"></label>`;
   view.innerHTML = `
   <section class="page narrow diag quiz">
     <header class="diag-head">
@@ -123,7 +123,7 @@ function renderItem(view) {
       const r = run.responses[key];
       const empty = r == null || (p.type === 'short' && !String(r).trim());
       if (empty) return toast('답을 고르거나 입력하세요. 모르면 "모르겠어요"를 누르세요.');
-      if (p.type === 'short' && normalizeAnswer(r) === null) return toast('정수나 분수(예: -3, 10/3)로 입력하세요.');
+      if (p.type === 'short' && normalizeAnswer(r) === null) return toast('정수, 분수, 소수(예: -3, 10/3, 0.25)로 입력하세요.');
       return go(1);
     }
   };
@@ -172,7 +172,7 @@ function renderResult(view) {
     const p = x.it.p;
     const L = lessonOfItem(x.it, p);
     const shown = x.r == null || x.r === '' ? '건너뜀' : p.type === 'mc' ? CIRCLED[x.r] : esc(x.r);
-    const ans = p.type === 'mc' ? `${CIRCLED[p.answer]} ${tex(p.options[p.answer])}` : tex(`$${p.answer}$`);
+    const ans = p.type === 'mc' ? `${CIRCLED[p.answer]} ${tex(p.options[p.answer])}` : tex(`$${answerTex(p.answer)}$`);
     return `<li class="dr-item"><details>
       <summary><span class="dr-mark">${gradeMark(x.ok ? 'right' : 'wrong')}</span><span class="dr-n">${i + 1}</span><span class="dr-u">${esc(unitLabel(UNIT_BY_ID[p.unit]))} · ${esc(p.topic)}</span><span class="dr-meta">${shown} · ${x.sec}초</span></summary>
       <div class="dr-body"><div class="q-text">${tex(p.q)}</div>${figure(p.fig)}<p><strong>정답</strong> ${ans}</p><div class="sol">${tex(p.solution)}</div>

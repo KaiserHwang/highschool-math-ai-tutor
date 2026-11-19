@@ -453,6 +453,9 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   // 융합 단원을 id가 아니라 단원의 종류로 구분해도 결과가 같다
   ok(UNITS.filter((u) => isFusionUnit(u.id)).map((u) => u.id).join() === 'u8' && REGULAR_UNITS.map((u) => u.id).join() === 'u1,u2,u3,u4,u5,u6,u7,a1,a2,a3,c1,c2,c3,s1,s2,s3' && !isFusionUnit('__proto__') && !isFusionUnit('u9'),
     '융합 단원은 u8 하나이고 교과서 단원은 u1~u7, a1~a3, c1~c3, s1~s3이다');
+  ok(model.answerTex('57/2500') === '0.0228\\left(=\\dfrac{57}{2500}\\right)' && model.answerTex('1587/10000').startsWith('0.1587') && model.answerTex('-3/1000').startsWith('-0.003')
+    && model.answerTex('1/4') === '1/4' && model.answerTex('10/3') === '10/3' && model.answerTex('12') === '12' && model.normalizeAnswer('0.0228') === '57/2500',
+    '표로 구한 확률(소수 셋째 자리 이상)은 소수와 기약분수를 함께 보이고, 다른 정답은 그대로 보인다. 소수 입력은 같은 기약분수로 채점된다');
   store.resetAll();
   ok(model.studiedUnits().join() === 'u1,u2,u3,u4,u5,u6,u7', '공부한 흔적이 없으면 혼합 평가 범위는 교과서 단원 전체다');
   store.update((s) => {

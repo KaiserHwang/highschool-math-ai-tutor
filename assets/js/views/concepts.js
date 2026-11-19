@@ -5,7 +5,7 @@ import { LESSON_BY_ID, CHECK_BY_ID, CQ_BY_ID } from '../content/lessons/index.js
 import { UNIT_BY_ID, unitLabel } from '../content/units.js';
 import { makeVariant, newSeed } from '../content/generators.js';
 import { update, today, logActivity } from '../store.js';
-import { isCorrect, normalizeAnswer, conceptsDue, conceptQueue, conceptMemory, conceptItems, conceptResult, CONCEPT_GAPS, gradeCQ, recordCQ, activeCourses } from '../model.js';
+import { isCorrect, normalizeAnswer, answerTex, conceptsDue, conceptQueue, conceptMemory, conceptItems, conceptResult, CONCEPT_GAPS, gradeCQ, recordCQ, activeCourses } from '../model.js';
 import { cqHTML, cqClick, newCQSeed } from './cq.js';
 import { tex, esc, CIRCLED, gradeMark, optionsClass, toast, fmtDate } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
@@ -45,9 +45,9 @@ function itemHTML(sl, k) {
   const done = a !== undefined;
   const body = item.type === 'mc'
     ? `<div class="options${optionsClass(item.options)}" role="radiogroup" aria-label="보기">${item.options.map((o, j) => `<button type="button" class="opt${done && j === item.answer ? ' is-ans' : ''}${done && j === a.response && !a.ok ? ' is-wrong' : ''}" role="radio" aria-checked="${done && j === a.response}" data-cr-opt="${j}" ${done ? 'disabled' : ''}><span class="opt-n">${CIRCLED[j]}</span><span class="opt-t">${tex(o)}</span></button>`).join('')}</div>${done ? '' : '<div class="row"><button type="button" class="btn btn-primary" data-act="cr-check">채점하기</button></div>'}`
-    : `<form class="short-form" data-cr-form><label class="short"><span class="short-l">답</span><input class="short-in" inputmode="text" autocomplete="off" placeholder="정수 또는 분수(예: -3, 10/3)" ${done ? `value="${esc(a.response)}" disabled` : ''}></label>${done ? '' : '<button class="btn btn-primary" type="submit">채점하기</button>'}</form>`;
+    : `<form class="short-form" data-cr-form><label class="short"><span class="short-l">답</span><input class="short-in" inputmode="text" autocomplete="off" placeholder="정수, 분수, 소수(예: -3, 10/3, 0.25)" ${done ? `value="${esc(a.response)}" disabled` : ''}></label>${done ? '' : '<button class="btn btn-primary" type="submit">채점하기</button>'}</form>`;
   const why = done && !a.ok && item.traps ? trapFor(item, a.response) : null;
-  const fb = done ? `<p class="${a.ok ? 'fb-right' : 'fb-wrong'}">${a.ok ? '정답입니다.' : `정답은 ${item.type === 'mc' ? CIRCLED[item.answer] : tex(`$${item.answer}$`)}입니다.`}</p>${why ? `<p class="trap-why"><strong>이 답이 나왔다면</strong> ${tex(why)}</p>` : ''}<div class="sol">${tex(item.solution)}</div>` : '';
+  const fb = done ? `<p class="${a.ok ? 'fb-right' : 'fb-wrong'}">${a.ok ? '정답입니다.' : `정답은 ${item.type === 'mc' ? CIRCLED[item.answer] : tex(`$${answerTex(item.answer)}$`)}입니다.`}</p>${why ? `<p class="trap-why"><strong>이 답이 나왔다면</strong> ${tex(why)}</p>` : ''}<div class="sol">${tex(item.solution)}</div>` : '';
   return `<li class="ck cr-item${done ? (a.ok ? ' is-right' : ' is-wrong') : ''}" data-cr-item="${k}">
     <div class="q-row"><span class="q-num ck-num">${k + 1}<span class="mark-slot">${done ? gradeMark(a.ok ? 'right' : 'wrong') : ''}</span></span><div class="q-text compact"><span class="cr-tag">${item.tag}</span> ${tex(item.q)}</div></div>
     ${item.fig ? figure(item.fig) : ''}
@@ -111,7 +111,7 @@ export function renderConcepts(view) {
     if (sl.answers[k] !== undefined) return;
     const { item } = sl.items[k];
     if (response === '' || response == null) { toast(item.type === 'mc' ? '보기를 하나 고르세요.' : '답을 입력하세요.'); return; }
-    if (item.type === 'short' && normalizeAnswer(response) === null) { toast('정수나 분수(예: -3, 10/3)로 입력하세요.'); return; }
+    if (item.type === 'short' && normalizeAnswer(response) === null) { toast('정수, 분수, 소수(예: -3, 10/3, 0.25)로 입력하세요.'); return; }
     const ok = item.type === 'cq' ? gradeCQ(item, response.a, response.r).ok : isCorrect(item, response);
     sl.answers[k] = { response, ok };
     update((s) => { if (item.type === 'cq') recordCQ(s, sl.id, item.id, response.a, response.r); logActivity({ checks: 1 }); });

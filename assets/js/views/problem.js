@@ -66,7 +66,7 @@ export function renderProblem(view, { args: [ref], params }) {
   const answerUI = p.type === 'mc'
     ? `<div class="options${optCls}" role="radiogroup" aria-label="보기">${p.options.map((o, k) => `<button type="button" class="opt" role="radio" aria-checked="false" data-opt="${k}"><span class="opt-n">${CIRCLED[k]}</span><span class="opt-t">${tex(o)}</span></button>`).join('')}</div>
        <div class="row"><button type="button" class="btn btn-primary" data-act="submit">채점하기</button></div>`
-    : `<form class="short-form" data-form="short"><label class="short"><span class="short-l">답</span><input class="short-in" name="ans" inputmode="text" autocomplete="off" placeholder="정수 또는 분수(예: -3, 10/3)" aria-describedby="fb"></label><button class="btn btn-primary" type="submit">채점하기</button></form>`;
+    : `<form class="short-form" data-form="short"><label class="short"><span class="short-l">답</span><input class="short-in" name="ans" inputmode="text" autocomplete="off" placeholder="정수, 분수, 소수(예: -3, 10/3, 0.25)" aria-describedby="fb"></label><button class="btn btn-primary" type="submit">채점하기</button></form>`;
 
   const note = isVariant ? '' : st.notes[pid] || '';
   const wrongEntry = isVariant ? null : st.wrong[pid];
@@ -275,7 +275,7 @@ export function renderProblem(view, { args: [ref], params }) {
   function submit(response) {
     if (p.type === 'short') {
       if (!String(response).trim()) return toast('답을 입력하세요.');
-      if (normalizeAnswer(response) === null) return toast('정수나 분수(예: -3, 10/3)로 입력하세요.');
+      if (normalizeAnswer(response) === null) return toast('정수, 분수, 소수(예: -3, 10/3, 0.25)로 입력하세요.');
     }
     const ok = isCorrect(p, response);
     const firstSubmitThisVisit = !session.submitted;

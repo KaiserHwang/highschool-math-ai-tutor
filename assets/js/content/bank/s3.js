@@ -154,7 +154,7 @@ export default [
   },
   {
     id: 's3-14', unit: 's3', level: 'core', topic: '임의추출의 확률', type: 'short',
-    q: t`$10$명 중에서 $3$명을 임의추출할 때, 특정한 사람 A는 뽑히고 B는 뽑히지 않을 확률을 구하시오.`,
+    q: t`$10$명 중에서 $3$명을 비복원추출로 임의추출할 때, 특정한 사람 A는 뽑히고 B는 뽑히지 않을 확률을 구하시오.`,
     answer: '7/30',
     skills: { reason: 1, calc: 0.5 },
     hints: [

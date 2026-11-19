@@ -393,7 +393,7 @@ export default {
           title: '평균보다 작거나 같을 확률',
           body: t`<p>$X$가 근사적으로 $\mathrm{N}(m,\ \sigma^2)$을 따르면 $\mathrm{P}(X\le a)=\mathrm{P}\left(Z\le\dfrac{a-m}\sigma\right)$입니다.</p>`,
           example: {
-            q: t`확률변수 $X$가 이항분포 $\mathrm{B}\left(100,\ \dfrac15\right)$을 따를 때, $\mathrm{P}(X\le26)$을 정규분포를 이용하여 구하시오. (단, $\mathrm{P}(0\le Z\le1.5)=0.4332$로 계산하고, 답은 소수로 써도 된다)`,
+            q: t`확률변수 $X$가 이항분포 $\mathrm{B}\left(100,\ \dfrac15\right)$을 따를 때, $\mathrm{P}(X\le26)$을 정규분포로 근사하여 구하시오. (단, 연속성 보정 없이 계산하고, $\mathrm{P}(0\le Z\le1.5)=0.4332$로 계산하고, 답은 소수로 써도 된다)`,
             think: [t`$m=20$, $\sigma^2=16$이므로 $\sigma=4$`],
             steps: [t`$\mathrm{P}(Z\le1.5)=0.5+0.4332=0.9332$`],
             answer: '2333/2500',
@@ -411,7 +411,7 @@ export default {
         },
       ],
       checks: [
-        { id: 's3-l5-d1', type: 'short', q: t`어느 공장 제품의 불량률은 $\dfrac1{10}$이다. 이 공장 제품 $900$개를 임의로 고를 때 불량품이 $81$개 이상일 확률을 정규분포를 이용하여 구하시오. (단, $\mathrm{P}(0\le Z\le1)=0.3413$으로 계산하고, 답은 소수로 써도 된다)`, answer: '8413/10000', solution: t`$m=90$, $\sigma^2=81$이므로 $\mathrm{P}(X\ge81)=\mathrm{P}(Z\ge-1)=0.5+0.3413=0.8413$` },
+        { id: 's3-l5-d1', type: 'short', q: t`어느 공장에서 만드는 제품은 각각 서로 독립적으로 $\dfrac1{10}$의 확률로 불량품이다. 이 공장 제품 $900$개 중 불량품이 $81$개 이상일 확률을 정규분포로 근사하여 구하시오. (단, 연속성 보정 없이 계산하고, $\mathrm{P}(0\le Z\le1)=0.3413$으로 계산하고, 답은 소수로 써도 된다)`, answer: '8413/10000', solution: t`$m=90$, $\sigma^2=81$이므로 $\mathrm{P}(X\ge81)\approx\mathrm{P}(Z\ge-1)=0.5+0.3413=0.8413$` },
         { id: 's3-l5-d2', type: 'short', q: t`확률변수 $X$가 이항분포 $\mathrm{B}\left(n,\ \dfrac15\right)$을 따르고, $X$가 근사적으로 따르는 정규분포의 표준편차가 $4$일 때, $n$의 값을 구하시오.`, answer: '100', solution: t`$n\times\dfrac15\times\dfrac45=\dfrac{4n}{25}=16$이므로 $n=100$` },
       ],
     },
@@ -483,7 +483,7 @@ export default {
           title: '두 대상이 함께 뽑힐 확률',
           body: t`<p>두 대상을 먼저 넣고 나머지를 고르는 경우를 셉니다.</p>`,
           example: {
-            q: t`$40$명의 학생 중에서 $4$명을 임의추출할 때, 특정한 두 학생 A, B가 모두 뽑힐 확률을 구하시오.`,
+            q: t`$40$명의 학생 중에서 $4$명을 비복원추출로 임의추출할 때, 특정한 두 학생 A, B가 모두 뽑힐 확률을 구하시오.`,
             think: [t`A, B를 넣고 나머지 $38$명 중 $2$명`],
             steps: [t`$\dfrac{_{38}\mathrm{C}_2}{_{40}\mathrm{C}_4}=\dfrac{703}{91390}=\dfrac1{130}$`],
             answer: '1/130',
@@ -492,7 +492,7 @@ export default {
       ],
       checks: [
         { id: 's3-l6-d1', type: 'short', q: t`$1,\ 2,\ 3,\ 4$의 숫자가 하나씩 적힌 공 $4$개에서 크기가 $2$인 표본을 복원추출할 때, 표본의 두 수가 같을 확률을 구하시오. (단, 뽑는 순서를 생각한다)`, answer: '1/4', solution: t`표본은 $4^2=16$가지이고 두 수가 같은 것은 $4$가지이므로 $\dfrac14$` },
-        { id: 's3-l6-d2', type: 'short', q: t`$10$명 중에서 $3$명을 임의추출할 때, 특정한 두 사람 A, B 중 적어도 한 명이 뽑힐 확률을 구하시오.`, answer: '8/15', solution: t`둘 다 뽑히지 않을 확률은 $\dfrac{_8\mathrm{C}_3}{_{10}\mathrm{C}_3}=\dfrac{56}{120}=\dfrac7{15}$이므로 $1-\dfrac7{15}=\dfrac8{15}$` },
+        { id: 's3-l6-d2', type: 'short', q: t`$10$명 중에서 $3$명을 비복원추출로 임의추출할 때, 특정한 두 사람 A, B 중 적어도 한 명이 뽑힐 확률을 구하시오.`, answer: '8/15', solution: t`둘 다 뽑히지 않을 확률은 $\dfrac{_8\mathrm{C}_3}{_{10}\mathrm{C}_3}=\dfrac{56}{120}=\dfrac7{15}$이므로 $1-\dfrac7{15}=\dfrac8{15}$` },
       ],
     },
     explain: {

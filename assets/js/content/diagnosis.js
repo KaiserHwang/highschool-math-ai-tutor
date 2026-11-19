@@ -453,15 +453,15 @@ export const DIAGNOSIS = [
   },
   {
     id: 'd55', unit: 's3', level: 'core', type: 'short', sec: 120, lesson: 's3-l5',
-    q: t`한 개의 동전을 $400$번 던질 때 앞면이 $180$번 이하로 나올 확률을 정규분포를 이용하여 구하시오. (단, $\mathrm{P}(0\le Z\le2)=0.4772$로 계산하고, 답은 소수로 써도 된다)`,
+    q: t`한 개의 동전을 $400$번 던질 때 앞면이 $180$번 이하로 나올 확률을 정규분포로 근사하여 구하시오. (단, 연속성 보정 없이 계산하고, $\mathrm{P}(0\le Z\le2)=0.4772$로 계산하고, 답은 소수로 써도 된다)`,
     answer: '57/2500',
     skills: { concept: 1, calc: 0.5 },
     hint: t`앞면의 횟수는 근사적으로 $\mathrm{N}(200,\ 10^2)$을 따릅니다.`,
-    solution: t`$\mathrm{P}(X\le180)=\mathrm{P}(Z\le-2)=0.5-0.4772=0.0228$`,
+    solution: t`$\mathrm{P}(X\le180)\approx\mathrm{P}(Z\le-2)=0.5-0.4772=0.0228$`,
   },
   {
     id: 'd56', unit: 's3', level: 'basic', type: 'short', sec: 60, lesson: 's3-l6',
-    q: t`어느 동아리 회원 $24$명 중에서 설문에 답할 $6$명을 임의추출할 때, 회원 A가 뽑힐 확률을 구하시오.`,
+    q: t`어느 동아리 회원 $24$명 중에서 설문에 답할 $6$명을 비복원추출로 임의추출할 때, 회원 A가 뽑힐 확률을 구하시오.`,
     answer: '1/4',
     skills: { concept: 1 },
     hint: t`A를 포함하는 표본은 나머지 $23$명 중 $5$명을 뽑는 경우입니다.`,
