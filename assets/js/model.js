@@ -205,10 +205,10 @@ export function diagFirstLesson(d) {
   const st = getState();
   for (const id of units) {
     const l = lessonsOfUnit(id).find((x) => !learnedOn(x, st.lessons[x.id]));
-    if (l) return { lesson: l, unitId: id, pct: ready[id].pct };
+    if (l) return { lesson: l, unitId: id, pct: ready[id].pct, lowest: id === units[0] };
   }
   const l = lessonsOfUnit(units[0])[0];
-  return l ? { lesson: l, unitId: units[0], pct: ready[units[0]].pct } : null;
+  return l ? { lesson: l, unitId: units[0], pct: ready[units[0]].pct, lowest: true, review: true } : null;
 }
 
 /**

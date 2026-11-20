@@ -8,9 +8,12 @@ import { newSeed } from '../content/generators.js';
 import { tex, esc, CIRCLED, fmtDate, gradeMark, toast, optionsClass } from '../lib/ui.js';
 import { radar } from '../lib/radar.js';
 import { figure } from '../lib/plot.js';
-import { saveDraft, loadDraft, clearDraft, restoreDiagRun, answeredCount } from '../lib/draft.js';
+import { saveDraft, loadDraft, clearDraft, restoreDiagRun, answeredCount, onDraftsCleared } from '../lib/draft.js';
 
 let run = null; // { set, items, i, responses, startedAt, shownAt }
+onDraftsCleared(() => { run = null; });
+// 탭을 닫거나 새로고침하기 직전까지 푼 시간도 임시 저장에 넣는다
+window.addEventListener('pagehide', () => saveRun());
 
 const CONF_LABEL = { sure: '확실해요', unsure: '조금 헷갈려요', guess: '찍었어요' };
 
@@ -52,6 +55,7 @@ function startRun(view, setId) {
 /** 지금 진행 중인 진단을 이 기기에 임시 저장한다(새로고침해도 이어 풀 수 있게) */
 function saveRun() {
   if (!run) return;
+  commitTime(); // 지금 문항에서 쓴 시간을 먼저 더하고 측정을 새로 시작한다
   saveDraft('diag', { set: run.set, ids: run.items.map((q) => q.id), i: run.i, responses: run.responses });
 }
 
@@ -82,7 +86,7 @@ function renderIntro(view) {
     const last = latestDiagnosisOf(s.id);
     if (draft && draft.set === s.id) {
       return `<li class="rc-row resume"><div><span class="rc-t">${esc(s.title)} 진단 · 풀던 중</span><span class="hint-text">${draft.items.length}문제 중 ${answeredCount(draft.responses)}문제 답함 · ${draft.i + 1}번까지 진행</span></div>
-      <span class="row"><button type="button" class="btn btn-primary" data-resume>${draft.i + 1}번부터 이어 풀기</button><button type="button" class="btn btn-quiet" data-start="${s.id}">처음부터 다시</button></span></li>`;
+      <span class="row"><button type="button" class="btn btn-primary" data-resume>${draft.i + 1}번부터 이어 풀기</button><button type="button" class="btn btn-quiet" data-start="${s.id}">처음부터 다시</button><button type="button" class="btn btn-quiet" data-discard>풀던 기록 지우기</button></span></li>`;
     }
     return `<li class="rc-row"><div><span class="rc-t">${esc(s.title)} 진단</span><span class="hint-text">${unitsIn(s)}개 단원 · ${diagItems(s.id).length}문제 · 약 ${s.minutes}분${last ? ` · 지난 진단 ${fmtDate(last.date)} ${last.overall}점` : ' · 아직 보지 않음'}</span></div>
       <span class="row"><button type="button" class="btn${last ? ' btn-quiet' : ' btn-primary'}" data-start="${s.id}">${esc(s.title)} ${last ? '다시 진단하기' : '진단 시작'}</button>${last ? `<a class="btn btn-quiet" href="#/diagnosis?view=result&set=${s.id}">지난 결과 보기</a>` : ''}</span></li>`;
@@ -106,8 +110,12 @@ function renderIntro(view) {
   </section>`;
   view.onclick = (e) => {
     if (e.target.closest('[data-resume]')) { if (!resumeRun(view)) renderIntro(view); return; }
+    if (e.target.closest('[data-discard]')) { clearDraft('diag'); run = null; renderIntro(view); return; }
     const b = e.target.closest('[data-start]');
-    if (b && isDiagSetId(b.dataset.start)) startRun(view, b.dataset.start);
+    if (!b || !isDiagSetId(b.dataset.start)) return;
+    // 다른 과목의 풀던 진단이 있으면 지워진다는 것을 먼저 알린다
+    if (draft && draft.set !== b.dataset.start && !confirm(`풀던 ${DIAG_SET_BY_ID[draft.set].title} 진단이 있어요. 새 진단을 시작하면 풀던 기록이 지워져요. 시작할까요?`)) return;
+    startRun(view, b.dataset.start);
   };
 }
 
@@ -125,7 +133,7 @@ function renderQuestion(view) {
   view.innerHTML = `
   <section class="page narrow diag">
     <header class="diag-head">
-      <p class="diag-progress"><span>${run.i + 1}</span> / ${ITEMS.length}</p>
+      <p class="diag-progress" id="dq-h" tabindex="-1"><span>${run.i + 1}</span> / ${ITEMS.length}<span class="sr"> 번째 문제</span></p>
       <div class="meter wide" role="progressbar" aria-valuemin="0" aria-valuemax="${ITEMS.length}" aria-valuenow="${run.i + 1}"><span style="--v:${((run.i + 1) / ITEMS.length) * 100}%"></span></div>
       <p class="meta">${esc(courseTitle(unit))} · ${esc(unit.title)}</p>
     </header>
@@ -149,6 +157,8 @@ function renderQuestion(view) {
     <p class="hint-text">힌트를 보면 그 문제의 점수가 조금 낮아집니다.</p>
   </section>`;
 
+  // 새 문항을 그리면 포커스를 문항 번호로 옮겨 지금 위치를 읽게 한다(객관식에서 포커스가 body로 빠지지 않게)
+  view.querySelector('#dq-h').focus({ preventScroll: true });
   const input = view.querySelector('.short-in');
   if (input) {
     input.addEventListener('input', () => { r.response = input.value; saveRun(); });
@@ -180,6 +190,8 @@ function renderQuestion(view) {
     if (act === 'prev') return go(-1);
     if (act === 'skip') {
       r.response = null; r.conf = 'guess';
+      // 마지막 문항에서는 바로 마치지 않고 답한 수를 보여 준 뒤 돌아보거나 마치게 한다(혼합 평가와 같게)
+      if (run.i === ITEMS.length - 1) { commitTime(); saveRun(); run.current = null; return renderConfirm(view); }
       return go(1, true);
     }
     if (act === 'next') {
@@ -199,6 +211,23 @@ function renderQuestion(view) {
     renderQuestion(view);
     window.scrollTo(0, 0);
   }
+}
+
+function renderConfirm(view) {
+  const n = run.items.length;
+  const answered = answeredCount(run.responses);
+  const firstBlank = run.items.findIndex((q) => { const r = run.responses[q.id]; return !r || r.response == null || r.response === ''; });
+  view.innerHTML = `<section class="page narrow diag">
+    <header class="page-head"><h1 class="page-title" tabindex="-1">진단을 마칠까요?</h1>
+      <p class="lead">${n}문제 중 ${answered}문제에 답했어요. 답하지 않은 문제는 그 단원의 준비도를 계산할 때 틀린 것으로 봐요.</p></header>
+    <p class="row"><button type="button" class="btn btn-quiet" data-act="back">${firstBlank >= 0 ? `${firstBlank + 1}번부터 돌아보기` : '돌아보기'}</button><button type="button" class="btn btn-primary" data-act="finish">진단 마치기</button></p>
+  </section>`;
+  view.querySelector('.page-title').focus();
+  view.onclick = (e) => {
+    const act = e.target.closest('[data-act]')?.dataset.act;
+    if (act === 'back') { run.i = firstBlank >= 0 ? firstBlank : n - 1; saveRun(); renderQuestion(view); window.scrollTo(0, 0); }
+    if (act === 'finish') finish(view);
+  };
 }
 
 function finish(view) {
@@ -243,7 +272,7 @@ function renderResult(view, d) {
   // 결과를 다 읽지 않아도 바로 공부를 시작할 수 있게, 먼저 볼 소단원을 점수 바로 아래에 둔다(#48 1-A)
   const first = diagFirstLesson(d);
   const startCard = first ? `<section class="paper start-first" aria-labelledby="sf-h"><h2 id="sf-h" class="h3">먼저 볼 개념: ${esc(first.lesson.title)}</h2>
-    <p class="hint-text">${esc(unitLabel(UNIT_BY_ID[first.unitId]))} · 이 진단에서 준비도가 가장 낮은 단원(${first.pct})이에요.</p>
+    <p class="hint-text">${esc(unitLabel(UNIT_BY_ID[first.unitId]))} · ${first.review ? `이 진단에서 준비도가 가장 낮은 단원(${first.pct})이에요. 이미 배운 개념이니 다시 보며 확인해 보세요.` : first.lowest ? `이 진단에서 준비도가 가장 낮은 단원(${first.pct})이에요.` : `아직 배울 개념이 남은 단원 중 준비도가 가장 낮은 단원(${first.pct})이에요.`}</p>
     <p class="row"><a class="btn btn-primary" href="#/l/${first.lesson.id}">${esc(first.lesson.title)} 시작하기</a><a class="btn btn-quiet" href="#/">오늘 할 일 보기</a></p></section>` : '';
   const items = QS.map((q, i) => {
     const it = d.items.find((x) => x.id === q.id) || {};

@@ -5,16 +5,28 @@ import { PROBLEM_BY_ID } from '../content/problems.js';
 import { makeVariant, GENERATORS } from '../content/generators.js';
 import { lessonForProblem } from '../content/lessons/index.js';
 import { getState, update, logActivity } from '../store.js';
-import { saveDraft, loadDraft, clearDraft } from '../lib/draft.js';
+import { saveDraft, loadDraft, clearDraft, onDraftsCleared } from '../lib/draft.js';
 import { isCorrect, normalizeAnswer, answerTex, addWrong, makeQuiz, studiedUnits, activeRegularUnits, activeCourseTitles, activeCourses } from '../model.js';
 import { tex, esc, CIRCLED, toast, gradeMark, fmtDate, fmtMinutes, optionsClass } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 
 let run = null; // { items:[{ref, kind, unit, p}], i, responses:{}, sec:{}, shownAt, done }
 
+onDraftsCleared(() => { run = null; });
+window.addEventListener('pagehide', () => saveRun());
+
+/** 지금 문항에서 쓴 시간을 더하고 측정을 새로 시작한다(한 문항 30분까지) */
+function commitTime() {
+  if (!run || run.done || run.confirming) return;
+  const key = String(run.i);
+  run.sec[key] = (run.sec[key] || 0) + Math.min((Date.now() - run.shownAt) / 1000, 1800);
+  run.shownAt = Date.now();
+}
+
 /** 진행 중인 평가를 이 기기에 임시 저장한다(새로고침해도 이어 풀 수 있게, #48 1-A) */
 function saveRun() {
   if (!run || run.done) return;
+  commitTime();
   saveDraft('quiz', { refs: run.items.map(({ ref, kind, unit }) => ({ ref, kind, unit })), i: run.i, responses: run.responses, sec: run.sec, scope: run.scope });
 }
 
@@ -113,7 +125,7 @@ function renderItem(view) {
   view.innerHTML = `
   <section class="page narrow diag quiz">
     <header class="diag-head">
-      <p class="diag-progress"><span>${run.i + 1}</span> / ${run.items.length}</p>
+      <p class="diag-progress" id="qz-h" tabindex="-1"><span>${run.i + 1}</span> / ${run.items.length}<span class="sr"> 번째 문제</span></p>
       <div class="meter wide" role="progressbar" aria-valuemin="0" aria-valuemax="${run.items.length}" aria-valuenow="${run.i + 1}"><span style="--v:${((run.i + 1) / run.items.length) * 100}%"></span></div>
       <p class="meta">혼합 평가 · 단원은 제출 후 공개</p>
     </header>
@@ -134,8 +146,9 @@ function renderItem(view) {
     input.addEventListener('input', () => { run.responses[key] = input.value; saveRun(); });
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') view.querySelector('[data-act="next"]').click(); });
     input.focus();
-  }
-  const commit = () => { run.sec[key] = (run.sec[key] || 0) + Math.min((Date.now() - run.shownAt) / 1000, 1800); };
+  } else view.querySelector('#qz-h').focus({ preventScroll: true }); // 객관식이면 문항 번호로 포커스
+  run.confirming = false;
+  const commit = commitTime;
   const go = (step) => {
     commit();
     if (step > 0 && run.i === run.items.length - 1) return finish(view);
@@ -157,7 +170,7 @@ function renderItem(view) {
     if (act === 'skip') {
       run.responses[key] = null;
       // 마지막 문항에서는 바로 제출하지 않고, 응답 수를 보여 준 뒤 돌아보거나 제출하게 한다
-      if (run.i === run.items.length - 1) { commit(); saveRun(); return renderConfirm(view); }
+      if (run.i === run.items.length - 1) { saveRun(); run.confirming = true; return renderConfirm(view); }
       return go(1);
     }
     if (act === 'next') {
@@ -168,7 +181,8 @@ function renderItem(view) {
       return go(1);
     }
   };
-  return () => (view.onclick = null);
+  // 다른 화면으로 옮겨 가도 입력 중이던 답과 시간을 저장한다
+  return () => { saveRun(); view.onclick = null; };
 }
 
 /** 마지막 문항을 비운 채 넘기려 할 때: 응답 수 요약과 돌아보기·제출 */
@@ -178,12 +192,12 @@ function renderConfirm(view) {
   const firstBlank = run.items.findIndex((_, i) => { const r = run.responses[String(i)]; return r == null || r === ''; });
   view.innerHTML = `<section class="page narrow diag quiz">
     <header class="page-head"><h1 class="page-title">제출할까요?</h1>
-      <p class="lead">${n}문제 중 ${answered}문제에 답했어요. 답하지 않은 문제는 틀린 것으로 기록되고 오답노트에 들어가요.</p></header>
+      <p class="lead">${n}문제 중 ${answered}문제에 답했어요. 답하지 않은 문제는 틀린 것으로 채점하고, 처음 푸는 문제 은행 문항은 오답노트에도 들어가요.</p></header>
     <p class="row"><button type="button" class="btn btn-quiet" data-act="back">${firstBlank >= 0 ? `${firstBlank + 1}번부터 돌아보기` : '돌아보기'}</button><button type="button" class="btn btn-primary" data-act="submit">제출하고 결과 보기</button></p>
   </section>`;
   view.onclick = (e) => {
     const act = e.target.closest('[data-act]')?.dataset.act;
-    if (act === 'back') { run.i = firstBlank >= 0 ? firstBlank : n - 1; saveRun(); renderItem(view); window.scrollTo(0, 0); }
+    if (act === 'back') { run.confirming = false; run.i = firstBlank >= 0 ? firstBlank : n - 1; run.shownAt = Date.now(); saveRun(); renderItem(view); window.scrollTo(0, 0); }
     if (act === 'submit') finish(view);
   };
   view.querySelector('[data-act="submit"]').focus();
@@ -192,7 +206,11 @@ function renderConfirm(view) {
 function finish(view) {
   clearDraft('quiz');
   run.done = true;
-  const results = run.items.map((it, i) => {
+  // 평가 중에 같은 은행 문제를 다른 화면에서 먼저 풀었으면 처음 보는 문제가 아니므로 채점에서 뺀다
+  const att = getState().attempts;
+  const kept = run.items.map((it, i) => ({ it, i })).filter(({ it }) => !(it.kind === 'bank' && att[it.ref]?.tries));
+  run.excluded = run.items.length - kept.length;
+  const results = kept.map(({ it, i }) => {
     const r = run.responses[String(i)];
     const ok = r != null && r !== '' && isCorrect(it.p, r);
     return { it, r, ok, sec: Math.round(run.sec[String(i)] || 0) };
@@ -243,7 +261,7 @@ function renderResult(view) {
   <section class="page narrow">
     <header class="page-head">
       <h1 class="page-title">혼합 평가 결과</h1>
-      <p class="lead">${res.length}문제 중 ${right}문제 정답 · 걸린 시간 ${fmtMinutes(total)}</p>
+      <p class="lead">${res.length}문제 중 ${right}문제 정답 · 걸린 시간 ${fmtMinutes(total)}</p>${run.excluded ? `<p class="hint-text">평가 중에 다른 화면에서 먼저 푼 문제 ${run.excluded}개는 처음 보는 문제가 아니라서 채점에서 뺐어요.</p>` : ''}
     </header>
     <section class="side-block"><h2 class="h3">단원별</h2>
       <ul class="unit-ready">${Object.entries(byUnit).map(([u, v]) => `<li><span class="ur-t">${esc(unitLabel(UNIT_BY_ID[u]))}<span class="ur-ev">${v.n}문항 중 ${v.ok}개 정답</span></span><span class="meter" role="img" aria-label="${Math.round((v.ok / v.n) * 100)}%"><span style="--v:${(v.ok / v.n) * 100}%"></span></span><span class="ur-p">${v.ok}/${v.n}</span></li>`).join('')}</ul>

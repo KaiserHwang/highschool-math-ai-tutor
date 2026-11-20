@@ -19,7 +19,10 @@ export function clearDraft(name) {
   try { localStorage.removeItem(KEY(name)); } catch { /* 무시 */ }
 }
 
-export const clearAllDrafts = () => { clearDraft('diag'); clearDraft('quiz'); };
+// 모든 기록을 지울 때 화면이 메모리에 들고 있는 진행 상태도 버리도록 알린다(같은 탭에서 되살아나지 않게)
+const clearListeners = new Set();
+export const onDraftsCleared = (fn) => clearListeners.add(fn);
+export const clearAllDrafts = () => { clearDraft('diag'); clearDraft('quiz'); clearListeners.forEach((fn) => fn()); };
 
 const isObj = (x) => x && typeof x === 'object' && !Array.isArray(x);
 
@@ -43,5 +46,5 @@ export function restoreDiagRun(d, items) {
   return { i: d.i, responses };
 }
 
-/** 몇 번째 문항까지 답했는지(이어 풀기 안내용): 응답이나 확신도가 있는 문항 수 */
-export const answeredCount = (responses) => Object.values(responses || {}).filter((r) => r && (r.response != null || r.conf)).length;
+/** 답한 문항 수(이어 풀기 안내용): 실제 답이 들어간 문항만 센다("모르겠어요"로 넘긴 문항은 빼고) */
+export const answeredCount = (responses) => Object.values(responses || {}).filter((r) => r && r.response != null && r.response !== '').length;
