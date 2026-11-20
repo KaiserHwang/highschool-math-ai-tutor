@@ -814,6 +814,14 @@ img, svg { display: block; }
 .deep-fold > summary { cursor: pointer; padding: 12px 14px; border: 1px dashed var(--rule); border-radius: var(--r-sm); color: var(--ink-2); font-weight: 600; }
 .deep-fold[open] > summary { margin-bottom: 14px; }
 @media (min-width: 1100px) { .lsteps { margin-left: 0; margin-right: 0; border-radius: var(--r); border: 1px solid var(--grid); } }
+/* 키보드 포커스로 스크롤할 때 위 단계 막대·아래 탭바에 가리지 않게 */
+html:has(.lsteps) { scroll-padding-top: 64px; }
+@media (max-width: 959px) { html { scroll-padding-bottom: calc(72px + env(safe-area-inset-bottom)); } }
+/* 모바일 하단 행동 버튼: 탭바 바로 위에 붙고, 넓은 화면에서는 위 막대로 충분하므로 숨긴다 */
+.lnext { position: sticky; bottom: calc(64px + env(safe-area-inset-bottom)); z-index: 11; display: flex; justify-content: flex-end; margin: 12px 0 0; pointer-events: none; }
+.lnext .btn { pointer-events: auto; box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.45); }
+.lnext[hidden] { display: none; }
+@media (min-width: 960px) { .lnext { display: none !important; } }
 
 .lesson { font-family: var(--serif); }
 .l-sec + .l-sec { margin-top: 30px; padding-top: 22px; border-top: 1px dashed var(--rule); }

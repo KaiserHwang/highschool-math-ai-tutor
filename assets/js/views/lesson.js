@@ -185,6 +185,7 @@ export function renderLesson(view, { args: [lessonId] }) {
       <div class="row ai-row">${Object.entries(AI_SERVICES).map(([k, s]) => `<button type="button" class="btn btn-ai ai-${k}" data-ai="${k}">${s.name}에게 묻기</button>`).join('')}</div>
     </details>
 
+    <div class="lnext" data-lnext hidden><button type="button" class="btn btn-primary" data-next-step></button></div>
     <nav class="pager" aria-label="다른 개념">
       ${prev ? `<a class="btn btn-quiet" href="#/l/${prev.id}">이전: ${esc(prev.title)}</a>` : '<span></span>'}
       ${next ? `<a class="btn btn-quiet" href="#/l/${next.id}">다음: ${esc(next.title)}</a>` : `<a class="btn btn-quiet" href="#/u/${unit.id}">단원으로</a>`}
@@ -266,7 +267,7 @@ export function renderLesson(view, { args: [lessonId] }) {
       a.derive ? `유도 ${a.derive.done}/${a.derive.total}` : '',
       a.explain ? `설명 ${a.explain.wrote || a.explain.opened ? '✓' : '–'}` : '',
     ].filter(Boolean).join(' · ');
-    $('[data-progress]').innerHTML = `${acts ? `<span class="act-line">${acts}</span><br>` : ''}확인 문제 ${parts}${pr.cqTotal ? ` · 이유까지 답하기 ${pr.cqRight}/${pr.cqTotal}${pr.cqMissed ? `(처음에 틀림 ${pr.cqMissed})` : ''}` : ''}${pr.deepTotal ? ` · 심화 ${pr.deepRight}/${pr.deepTotal}` : ''}${pr.verified ? ' · <span class="done-tag">혼자 확인 완료</span>' : ''}${pr.done ? ' · 이해 표시함' : ''}${pr.recheck ? ' · <span class="recheck-tag">다시 확인할 개념</span>' : ''}${pr.kept ? ' · <span class="done-tag">오래 기억함</span>' : pr.spaced && !pr.recheck ? ` · 다음 개념 확인 ${fmtDate(pr.spaced.due)}` : ''}`;
+    $('[data-progress]').innerHTML = `${acts ? `<span class="act-line">${acts}</span><br>` : ''}확인 문제 ${parts}${pr.cqTotal ? ` · 이유까지 답하기: 처음에 답과 이유를 모두 맞힘 ${pr.cqRight}/${pr.cqTotal}${pr.cqMissed ? `(처음에 틀림 ${pr.cqMissed})` : ''}` : ''}${pr.deepTotal ? ` · 심화 ${pr.deepRight}/${pr.deepTotal}` : ''}${pr.verified ? ' · <span class="done-tag">혼자 확인 완료</span>' : ''}${pr.done ? ' · 이해 표시함' : ''}${pr.recheck ? ' · <span class="recheck-tag">다시 확인할 개념</span>' : ''}${pr.kept ? ' · <span class="done-tag">오래 기억함</span>' : pr.spaced && !pr.recheck ? ` · 다음 개념 확인 ${fmtDate(pr.spaced.due)}` : ''}`;
     const self = pr.done
       ? `<p class="l-done-msg"><span class="done-tag">이해했어요</span> 표시를 했습니다. ${pr.verified ? '확인 문제와 개념 질문도 모두 처음에 혼자 맞혔어요.' : '이 표시는 스스로 판단한 것이고, 확인 문제와 "이유까지 답하기"를 모두 처음에 혼자 맞히면 "혼자 확인"으로 따로 표시됩니다.'}</p><p class="row">${related.length ? `<a class="btn btn-primary" href="#/p/${related[0].id}">관련 문제 풀기</a>` : ''}${next && next.unit === L.unit ? `<a class="btn${related.length ? ' btn-quiet' : ' btn-primary'}" href="#/l/${next.id}">다음 개념</a>` : ''}<button type="button" class="btn btn-quiet" data-act="undone">표시 취소</button></p>`
       : `<p class="l-done-msg">예제와 확인 문제까지 마쳤다면 표시해 두세요. 확인 문제를 아직 다 풀지 않았어도 표시할 수 있지만, 그때는 "이해 표시"로만 기록됩니다.</p><p class="row"><button type="button" class="btn btn-primary" data-act="done">이해했어요</button></p>`;
@@ -282,8 +283,18 @@ export function renderLesson(view, { args: [lessonId] }) {
       b.classList.toggle('is-done', !!s && s.done >= s.total);
       b.classList.toggle('is-part', !!s && s.done > 0 && s.done < s.total);
       b.querySelector('.ls-n').textContent = s && s.total > 1 ? `${s.done}/${s.total}` : '';
-      b.setAttribute('aria-label', `${b.querySelector('.ls-t').textContent}${s ? (s.done >= s.total ? ' 완료' : ` ${s.done}/${s.total}`) : ''}`);
+      b.setAttribute('aria-label', `${b.querySelector('.ls-t').textContent}${s ? (b.dataset.step === 'cq' ? ` 응답 ${s.done}/${s.total}` : s.done >= s.total ? ' 완료' : s.total === 1 ? ' 아직 안 함' : ` ${s.done}/${s.total}`) : ''}`);
     });
+  }
+  // 하단 행동 버튼(모바일): 지금 단계의 다음 단계로, 마지막 단계면 "이해했어요" 표시로 안내한다
+  function paintNext(cur) {
+    const box = view.querySelector('[data-lnext]'), b = box && box.querySelector('[data-next-step]');
+    if (!b) return;
+    const i = stepIds.indexOf(cur);
+    const target = i >= 0 && i < stepIds.length - 1 ? stepIds[i + 1] : 'done';
+    b.dataset.nextStep = target;
+    b.textContent = target === 'done' ? (lessonProgress(L).done ? '이해 표시 확인하기' : '이해했어요 표시하러 가기') : `다음: ${STEP_LABEL[target]}`;
+    box.hidden = false;
   }
   function goStep(id) {
     const h = view.querySelector(`#h-${id}`);
@@ -301,17 +312,21 @@ export function renderLesson(view, { args: [lessonId] }) {
     det.open = (deep.checks || []).some((c) => rec.checks[c.id]?.tries) || lastPos === 'deep' || lastPos === 'say';
     const sum = document.createElement('summary');
     const ex = deep.ideas.filter((x) => x.example).length;
-    sum.textContent = `심화 예제 ${ex}개 · 심화 확인 ${deep.checks.length}개 펼쳐 보기`;
+    const sumText = () => (sum.textContent = `심화 예제 ${ex}개 · 심화 확인 ${deep.checks.length}개 ${det.open ? '접기' : '펼쳐 보기'}`);
+    sumText();
+    det.addEventListener('toggle', sumText);
     det.append(sum, ...[...dsec.children].slice(1));
     dsec.append(det);
   }
   // 지금 보고 있는 단계를 막대에 표시하고, 마지막으로 본 단계를 기억한다
   let observer = null;
   if ('IntersectionObserver' in window) {
+    // 콜백에는 경계를 넘은 섹션만 오므로, 지금 감지 영역 안에 있는 섹션을 따로 모아 둔다
+    const inView = new Set();
     observer = new IntersectionObserver((entries) => {
-      const vis = entries.filter((e) => e.isIntersecting).map((e) => e.target.getAttribute('aria-labelledby').slice(2));
-      if (!vis.length) return;
-      const cur = stepIds.find((id) => vis.includes(id));
+      for (const e of entries) { const id = e.target.getAttribute('aria-labelledby').slice(2); if (e.isIntersecting) inView.add(id); else inView.delete(id); }
+      if (!inView.size) return;
+      const cur = stepIds.find((id) => inView.has(id));
       if (!cur) return;
       view.querySelectorAll('.ls-i').forEach((b) => {
         if (b.dataset.step !== cur) { b.removeAttribute('aria-current'); return; }
@@ -319,7 +334,9 @@ export function renderLesson(view, { args: [lessonId] }) {
         const ol = b.closest('ol'); // 좁은 화면에서 지금 단계가 막대 안에 보이게 가로로만 옮긴다
         if (ol) ol.scrollTo({ left: Math.max(0, b.parentElement.offsetLeft - 16), behavior: 'smooth' });
       });
-      saveLessonPos(L.id, cur);
+      // 화면이 아주 길면 맨 위에서도 첫 단계가 감지되므로, 첫 단계는 실제로 내려왔을 때만 기억한다(지난 위치를 덮지 않게)
+      if (cur !== stepIds[0] || window.scrollY > 40) saveLessonPos(L.id, cur);
+      paintNext(cur);
     }, { rootMargin: '-30% 0px -60% 0px' });
     view.querySelectorAll('.l-sec').forEach((s) => observer.observe(s));
   }
@@ -378,6 +395,12 @@ export function renderLesson(view, { args: [lessonId] }) {
   const cqFind = (id) => (L.cq || []).find((q) => q.id === id);
   view.onclick = (e) => {
     const t = e.target;
+    const nx = t.closest('[data-next-step]');
+    if (nx) {
+      if (nx.dataset.nextStep === 'done') { const d = view.querySelector('[data-done]'); d.setAttribute('tabindex', '-1'); d.scrollIntoView({ block: 'center', behavior: 'smooth' }); d.focus({ preventScroll: true }); }
+      else goStep(nx.dataset.nextStep);
+      return;
+    }
     const step = t.closest('[data-step]');
     if (step) { goStep(step.dataset.step); return; }
     if (cqClick(t, {
