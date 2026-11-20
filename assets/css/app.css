@@ -10,12 +10,12 @@
   --ink: #17233b;
   --ink-2: #33415c;
   --pencil: #5a6472;
-  --red-pen: #d0312d;
+  --red-pen: #bf2a26;
   --blue-pen: #1f5fbf;
   --hl: #ffe867;
   --hl-ink: #17233b;
   --ok: #2f6b4f;
-  --lv-basic: #6b7a8f;
+  --lv-basic: #5d6b80;
   --lv-core: #2f6b4f;
   --lv-adv: #a85f12;
   --lv-killer: #9b1d33;
@@ -301,7 +301,7 @@ img, svg { display: block; }
 .short-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; margin: 20px 0 0; }
 .short { display: flex; align-items: center; gap: 10px; flex: 1 1 220px; }
 .short-l { font: 600 15px var(--serif); }
-.short-in, .field input, .field textarea {
+.short-in, .field input:not([type='checkbox']):not([type='radio']):not([type='file']), .field textarea {
   width: 100%;
   min-height: 44px;
   padding: 8px 12px;
@@ -310,6 +310,8 @@ img, svg { display: block; }
   background: var(--paper);
 }
 .short-in { font: 500 18px var(--serif); max-width: 240px; }
+.short-in::placeholder { font: 400 15px var(--sans); }
+.short-help { flex-basis: 100%; margin: 0; font-size: 12px; color: var(--pencil); }
 .field textarea { resize: vertical; line-height: 1.6; }
 
 .fb { margin-top: 16px; }
@@ -778,9 +780,9 @@ img, svg { display: block; }
   .strip-i { flex: none; }
 }
 @media (max-width: 1099px) {
-  .pad-fab { width: 56px; height: 56px; padding: 0; justify-content: center; font-size: 0; border-radius: 50%; }
-  .pad-fab svg { width: 24px; height: 24px; }
-  .study .pager { margin-bottom: 72px; }
+  /* 연습장 버튼은 오른쪽 아래 구석에 작게 두어 본문(힌트·AI 질문 줄)을 덜 가린다 */
+  .pad-fab { width: 48px; height: 48px; right: 12px; padding: 0; justify-content: center; font-size: 0; border-radius: 50%; }
+  .pad-fab svg { width: 22px; height: 22px; }  .study .pager { margin-bottom: 72px; }
 }
 .ring-t { align-items: center; }
 .options-mid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important; }
@@ -882,9 +884,9 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .ur-ev { display: block; font-size: 12px; color: var(--pencil); }
 .diag-stats { margin-bottom: 4px; }
 
-.chip-check { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--rule); border-radius: 999px; background: var(--paper); font-size: 14px; cursor: pointer; }
+.chip-check { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 12px; border: 1px solid var(--rule); border-radius: 999px; background: var(--paper); font-size: 14px; white-space: nowrap; cursor: pointer; }
 .chip-check:has(input:checked) { border-color: var(--ink); background: var(--paper-2); }
-.chip-check input { accent-color: var(--ink); }
+.chip-check input { accent-color: var(--ink); width: 18px; height: 18px; min-height: 0; margin: 0; flex: none; }
 
 .scope-note { margin: 2px 0 0; font-size: 12px; color: var(--pencil); }
 .next-sec li { line-height: 1.8; }
@@ -1049,11 +1051,14 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .map-panel .row { margin-top: 14px; }
 /* 좁은 화면: 고른 개념을 아래에서 올라오는 카드로 */
 .map-panel[data-empty] { display: none; }
-.map-panel:not([data-empty]) { position: fixed; z-index: 15; left: 8px; right: 8px; bottom: calc(64px + env(safe-area-inset-bottom)); max-height: 46vh; overflow: auto; }
+.map-panel:not([data-empty]) { position: fixed; z-index: 15; left: 0; right: 0; bottom: calc(57px + env(safe-area-inset-bottom)); max-height: 52vh; overflow: auto; border-radius: 16px 16px 0 0; border-bottom: 0; padding-bottom: 0; }
+/* 모바일 하단 시트: 행동 버튼은 시트 아래에 붙여 내용이 길어도 잘리지 않게 한다 */
+.map-panel:not([data-empty]) .row { position: sticky; bottom: 0; background: var(--paper); margin: 14px -18px 0; padding: 10px 18px 12px; border-top: 1px solid var(--grid); }
 .map-page.has-sheet { padding-bottom: 50vh; }
 @media (min-width: 1320px) { .map-page.has-sheet { padding-bottom: 24px; } }
 @media (min-width: 960px) {
-  .map-panel:not([data-empty]) { left: auto; right: 24px; bottom: 24px; width: 380px; max-height: 70vh; }
+  .map-panel:not([data-empty]) { left: auto; right: 24px; bottom: 24px; width: 380px; max-height: 70vh; border-radius: var(--r); border-bottom: 1px solid var(--rule); padding-bottom: 16px; }
+  .map-panel:not([data-empty]) .row { position: static; margin: 14px 0 0; padding: 0; border-top: 0; background: none; }
 }
 @media (min-width: 1320px) {
   .map-grid { grid-template-columns: minmax(0, 1fr) 320px; }

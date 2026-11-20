@@ -27,6 +27,15 @@ export function plain(html) {
 }
 
 let toastTimer;
+/** 떠 있는 토스트를 바로 닫는다(화면을 옮길 때 이전 화면의 안내가 남지 않게) */
+export function hideToast() {
+  const el = document.getElementById('toast');
+  if (!el || el.hidden) return;
+  clearTimeout(toastTimer);
+  el.hidden = true;
+  el.classList.remove('is-out');
+}
+
 export function toast(msg, ms = 3200) {
   const el = document.getElementById('toast');
   if (!el) return;

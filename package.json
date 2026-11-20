@@ -2,7 +2,7 @@
   "name": "mathpulse",
   "private": true,
   "type": "module",
-  "description": "2022 개정 고1 공통수학1·2 개념 학습 웹앱",
+  "description": "2022 개정 고등학교 수학(공통수학1·2, 대수, 미적분Ⅰ, 확률과 통계) 개념 학습 웹앱",
   "scripts": {
     "gen": "node tools/ids.mjs && node tools/coverage.mjs && node tools/gen-sw.mjs",
     "test": "npm run test:js && npm run verify",

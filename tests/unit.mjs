@@ -456,6 +456,16 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   ok(model.answerTex('57/2500') === '0.0228\\left(=\\dfrac{57}{2500}\\right)' && model.answerTex('1587/10000').startsWith('0.1587') && model.answerTex('-3/1000').startsWith('-0.003')
     && model.answerTex('1/4') === '1/4' && model.answerTex('10/3') === '10/3' && model.answerTex('12') === '12' && model.normalizeAnswer('0.0228') === '57/2500',
     '표로 구한 확률(소수 셋째 자리 이상)은 소수와 기약분수를 함께 보이고, 다른 정답은 그대로 보인다. 소수 입력은 같은 기약분수로 채점된다');
+  {
+    store.resetAll();
+    const fresh = !model.trackChosen() && !model.hasStudyHistory();
+    store.update((s) => { s.profile.track = 'killer'; });
+    const picked = model.trackChosen();
+    store.update((s) => { s.activity['2026-11-20'] = { solved: 0, attempted: 0, checks: 1 }; });
+    const studied = model.hasStudyHistory();
+    store.resetAll();
+    ok(fresh && picked && studied, '진단도 트랙 선택도 없으면 트랙을 정하지 않은 것으로, 기록이 하루라도 있으면 학습 기록이 있는 것으로 본다(첫 화면에서 근거 없는 문구를 숨기는 기준)');
+  }
   store.resetAll();
   ok(model.studiedUnits().join() === 'u1,u2,u3,u4,u5,u6,u7', '공부한 흔적이 없으면 혼합 평가 범위는 교과서 단원 전체다');
   store.update((s) => {

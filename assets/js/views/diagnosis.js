@@ -87,7 +87,7 @@ function renderQuestion(view) {
   const unit = UNIT_BY_ID[q.unit];
   const answerUI = q.type === 'mc'
     ? `<div class="options${optionsClass(q.options)}" role="radiogroup" aria-label="보기">${q.options.map((o, k) => `<button type="button" class="opt" role="radio" aria-checked="${r.response === k}" data-opt="${k}"><span class="opt-n">${CIRCLED[k]}</span><span class="opt-t">${tex(o)}</span></button>`).join('')}</div>`
-    : `<label class="short"><span class="short-l">답</span><input class="short-in" inputmode="text" autocomplete="off" value="${esc(r.response ?? '')}" placeholder="정수, 분수, 소수(예: 10/3, 0.25)"></label>`;
+    : `<label class="short"><span class="short-l">답</span><input class="short-in" inputmode="text" autocomplete="off" value="${esc(r.response ?? '')}" placeholder="예: -3, 10/3, 0.25" aria-describedby="short-help"></label><p class="short-help" id="short-help">정수, 분수, 소수로 입력해요.</p>`;
 
   view.innerHTML = `
   <section class="page narrow diag">
@@ -208,10 +208,11 @@ function renderResult(view, d) {
   const track = TRACKS[d.track];
   const items = QS.map((q, i) => {
     const it = d.items.find((x) => x.id === q.id) || {};
-    const resp = it.response == null || it.response === '' ? '건너뜀' : q.type === 'mc' ? CIRCLED[it.response] : esc(it.response);
+    const skipped = it.response == null || it.response === '';
+    const resp = skipped ? '미응답' : q.type === 'mc' ? CIRCLED[it.response] : esc(it.response);
     return `<li class="dr-item">
       <details>
-        <summary><span class="dr-mark">${it.correct ? gradeMark('right') : gradeMark('wrong')}</span><span class="dr-n">${i + 1}</span><span class="dr-u">${esc(UNIT_BY_ID[q.unit].title)}${LESSON_BY_ID[q.lesson] ? ` · ${esc(LESSON_BY_ID[q.lesson].title)}` : ''}</span><span class="dr-meta">${resp} · ${it.conf ? CONF_LABEL[it.conf] : ''}${it.hint ? ' · 힌트' : ''} · ${Math.round(it.sec)}초</span></summary>
+        <summary><span class="dr-mark">${it.correct ? gradeMark('right') : gradeMark('wrong')}</span><span class="dr-n">${i + 1}</span><span class="dr-u">${esc(UNIT_BY_ID[q.unit].title)}${LESSON_BY_ID[q.lesson] ? ` · ${esc(LESSON_BY_ID[q.lesson].title)}` : ''}</span><span class="dr-meta">${resp}${!skipped && it.conf ? ` · ${CONF_LABEL[it.conf]}` : ''}${it.hint ? ' · 힌트' : ''} · ${Math.round(it.sec)}초</span></summary>
         <div class="dr-body"><div class="q-text">${tex(q.q)}</div>${figure(q.fig)}<p class="sol">${tex(q.solution)}</p></div>
       </details>
     </li>`;

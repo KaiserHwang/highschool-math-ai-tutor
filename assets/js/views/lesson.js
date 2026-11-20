@@ -40,7 +40,7 @@ function checkHTML(c, i, rec, label = '') {
   const answer = c.type === 'mc'
     ? `<div class="options${optionsClass(c.options)}" role="radiogroup" aria-label="보기">${c.options.map((o, k) => `<button type="button" class="opt" role="radio" aria-checked="false" data-opt="${k}"><span class="opt-n">${CIRCLED[k]}</span><span class="opt-t">${tex(o)}</span></button>`).join('')}</div>
        <div class="row"><button type="button" class="btn btn-primary" data-act="check">채점하기</button></div>`
-    : `<form class="short-form" data-form="check"><label class="short"><span class="short-l">답</span><input class="short-in" name="ans" inputmode="text" autocomplete="off" placeholder="정수, 분수, 소수(예: -3, 10/3, 0.25)"></label><button class="btn btn-primary" type="submit">채점하기</button></form>`;
+    : `<form class="short-form" data-form="check"><label class="short"><span class="short-l">답</span><input class="short-in" name="ans" inputmode="text" autocomplete="off" placeholder="예: -3, 10/3, 0.25" aria-describedby="short-help"></label><button class="btn btn-primary" type="submit">채점하기</button><p class="short-help" id="short-help">정수, 분수, 소수로 입력해요.</p></form>`;
   return `<li class="ck${right ? ' is-right' : ''}" data-check="${esc(c.id)}">
     <div class="q-row"><span class="q-num ck-num">${label}${i + 1}<span class="mark-slot">${right ? gradeMark('right').replace('class="mark mark-right"', 'class="mark mark-right static"') : ''}</span></span><div class="q-text compact">${tex(c.q)}</div></div>
     ${c.fig ? figure(c.fig) : ''}
@@ -125,7 +125,7 @@ export function renderLesson(view, { args: [lessonId] }) {
 
   view.innerHTML = `
   <section class="page lesson-page">
-    <nav class="crumbs" aria-label="위치"><a href="#/units">단원</a><span aria-hidden="true">/</span><a href="#/u/${unit.id}">${esc(unitLabel(unit))}</a><span aria-hidden="true">/</span><span>개념 ${no}</span></nav>
+    <nav class="crumbs" aria-label="위치"><a href="#/units">개념 학습</a><span aria-hidden="true">/</span><a href="#/u/${unit.id}">${esc(unitLabel(unit))}</a><span aria-hidden="true">/</span><span>개념 ${no}</span></nav>
     <nav class="lstrip" aria-label="${esc(unit.title)} 개념 목록">${siblings.map((l, i) => {
       const pr = lessonProgress(l);
       return `<a href="#/l/${l.id}" class="lstrip-i${l === L ? ' is-cur' : ''} st-${pr.state}" ${l === L ? 'aria-current="page"' : ''} title="${esc(l.title)}${LESSON_STATE[pr.state] ? ' · ' + LESSON_STATE[pr.state] : ''}">${i + 1}</a>`;
@@ -290,7 +290,7 @@ export function renderLesson(view, { args: [lessonId] }) {
     const fb = li.querySelector('.fb');
     if (ok) {
       li.classList.add('is-right');
-      fb.innerHTML = `<p class="fb-right">정답입니다.</p><div class="sol">${tex(c.solution)}</div>`;
+      fb.innerHTML = `<p class="fb-right">맞았어요.</p><div class="sol">${tex(c.solution)}</div>`;
     } else {
       if (c.type === 'mc') li.querySelector(`[data-opt="${response}"]`)?.classList.add('is-wrong');
       const why = trapFor(c, response);

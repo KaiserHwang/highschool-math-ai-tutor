@@ -1,6 +1,6 @@
 import { subscribe, getState, isMemoryOnly } from './store.js';
-import { dueReviews, conceptsDue, lessonRechecks } from './model.js';
-import { toast } from './lib/ui.js';
+import { dueReviews, conceptsDue, lessonRechecks, activeCourseTitles } from './model.js';
+import { toast, hideToast, esc } from './lib/ui.js';
 import { ID_PART } from './lib/ids.js';
 import { renderHome } from './views/home.js';
 import { renderDiagnosis } from './views/diagnosis.js';
@@ -48,6 +48,7 @@ function parse() {
 
 function route() {
   const { path, params } = parse();
+  hideToast(); // 이전 화면의 안내는 새 화면으로 가져가지 않는다
   if (cleanup) { try { cleanup(); } catch (e) { console.error(e); } cleanup = null; }
   let matched = false;
   for (const [re, get, nav] of routes) {
@@ -70,6 +71,12 @@ function route() {
   }
   window.scrollTo(0, 0);
   view.focus({ preventScroll: true });
+}
+
+/** 데스크톱 레일 아래에 공부하는 과목을 보인다(고정 문구 대신) */
+function updateRailCourses() {
+  const el = document.getElementById('rail-courses');
+  if (el) el.innerHTML = `2022 개정 교육과정<br>${activeCourseTitles().map(esc).join(' · ')}`;
 }
 
 function setActive(nav) {
@@ -99,8 +106,11 @@ function applyTheme() {
   else document.documentElement.setAttribute('data-theme', t);
 }
 
-subscribe(() => { updateBadges(); applyTheme(); });
+subscribe(() => { updateBadges(); applyTheme(); updateRailCourses(); });
 window.addEventListener('hashchange', route);
+updateRailCourses();
+// '본문으로 건너뛰기'는 해시를 바꾸면 라우터가 다른 화면으로 보내므로, 해시를 그대로 두고 본문에 포커스만 옮긴다
+document.querySelector('.skip')?.addEventListener('click', (e) => { e.preventDefault(); view.focus(); view.scrollIntoView({ block: 'start' }); });
 applyTheme();
 route();
 

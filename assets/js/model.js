@@ -281,6 +281,16 @@ export function unitReadiness(unitId) {
   return d ? diagUnitReadiness(d)[unitId] || null : null;
 }
 
+/** 트랙이 실제로 정해졌는지(직접 고르거나 진단을 봄). 아니면 activeTrack()은 기본값이라 화면에서 사실처럼 말하지 않는다. */
+export function trackChosen() {
+  return !!(getState().profile.track || latestDiagnosis());
+}
+
+/** 학습 기록(개념 문항 풀이나 문제 풀이)이 하루라도 있는지. 없으면 "약한 단원" 같은 판단을 보여 주지 않는다. */
+export function hasStudyHistory() {
+  return Object.values(getState().activity || {}).some((a) => studyCount(a) > 0 || (a && a.attempted > 0));
+}
+
 export function activeTrack() {
   const st = getState();
   return st.profile.track || latestDiagnosis()?.track || 'standard';
