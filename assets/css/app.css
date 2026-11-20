@@ -709,11 +709,11 @@ img, svg { display: block; }
 .pad-fab { display: none; }
 @media (max-width: 1099px) {
   .study-pad { display: none; }
+  /* 연습장 버튼은 문제 카드 머리에 둔다(떠 있는 버튼은 아래쪽 본문·버튼을 가렸다) */
   .pad-fab {
-    display: inline-flex; align-items: center; gap: 6px;
-    position: fixed; right: 16px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 25;
-    padding: 10px 16px; border-radius: 24px; border: 0;
-    background: var(--ink); color: var(--paper); font-weight: 600; box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.45); cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px; margin-left: auto;
+    min-height: 36px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--rule);
+    background: var(--paper); color: var(--ink); font-size: 13px; font-weight: 600; cursor: pointer;
   }
   .pad-fab svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
   .study-pad.is-full {
@@ -727,7 +727,6 @@ img, svg { display: block; }
   body.pad-open { overflow: hidden; }
   body.pad-open .tabbar, body.pad-open .pad-fab { display: none; }
 }
-@media (min-width: 960px) and (max-width: 1099px) { .pad-fab { bottom: 24px; } }
 
 /* ── 홈 재구성 ─────────────────────────── */
 .home-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 24px; }
@@ -780,9 +779,7 @@ img, svg { display: block; }
   .strip-i { flex: none; }
 }
 @media (max-width: 1099px) {
-  /* 연습장 버튼은 오른쪽 아래 구석에 작게 두어 본문(힌트·AI 질문 줄)을 덜 가린다 */
-  .pad-fab { width: 48px; height: 48px; right: 12px; padding: 0; justify-content: center; font-size: 0; border-radius: 50%; }
-  .pad-fab svg { width: 22px; height: 22px; }  .study .pager { margin-bottom: 72px; }
+  .study .pager { margin-bottom: 16px; }
 }
 .ring-t { align-items: center; }
 .options-mid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important; }

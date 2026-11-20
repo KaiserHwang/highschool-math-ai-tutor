@@ -109,14 +109,15 @@ export function renderSettings(view) {
   }
 
   function onClick(e) {
+    // closest는 <html data-theme>까지 올라가므로 이 화면 안의 요소만 본다
     const tr = e.target.closest('[data-track]');
-    if (tr) {
+    if (tr && view.contains(tr)) {
       update((s) => (s.profile.track = tr.dataset.track || null));
       view.querySelectorAll('[data-track]').forEach((b) => b.setAttribute('aria-pressed', String(b === tr)));
       return;
     }
     const th = e.target.closest('[data-theme]');
-    if (th) {
+    if (th && view.contains(th)) {
       update((s) => (s.settings.theme = th.dataset.theme));
       view.querySelectorAll('[data-theme]').forEach((b) => b.setAttribute('aria-pressed', String(b === th)));
       return;

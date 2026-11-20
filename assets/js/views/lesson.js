@@ -40,7 +40,7 @@ function checkHTML(c, i, rec, label = '') {
   const answer = c.type === 'mc'
     ? `<div class="options${optionsClass(c.options)}" role="radiogroup" aria-label="보기">${c.options.map((o, k) => `<button type="button" class="opt" role="radio" aria-checked="false" data-opt="${k}"><span class="opt-n">${CIRCLED[k]}</span><span class="opt-t">${tex(o)}</span></button>`).join('')}</div>
        <div class="row"><button type="button" class="btn btn-primary" data-act="check">채점하기</button></div>`
-    : `<form class="short-form" data-form="check"><label class="short"><span class="short-l">답</span><input class="short-in" name="ans" inputmode="text" autocomplete="off" placeholder="예: -3, 10/3, 0.25" aria-describedby="short-help"></label><button class="btn btn-primary" type="submit">채점하기</button><p class="short-help" id="short-help">정수, 분수, 소수로 입력해요.</p></form>`;
+    : `<form class="short-form" data-form="check"><label class="short"><span class="short-l">답</span><input class="short-in" name="ans" inputmode="text" autocomplete="off" placeholder="예: -3, 10/3, 0.25" aria-describedby="sh-${esc(c.id)}"></label><button class="btn btn-primary" type="submit">채점하기</button><p class="short-help" id="sh-${esc(c.id)}">정수, 분수, 소수로 입력해요.</p></form>`;
   return `<li class="ck${right ? ' is-right' : ''}" data-check="${esc(c.id)}">
     <div class="q-row"><span class="q-num ck-num">${label}${i + 1}<span class="mark-slot">${right ? gradeMark('right').replace('class="mark mark-right"', 'class="mark mark-right static"') : ''}</span></span><div class="q-text compact">${tex(c.q)}</div></div>
     ${c.fig ? figure(c.fig) : ''}

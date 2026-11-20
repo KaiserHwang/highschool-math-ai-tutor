@@ -98,6 +98,7 @@ export function renderProblem(view, { args: [ref], params }) {
           <header class="paper-head">
             <span class="meta">${esc(p.topic)} · <span class="lv lv-${p.level}">${LEVELS[p.level].label}</span> · ${p.type === 'mc' ? '객관식' : '단답형'}${p.fig ? ' · 그림' : ''}</span>
             ${wasSolved ? '<span class="meta done-tag">해결한 문제</span>' : ''}
+            <button type="button" class="pad-fab" data-act="pad-open" aria-label="연습장 열기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16zM14 6l3 3"/></svg>연습장</button>
           </header>
           <div class="q-row" id="q-${esc(pid)}"><span class="q-num">${isVariant ? '<span class="q-var">연습</span>' : n}<span class="mark-slot"></span></span><div class="q-text">${tex(p.q)}</div></div>
           ${figure(p.fig)}
@@ -141,7 +142,6 @@ export function renderProblem(view, { args: [ref], params }) {
         ${scratchpadHTML()}
       </aside>
     </div>
-    <button type="button" class="pad-fab" data-act="pad-open" aria-label="연습장 열기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16zM14 6l3 3"/></svg>연습장</button>
     <nav class="pager" aria-label="다른 문제">
       ${isVariant
         ? `${fromPid ? `<a class="btn btn-quiet" href="${link(`/p/${fromPid}`)}">원래 문제로</a>` : '<span></span>'}<a class="btn btn-quiet" href="${link(`/u/${unit.id}`)}">단원으로</a><a class="btn btn-quiet" href="${link(`/v/${ref}`, { s: newSeed(), from: fromPid })}">다른 숫자로 한 문제 더</a>`

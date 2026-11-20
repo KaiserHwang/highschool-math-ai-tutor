@@ -286,9 +286,13 @@ export function trackChosen() {
   return !!(getState().profile.track || latestDiagnosis());
 }
 
-/** 학습 기록(개념 문항 풀이나 문제 풀이)이 하루라도 있는지. 없으면 "약한 단원" 같은 판단을 보여 주지 않는다. */
+/** 공부하는 과목 안에 판단 근거가 있는지: 그 과목 문제를 풀었거나, 소단원 기록이 있거나, 그 과목 진단을 봤다.
+ *  일별 activity에는 과목 구분이 없어 쓰지 않는다. 없으면 "약한 단원" 같은 판단을 보여 주지 않는다. */
 export function hasStudyHistory() {
-  return Object.values(getState().activity || {}).some((a) => studyCount(a) > 0 || (a && a.attempted > 0));
+  const st = getState();
+  if (activeProblems().some((p) => statusOf(p.id) !== 'new')) return true;
+  if (activeLessons().some((l) => { const r = st.lessons[l.id]; return r && (r.done || Object.keys(r.checks || {}).length); })) return true;
+  return activeDiagSets().some((s) => latestDiagnosisOf(s.id));
 }
 
 export function activeTrack() {
