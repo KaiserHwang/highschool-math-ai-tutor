@@ -471,6 +471,21 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
     store.update((s) => { s.diagnoses.push(model.gradeDiagnosis({})); });
     const byDiag = model.hasStudyHistory();
     store.resetAll();
+    // 진단 임시 저장: 문항 구성이 같을 때만 이어 풀고, 값은 정리해서 받는다
+    const draft = await import('../assets/js/lib/draft.js');
+    const { diagItems } = await import('../assets/js/content/diagnosis.js');
+    const its = diagItems('common');
+    const mcQ = its.find((q) => q.type === 'mc'), shQ = its.find((q) => q.type === 'short');
+    const ok1 = draft.restoreDiagRun({ ids: its.map((q) => q.id), i: 2, responses: { [mcQ.id]: { response: 1, conf: 'sure', hint: true, sec: 12 }, [shQ.id]: { response: 99, conf: 'bad', sec: -5 } } }, its);
+    const badOrder = draft.restoreDiagRun({ ids: its.map((q) => q.id).reverse(), i: 0, responses: {} }, its);
+    const badI = draft.restoreDiagRun({ ids: its.map((q) => q.id), i: its.length, responses: {} }, its);
+    ok(ok1 && ok1.i === 2 && ok1.responses[mcQ.id].response === 1 && ok1.responses[mcQ.id].hint === true && ok1.responses[shQ.id].response === null && ok1.responses[shQ.id].conf === null && ok1.responses[shQ.id].sec === 0
+      && badOrder === null && badI === null && draft.answeredCount(ok1.responses) === 1,
+      '풀던 진단은 문항 구성이 같을 때만 이어 풀고, 이상한 응답·확신도·시간은 비운다');
+    // 진단 결과의 "먼저 볼 개념": 준비도가 가장 낮은 단원의 첫 소단원
+    const g = model.gradeDiagnosis(Object.fromEntries(its.filter((q) => q.unit !== 'u2').map((q) => [q.id, { response: q.answer, conf: 'sure', sec: 30 }])));
+    const fl = model.diagFirstLesson(g);
+    ok(fl && fl.unitId === 'u2' && fl.lesson.unit === 'u2', '진단 결과는 준비도가 가장 낮은 단원(u2만 비움)의 아직 배우지 않은 첫 소단원을 먼저 보여 준다');
     ok(fresh && picked && studied && otherCourse && byDiag, '진단도 트랙 선택도 없으면 트랙을 정하지 않은 것으로, 공부하는 과목의 문제·소단원 기록이나 그 과목 진단이 있으면 근거가 있는 것으로 본다(다른 과목 기록은 제외)');
   }
   store.resetAll();

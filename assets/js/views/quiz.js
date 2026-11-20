@@ -5,11 +5,48 @@ import { PROBLEM_BY_ID } from '../content/problems.js';
 import { makeVariant, GENERATORS } from '../content/generators.js';
 import { lessonForProblem } from '../content/lessons/index.js';
 import { getState, update, logActivity } from '../store.js';
+import { saveDraft, loadDraft, clearDraft, onDraftsCleared } from '../lib/draft.js';
 import { isCorrect, normalizeAnswer, answerTex, addWrong, makeQuiz, studiedUnits, activeRegularUnits, activeCourseTitles, activeCourses } from '../model.js';
 import { tex, esc, CIRCLED, toast, gradeMark, fmtDate, fmtMinutes, optionsClass } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 
 let run = null; // { items:[{ref, kind, unit, p}], i, responses:{}, sec:{}, shownAt, done }
+
+onDraftsCleared(() => { run = null; });
+window.addEventListener('pagehide', () => saveRun());
+
+/** 지금 문항에서 쓴 시간을 더하고 측정을 새로 시작한다(한 문항 30분까지) */
+function commitTime() {
+  if (!run || run.done || run.confirming) return;
+  const key = String(run.i);
+  run.sec[key] = (run.sec[key] || 0) + Math.min((Date.now() - run.shownAt) / 1000, 1800);
+  run.shownAt = Date.now();
+}
+
+/** 진행 중인 평가를 이 기기에 임시 저장한다(새로고침해도 이어 풀 수 있게, #48 1-A) */
+function saveRun() {
+  if (!run || run.done) return;
+  commitTime();
+  saveDraft('quiz', { refs: run.items.map(({ ref, kind, unit }) => ({ ref, kind, unit })), i: run.i, responses: run.responses, sec: run.sec, scope: run.scope });
+}
+
+/** 임시 저장된 평가: 같은 과목 범위이고 문제를 모두 다시 만들 수 있을 때만 */
+function pendingQuiz() {
+  const d = loadDraft('quiz');
+  if (!d || d.scope !== activeCourses().join() || !Array.isArray(d.refs) || d.refs.length < 3 || d.refs.length > 12) return null;
+  let items;
+  try { items = d.refs.map((r) => ({ ref: String(r.ref), kind: r.kind, unit: r.unit, p: ['bank', 'variant'].includes(r.kind) ? itemOf(r) : null })); } catch { return null; }
+  if (items.some((it) => !it.p) || !Number.isInteger(d.i) || d.i < 0 || d.i >= items.length) return null;
+  const responses = {}, sec = {};
+  items.forEach((it, i) => {
+    const r = d.responses && d.responses[String(i)];
+    if (it.p.type === 'mc' ? Number.isInteger(r) && r >= 0 && r < it.p.options.length : typeof r === 'string') responses[String(i)] = it.p.type === 'mc' ? r : r.slice(0, 40);
+    else if (r === null) responses[String(i)] = null;
+    const t = d.sec && d.sec[String(i)];
+    if (Number.isFinite(t) && t >= 0) sec[String(i)] = Math.min(t, 1800);
+  });
+  return { items, i: d.i, responses, sec };
+}
 
 const itemOf = (it) => (it.kind === 'bank' ? PROBLEM_BY_ID[it.ref] : makeVariant(...(([k, s]) => [k, Number(s)])(it.ref.split(':'))));
 
@@ -34,6 +71,7 @@ function renderIntro(view) {
   const st = getState();
   const studied = studiedUnits();
   const history = (st.quizzes || []).slice(-5).reverse();
+  const resume = pendingQuiz();
   view.innerHTML = `
   <section class="page narrow">
     <header class="page-head">
@@ -48,6 +86,7 @@ function renderIntro(view) {
         <li>공부하는 과목(${esc(activeCourseTitles().join('·'))}) 범위의 연습 평가입니다. 결과를 수능 점수로 환산하지 않습니다.</li>
       </ul>
     </div>
+    ${resume ? `<section class="rc-row resume"><div><span class="rc-t">풀던 혼합 평가</span><span class="hint-text">${resume.items.length}문제 중 ${Object.values(resume.responses).filter((r) => r != null && r !== '').length}문제 답함 · ${resume.i + 1}번까지 진행</span></div><span class="row"><button type="button" class="btn btn-primary" data-act="resume">${resume.i + 1}번부터 이어 풀기</button><button type="button" class="btn btn-quiet" data-act="discard">새로 시작</button></span></section>` : ''}
     <fieldset class="field"><legend class="field-l">범위</legend>
       <div class="row" role="group">${activeRegularUnits().map((u) => `<label class="chip-check"><input type="checkbox" value="${u.id}" ${studied.includes(u.id) ? 'checked' : ''}> ${esc(unitLabel(u))}</label>`).join('')}</div>
       <p class="hint-text">공부한 흔적이 있는 단원을 미리 골라 두었습니다.</p>
@@ -56,12 +95,19 @@ function renderIntro(view) {
     ${history.length ? `<section class="side-block"><h2 class="h3">지난 평가</h2><ol class="diag-history">${history.map((q) => `<li>${fmtDate(q.date)} · ${q.items.length}문제 중 ${q.items.filter((i) => i.correct).length}문제 정답 · ${[...new Set(q.items.map((i) => UNIT_BY_ID[i.unit].no))].join(', ')}</li>`).join('')}</ol></section>` : ''}
   </section>`;
   view.onclick = (e) => {
+    if (e.target.closest('[data-act="resume"]') && resume) {
+      // 중단해 있던 시간은 풀이 시간에 넣지 않는다
+      run = { ...resume, shownAt: Date.now(), done: false, startedAt: Date.now(), scope: activeCourses().join() };
+      return renderItem(view);
+    }
+    if (e.target.closest('[data-act="discard"]')) { clearDraft('quiz'); return renderIntro(view); }
     if (!e.target.closest('[data-act="start"]')) return;
     const units = [...view.querySelectorAll('input[type="checkbox"]:checked')].map((i) => i.value);
     if (!units.length) return toast('범위를 하나 이상 고르세요.');
     const items = makeQuiz(units, 8).map((it) => ({ ...it, p: itemOf(it) })).filter((it) => it.p);
     if (items.length < 3) return toast('고른 범위에 아직 풀지 않은 문제가 부족합니다. 범위를 넓혀 보세요.');
     run = { items, i: 0, responses: {}, sec: {}, shownAt: Date.now(), done: false, startedAt: Date.now(), scope: activeCourses().join() };
+    saveRun();
     renderItem(view);
   };
   return () => (view.onclick = null);
@@ -79,7 +125,7 @@ function renderItem(view) {
   view.innerHTML = `
   <section class="page narrow diag quiz">
     <header class="diag-head">
-      <p class="diag-progress"><span>${run.i + 1}</span> / ${run.items.length}</p>
+      <p class="diag-progress" id="qz-h" tabindex="-1" aria-label="${run.items.length}문제 중 ${run.i + 1}번째 문제"><span>${run.i + 1}</span> / ${run.items.length}</p>
       <div class="meter wide" role="progressbar" aria-valuemin="0" aria-valuemax="${run.items.length}" aria-valuenow="${run.i + 1}"><span style="--v:${((run.i + 1) / run.items.length) * 100}%"></span></div>
       <p class="meta">혼합 평가 · 단원은 제출 후 공개</p>
     </header>
@@ -97,15 +143,17 @@ function renderItem(view) {
   </section>`;
   const input = view.querySelector('.short-in');
   if (input) {
-    input.addEventListener('input', () => (run.responses[key] = input.value));
+    input.addEventListener('input', () => { run.responses[key] = input.value; saveRun(); });
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') view.querySelector('[data-act="next"]').click(); });
     input.focus();
-  }
-  const commit = () => { run.sec[key] = (run.sec[key] || 0) + Math.min((Date.now() - run.shownAt) / 1000, 1800); };
+  } else view.querySelector('#qz-h').focus({ preventScroll: true }); // 객관식이면 문항 번호로 포커스
+  run.confirming = false;
+  const commit = commitTime;
   const go = (step) => {
     commit();
     if (step > 0 && run.i === run.items.length - 1) return finish(view);
     run.i = Math.max(0, Math.min(run.items.length - 1, run.i + step));
+    saveRun();
     renderItem(view);
     window.scrollTo(0, 0);
   };
@@ -114,11 +162,17 @@ function renderItem(view) {
     if (opt) {
       run.responses[key] = Number(opt.dataset.opt);
       view.querySelectorAll('[data-opt]').forEach((b) => b.setAttribute('aria-checked', String(b === opt)));
+      saveRun();
       return;
     }
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (act === 'prev') return go(-1);
-    if (act === 'skip') { run.responses[key] = null; return go(1); }
+    if (act === 'skip') {
+      run.responses[key] = null;
+      // 마지막 문항에서는 바로 제출하지 않고, 응답 수를 보여 준 뒤 돌아보거나 제출하게 한다
+      if (run.i === run.items.length - 1) { saveRun(); run.confirming = true; return renderConfirm(view); }
+      return go(1);
+    }
     if (act === 'next') {
       const r = run.responses[key];
       const empty = r == null || (p.type === 'short' && !String(r).trim());
@@ -127,12 +181,36 @@ function renderItem(view) {
       return go(1);
     }
   };
-  return () => (view.onclick = null);
+  // 다른 화면으로 옮겨 가도 입력 중이던 답과 시간을 저장한다
+  return () => { saveRun(); view.onclick = null; };
+}
+
+/** 마지막 문항을 비운 채 넘기려 할 때: 응답 수 요약과 돌아보기·제출 */
+function renderConfirm(view) {
+  const n = run.items.length;
+  const answered = run.items.filter((_, i) => { const r = run.responses[String(i)]; return r != null && r !== ''; }).length;
+  const firstBlank = run.items.findIndex((_, i) => { const r = run.responses[String(i)]; return r == null || r === ''; });
+  view.innerHTML = `<section class="page narrow diag quiz">
+    <header class="page-head"><h1 class="page-title">제출할까요?</h1>
+      <p class="lead">${n}문제 중 ${answered}문제에 답했어요. 답하지 않은 문제는 틀린 것으로 채점하고, 처음 푸는 문제 은행 문항은 오답노트에도 들어가요.</p></header>
+    <p class="row"><button type="button" class="btn btn-quiet" data-act="back">${firstBlank >= 0 ? `${firstBlank + 1}번부터 돌아보기` : '돌아보기'}</button><button type="button" class="btn btn-primary" data-act="submit">제출하고 결과 보기</button></p>
+  </section>`;
+  view.onclick = (e) => {
+    const act = e.target.closest('[data-act]')?.dataset.act;
+    if (act === 'back') { run.confirming = false; run.i = firstBlank >= 0 ? firstBlank : n - 1; run.shownAt = Date.now(); saveRun(); renderItem(view); window.scrollTo(0, 0); }
+    if (act === 'submit') finish(view);
+  };
+  view.querySelector('[data-act="submit"]').focus();
 }
 
 function finish(view) {
+  clearDraft('quiz');
   run.done = true;
-  const results = run.items.map((it, i) => {
+  // 평가 중에 같은 은행 문제를 다른 화면에서 먼저 풀었으면 처음 보는 문제가 아니므로 채점에서 뺀다
+  const att = getState().attempts;
+  const kept = run.items.map((it, i) => ({ it, i })).filter(({ it }) => !(it.kind === 'bank' && att[it.ref]?.tries));
+  run.excluded = run.items.length - kept.length;
+  const results = kept.map(({ it, i }) => {
     const r = run.responses[String(i)];
     const ok = r != null && r !== '' && isCorrect(it.p, r);
     return { it, r, ok, sec: Math.round(run.sec[String(i)] || 0) };
@@ -183,7 +261,7 @@ function renderResult(view) {
   <section class="page narrow">
     <header class="page-head">
       <h1 class="page-title">혼합 평가 결과</h1>
-      <p class="lead">${res.length}문제 중 ${right}문제 정답 · 걸린 시간 ${fmtMinutes(total)}</p>
+      <p class="lead">${res.length}문제 중 ${right}문제 정답 · 걸린 시간 ${fmtMinutes(total)}</p>${run.excluded ? `<p class="hint-text">평가 중에 다른 화면에서 먼저 푼 문제 ${run.excluded}개는 처음 보는 문제가 아니라서 채점에서 뺐어요.</p>` : ''}
     </header>
     <section class="side-block"><h2 class="h3">단원별</h2>
       <ul class="unit-ready">${Object.entries(byUnit).map(([u, v]) => `<li><span class="ur-t">${esc(unitLabel(UNIT_BY_ID[u]))}<span class="ur-ev">${v.n}문항 중 ${v.ok}개 정답</span></span><span class="meter" role="img" aria-label="${Math.round((v.ok / v.n) * 100)}%"><span style="--v:${(v.ok / v.n) * 100}%"></span></span><span class="ur-p">${v.ok}/${v.n}</span></li>`).join('')}</ul>
