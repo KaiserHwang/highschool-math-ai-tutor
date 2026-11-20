@@ -39,6 +39,9 @@ export function installRadioKeys(doc = document) {
     const r = e.target.closest && e.target.closest('[role="radio"]');
     const g = r && r.closest('[role="radiogroup"]');
     if (!g) return;
+    // 묶음 밖에서 들어올 때 이미 고른 보기가 있으면 그 보기로 포커스를 옮긴다(다시 그린 문항에서도 고른 보기부터)
+    const picked = radiosOf(g).find((b) => b.getAttribute('aria-checked') === 'true');
+    if (picked && picked !== r && !(e.relatedTarget && g.contains(e.relatedTarget))) { picked.focus(); return; }
     for (const b of radiosOf(g)) b.tabIndex = b === r ? 0 : -1;
   });
   doc.addEventListener('keydown', (e) => {
@@ -53,7 +56,8 @@ export function installRadioKeys(doc = document) {
     const i = items.indexOf(r);
     const next = e.key === 'Home' ? items[0] : e.key === 'End' ? items[items.length - 1] : items[(i + step + items.length) % items.length];
     next.focus();
-    next.click(); // 고르기는 각 화면의 클릭 처리를 그대로 쓴다
+    // 고르면 바로 확정되는 묶음(예측, data-radio-keys="focus")은 포커스만 옮기고 Space/Enter로 고른다
+    if (g.dataset.radioKeys !== 'focus') next.click(); // 고르기는 각 화면의 클릭 처리를 그대로 쓴다
   });
 }
 

@@ -264,6 +264,10 @@ async function run(viewport, tag) {
   // 보강: 먼저 예측하기, 탐구 그래프, 유도 따라가기, 오답 설명, 심화 확인, 직접 설명하기
   const PL = LESSON_BY_ID['u2-l1'];
   const wrongPd = PL.predict.answer === 0 ? 1 : 0;
+  // 예측은 고르면 바로 확정되므로 방향키는 포커스만 옮긴다(#48 2단계)
+  await page.focus('[data-pd-opt="0"]');
+  await page.keyboard.press('ArrowRight');
+  ok((await page.locator('[data-pd].answered').count()) === 0 && (await page.evaluate(() => document.activeElement.dataset.pdOpt)) === '1', `[${tag}] 예측 보기는 방향키로 옮겨도 답이 확정되지 않는다`);
   await page.click(`[data-pd-opt="${wrongPd}"]`);
   await page.locator('.pd-fb .fb-note').waitFor();
   ok(await page.locator(`[data-pd-opt="${PL.predict.answer}"].is-ans`).count() === 1 && (await page.locator('[data-pd-opt]:not([disabled])').count()) === 0, `[${tag}] 예측을 고르면 정답과 설명이 나오고 다시 고를 수 없다`);
