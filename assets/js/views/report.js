@@ -1,6 +1,6 @@
 import { getState, today, addDays } from '../store.js';
 import { UNIT_BY_ID, SKILLS, TRACKS, unitLabel, NEXT_SUBJECTS_NOTE } from '../content/units.js';
-import { latestDiagnosis, currentSkills, unitMastery, periodStats, wrongList, REASONS, streak, totals, activeTrack, lessonTotals, conceptMemory, rootWeaknesses, misconceptionStats, studyCount, activeDiagSets, latestDiagnosisOf, activeUnits, activeCourseTitles, hiddenReviews } from '../model.js';
+import { hasStudyHistory, latestDiagnosis, currentSkills, unitMastery, periodStats, wrongList, REASONS, streak, totals, activeTrack, lessonTotals, conceptMemory, rootWeaknesses, misconceptionStats, studyCount, activeDiagSets, latestDiagnosisOf, activeUnits, activeCourseTitles, hiddenReviews } from '../model.js';
 import { MISCONCEPTIONS } from '../content/misconceptions.js';
 import { LESSON_BY_ID } from '../content/lessons/index.js';
 import { radar } from '../lib/radar.js';
@@ -10,7 +10,8 @@ import { AI_SERVICES, reportPrompt, sendToAI } from '../lib/ai.js';
 export function renderReport(view) {
   const st = getState();
   // 기록이 하나도 없으면 0과 "–"로 찬 표 대신 시작 안내만 보인다(#48 1-C)
-  if (!Object.keys(st.activity || {}).length && !st.diagnoses.length && !Object.keys(st.attempts || {}).length && !Object.keys(st.lessons || {}).length) {
+  // 기준은 홈과 같이 공부하는 과목의 기록(hasStudyHistory)이고, 하루라도 공부한 날이 있으면 기록이 있는 것으로 본다
+  if (!hasStudyHistory() && !Object.keys(st.activity || {}).length) {
     view.innerHTML = `<section class="page narrow"><header class="page-head"><h1 class="page-title">학습 리포트</h1>
       <p class="lead">아직 기록이 없어요. 진단을 보거나 첫 개념을 공부하면 학습량, 숙련도, 역량 변화가 여기에 쌓여요.</p></header>
       <p class="row"><a class="btn btn-primary" href="#/diagnosis">수준 진단 시작</a><a class="btn btn-quiet" href="#/units">첫 개념 공부하기</a></p></section>`;
@@ -57,7 +58,7 @@ export function renderReport(view) {
       <p class="hint-text">${esc(NEXT_SUBJECTS_NOTE)} 이 리포트의 숙련도는 앱에서 공부한 기록이며, 수능 준비도 전체를 나타내지 않습니다.</p>
     </header>
     <dl class="stats">
-      <div><dt>오래 기억한 개념</dt><dd>${conceptMemory().kept}<small>/${conceptMemory().learned}</small></dd></div>
+      <div><dt>오래 기억한 개념</dt><dd>${conceptMemory().learned ? `${conceptMemory().kept}<small>/${conceptMemory().learned}</small>` : '<small class="dd-note">첫 기억 확인을 기다려요</small>'}</dd></div>
       <div><dt>혼자 확인한 개념</dt><dd>${lessonTotals().verified}<small>/${lessonTotals().total}</small></dd></div>
       <div><dt>개념 확인 문제</dt><dd>${w7.checks}<small>번 풀이</small></dd></div>
       <div><dt>최근 7일 해결</dt><dd>${w7.solved}<small>문제</small></dd></div>

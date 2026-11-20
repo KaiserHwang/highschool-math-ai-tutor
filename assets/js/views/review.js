@@ -1,5 +1,5 @@
 import { UNIT_BY_ID, UNITS, unitLabel } from '../content/units.js';
-import { wrongList, REASONS, REVIEW_GAPS, lessonRechecks, conceptsDue, conceptQueue, hiddenReviews } from '../model.js';
+import { wrongList, REASONS, REVIEW_GAPS, lessonRechecks, conceptsDue, conceptQueue, hiddenReviews, reviewToday } from '../model.js';
 import { tex, esc, fmtDate } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 import { generatorFor, newSeed } from '../content/generators.js';
@@ -54,15 +54,14 @@ function draw(view) {
   };
   const recheckSec = rechecks.length ? `<section class="wn-sec"><h2 class="h3">다시 확인할 개념 ${rechecks.length}</h2><p class="hint-text">확인 문제나 개념 질문을 틀렸거나 풀이를 본 소단원입니다. 다음 날 아직 보지 않은 개념 질문에서 답과 이유를 모두 맞히면 목록에서 빠집니다.</p><ul class="rc-list">${rechecks.map(recheckCard).join('')}</ul></section>` : '';
 
-  // 오늘 할 복습과 다음 예정을 한곳에(#48 1-C): 오답 다시 풀기 · 개념 다시 확인 · 기억 확인
-  const rcDue = rechecks.filter((x) => x.pr.recheckDue).length, cDue = conceptsDue().length;
-  const todayTotal = due.length + rcDue + cDue;
-  const nextDue = [later[0]?.due, rechecks.find((x) => !x.pr.recheckDue)?.pr.recheck.due, conceptQueue().find((x) => x.sp.due > today())?.sp.due].filter(Boolean).sort()[0];
-  const sumRow = (label, n, href, note) => `<li class="rs-i${n ? ' on' : ''}"><span class="rs-t">${label}</span><b class="rs-n">${n}</b><span class="hint-text">${note}</span>${n && href ? `<a class="btn btn-quiet" href="${href}">시작</a>` : ''}</li>`;
-  const summary = `<section class="review-sum" aria-labelledby="rs-h"><h2 id="rs-h" class="h3">오늘 할 복습 ${todayTotal}</h2>
-    <ul class="rs-list">${sumRow('오답 다시 풀기', due.length, due[0] ? `#/p/${due[0].pid}?review=1` : '', '틀린 문제를 1·3·7·14일 간격으로')}${sumRow('개념 다시 확인', rcDue, rechecks.find((x) => x.pr.recheckDue) ? `#/rc/${rechecks.find((x) => x.pr.recheckDue).l.id}` : '', '틀린 개념을 다음 날 다른 질문으로')}${sumRow('기억 확인', cDue, '#/cr', '배운 개념을 1주·3주·2개월 뒤에')}</ul>
-    <p class="hint-text">${todayTotal ? '' : '오늘 할 복습은 없어요. '}${nextDue ? `다음 예정: ${fmtDate(nextDue)}` : ''}</p></section>`;
-  const filtered = filter.reason !== 'all' || filter.unit !== 'all';
+  // 오늘 할 복습과 다음 예정을 한곳에(#48 1-C): 오답 다시 풀기 · 개념 다시 확인 · 기억 확인. 메뉴 배지도 같은 집계(reviewToday)를 쓴다.
+  const rt = reviewToday();
+  const rcFirst = rechecks.find((x) => x.pr.recheckDue);
+  const nextOf = { wrong: later[0]?.due, recheck: rechecks.find((x) => !x.pr.recheckDue)?.pr.recheck.due, memory: conceptQueue().find((x) => x.sp.due > today())?.sp.due };
+  const sumRow = (label, n, href, note, next) => `<li class="rs-i${n ? ' on' : ''}"><span class="rs-t">${label}</span><b class="rs-n">${n}</b><span class="hint-text">${note}${!n && next ? ` · 다음 ${fmtDate(next)}` : ''}</span>${n && href ? `<a class="btn btn-quiet" href="${href}">시작</a>` : ''}</li>`;
+  const summary = `<section class="review-sum" aria-labelledby="rs-h"><h2 id="rs-h" class="h3">오늘 할 복습 ${rt.total}</h2>
+    <ul class="rs-list">${sumRow('오답 다시 풀기', rt.wrong, due[0] ? `#/p/${due[0].pid}?review=1` : '', '틀린 문제를 1·3·7·14일 간격으로', nextOf.wrong)}${sumRow('개념 다시 확인', rt.recheck, rcFirst ? `#/rc/${rcFirst.l.id}` : '', '틀린 개념을 다음 날 다른 질문으로', nextOf.recheck)}${sumRow('기억 확인', rt.memory, '#/cr', '배운 개념을 1주·3주·2개월 뒤에, 그 뒤 6개월마다', nextOf.memory)}</ul>
+    ${rt.total ? '' : '<p class="hint-text">오늘 할 복습은 없어요.</p>'}</section>`;  const filtered = filter.reason !== 'all' || filter.unit !== 'all';
   const listOf = (arr, isDue) => arr.filter(pass).map((w) => card(w, isDue)).join('') || `<li class="empty">${filtered ? '고른 조건에 맞는 문제가 없습니다.' : isDue ? '오늘 복습할 문제가 없습니다. 예정된 복습일에 다시 오세요.' : '없습니다.'}</li>`;
 
   view.innerHTML = `

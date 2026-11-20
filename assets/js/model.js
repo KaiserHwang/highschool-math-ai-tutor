@@ -307,7 +307,8 @@ export function trackChosen() {
 export function hasStudyHistory() {
   const st = getState();
   if (activeProblems().some((p) => statusOf(p.id) !== 'new')) return true;
-  if (activeLessons().some((l) => { const r = st.lessons[l.id]; return r && (r.done || Object.keys(r.checks || {}).length); })) return true;
+  // 소단원 기록: 이해 표시, 확인 문제, 개념 질문, 예측·찾아보기·유도·설명처럼 하나라도 해 본 활동이 있으면
+  if (activeLessons().some((l) => { const r = st.lessons[l.id]; return r && (r.done || Object.keys(r.checks || {}).length || Object.keys(r.cq || {}).length || r.predict || (r.goals || []).length || r.derive || (r.note || '').trim() || Array.isArray(r.keys)); })) return true;
   return activeDiagSets().some((s) => latestDiagnosisOf(s.id));
 }
 
@@ -697,6 +698,14 @@ export function practiceTarget(lesson) {
   const fresh = rel.filter((p) => !st.attempts[p.id]?.tries).sort((a, b) => order.indexOf(a.level) - order.indexOf(b.level));
   const p = fresh[0] || rel.find((q) => !st.attempts[q.id]?.solved) || rel[0];
   return p ? { kind: 'problem', pid: p.id, topic: p.topic } : null;
+}
+
+/** 오늘 할 복습 수(복습 화면 요약과 메뉴 배지가 같이 쓴다, #48 1-C): 오답 다시 풀기 · 개념 다시 확인 · 기억 확인 */
+export function reviewToday() {
+  const wrong = dueReviews().length;
+  const recheck = lessonRechecks().filter((x) => x.pr.recheckDue).length;
+  const memory = conceptsDue().length;
+  return { wrong, recheck, memory, total: wrong + recheck + memory };
 }
 
 export function lessonRechecks() {
