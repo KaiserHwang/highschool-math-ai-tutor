@@ -7,7 +7,7 @@ import { makeVariant, newSeed } from '../content/generators.js';
 import { update, today, logActivity } from '../store.js';
 import { isCorrect, normalizeAnswer, answerTex, conceptsDue, conceptQueue, conceptMemory, conceptItems, conceptResult, CONCEPT_GAPS, gradeCQ, recordCQ, activeCourses } from '../model.js';
 import { cqHTML, cqClick, newCQSeed } from './cq.js';
-import { tex, esc, CIRCLED, gradeMark, optionsClass, toast, fmtDate } from '../lib/ui.js';
+import { tex, esc, CIRCLED, gradeMark, optionsClass, toast, fmtDate, fieldError } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 import { trapFor } from './lesson.js';
 
@@ -110,8 +110,9 @@ export function renderConcepts(view) {
     const k = Number(li.dataset.crItem);
     if (sl.answers[k] !== undefined) return;
     const { item } = sl.items[k];
-    if (response === '' || response == null) { toast(item.type === 'mc' ? '보기를 하나 고르세요.' : '답을 입력하세요.'); return; }
-    if (item.type === 'short' && normalizeAnswer(response) === null) { toast('정수, 분수, 소수(예: -3, 10/3, 0.25)로 입력하세요.'); return; }
+    // 단답 입력 오류는 토스트 대신 입력란 옆에 남기고 낭독기에 알린다(#48 2단계)
+    if (response === '' || response == null) { if (item.type === 'short') fieldError(li.querySelector('.short-in'), '답을 입력하세요.'); else toast('보기를 하나 고르세요.'); return; }
+    if (item.type === 'short' && normalizeAnswer(response) === null) { fieldError(li.querySelector('.short-in'), '정수, 분수, 소수(예: -3, 10/3, 0.25)로 입력하세요.'); return; }
     const ok = item.type === 'cq' ? gradeCQ(item, response.a, response.r).ok : isCorrect(item, response);
     sl.answers[k] = { response, ok };
     update((s) => { if (item.type === 'cq') recordCQ(s, sl.id, item.id, response.a, response.r); logActivity({ checks: 1 }); });

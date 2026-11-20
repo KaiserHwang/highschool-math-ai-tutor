@@ -311,6 +311,8 @@ img, svg { display: block; }
 }
 .short-in { font: 500 18px var(--serif); max-width: 240px; }
 .short-in::placeholder { font: 400 15px var(--sans); }
+.field-err { flex-basis: 100%; margin: 4px 0 0; font-size: 13px; font-weight: 600; color: var(--red-pen); }
+.short-in[aria-invalid='true'] { border-color: var(--red-pen); box-shadow: 0 0 0 1px var(--red-pen); }
 .short-help { flex-basis: 100%; margin: 0; font-size: 12px; color: var(--pencil); }
 .field textarea { resize: vertical; line-height: 1.6; }
 
@@ -790,6 +792,7 @@ img, svg { display: block; }
 
 /* ── 개념 학습 ─────────────────────────── */
 .lstrip { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 14px; }
+.lstrip-i, .strip-i { min-width: 40px; min-height: 40px; } /* 터치 영역(#48 2단계) */
 .lstrip-i { display: grid; place-items: center; min-width: 34px; height: 34px; padding: 0 6px; border: 1px solid var(--rule); border-radius: 999px; background: var(--paper); text-decoration: none; font: 600 13px var(--serif); color: var(--ink-2); }
 .lstrip-i.st-self, .lstrip-i.st-partial { border-color: var(--ok); color: var(--ok); }
 .lstrip-i.st-verified { border-color: var(--ok); color: var(--paper); background: var(--ok); }
@@ -1059,7 +1062,9 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .mmap .mn.st-recheck rect { stroke: var(--red-pen); stroke-dasharray: 5 3; }
 .mmap .mn.st-recheck .mn-ic { fill: var(--red-pen); }
 .mmap .mn:hover rect, .mmap .mn:focus-visible rect { stroke: var(--ink); stroke-width: 2; }
-.mmap.has-sel .mn:not(.is-sel):not(.is-anc):not(.is-dep) { opacity: .32; }
+/* 관계 밖 개념은 상자만 흐리게 하고 글자는 읽을 수 있는 대비로 남긴다(#48 2단계) */
+.mmap.has-sel .mn:not(.is-sel):not(.is-anc):not(.is-dep) > :not(.mn-t) { opacity: .3; }
+.mmap.has-sel .mn:not(.is-sel):not(.is-anc):not(.is-dep) .mn-t { fill: var(--pencil); }
 .mmap.has-sel .me:not(.on-anc):not(.on-dep) { opacity: .12; }
 .mmap .mn.is-sel rect { stroke: var(--ink); stroke-width: 3; }
 .mmap .mn.is-anc rect { stroke: var(--blue-pen); stroke-width: 2.2; }

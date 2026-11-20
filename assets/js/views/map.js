@@ -199,8 +199,18 @@ export function renderMap(view, { args: [selArg] }) {
   };
   view.onkeydown = (e) => {
     const n = e.target.closest && e.target.closest('.mn');
-    if (n && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); select(n.dataset.id === sel ? null : n.dataset.id); }
-    if (e.key === 'Escape' && sel) select(null);
+    if (n && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      select(n.dataset.id === sel ? null : n.dataset.id);
+      // 키보드로 개념을 고르면 상세 카드 제목으로 포커스를 옮겨, 다음 Tab이 "개념 보기" 등 상세 행동으로 가게 한다(#48 2단계)
+      const h = sel && panel.querySelector('h2, h3');
+      if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
+    }
+    if (e.key === 'Escape' && sel) {
+      const back = sel;
+      select(null);
+      wrap.querySelector(`.mn[data-id="${back}"]`)?.focus({ preventScroll: true }); // 닫으면 고른 개념으로 돌아간다
+    }
   };
   let t = 0;
   const onResize = () => { clearTimeout(t); t = setTimeout(drawMap, 120); };

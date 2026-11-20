@@ -72,6 +72,7 @@ export function renderReport(view) {
       <section class="paper chart-paper">
         <h2 class="paper-title">역량 변화</h2>
         ${series.length ? radar(series) : '<p class="hint-text">진단을 받거나 문제를 풀면 역량 차트가 나타납니다.</p>'}
+        ${series.length ? `<details class="radar-data"><summary>수치로 보기</summary><table class="tbl"><thead><tr><th scope="col">역량</th><th scope="col">진단</th><th scope="col">현재</th></tr></thead><tbody>${SKILLS.map((k) => { const cell = (v) => (v == null ? '자료 없음' : Math.round(v)); return `<tr><th scope="row">${esc(k.label)}</th><td>${diag ? cell(diag.skills[k.key]) : '진단 없음'}</td><td>${cell(now[k.key])}</td></tr>`; }).join('')}</tbody></table></details>` : ''}
         ${series.length > 1 ? '<p class="legend"><span class="key key-now"></span>현재(진단 + 학습 기록) <span class="key key-diag"></span>최근 진단</p>' : ''}
       </section>
       <div class="result-side">

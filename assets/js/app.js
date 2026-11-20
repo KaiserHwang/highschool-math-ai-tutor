@@ -1,6 +1,6 @@
 import { subscribe, getState, isMemoryOnly } from './store.js';
 import { conceptsDue, reviewToday, activeCourseTitles } from './model.js';
-import { toast, hideToast, esc } from './lib/ui.js';
+import { toast, hideToast, esc, installRadioKeys } from './lib/ui.js';
 import { ID_PART } from './lib/ids.js';
 import { renderHome } from './views/home.js';
 import { renderDiagnosis } from './views/diagnosis.js';
@@ -109,6 +109,7 @@ function applyTheme() {
 subscribe(() => { updateBadges(); applyTheme(); updateRailCourses(); });
 window.addEventListener('hashchange', route);
 updateRailCourses();
+installRadioKeys(); // 보기 묶음의 방향키 선택(#48 2단계)
 // '본문으로 건너뛰기'는 해시를 바꾸면 라우터가 다른 화면으로 보내므로, 해시를 그대로 두고 본문에 포커스만 옮긴다
 document.querySelector('.skip')?.addEventListener('click', (e) => { e.preventDefault(); view.focus(); view.scrollIntoView({ block: 'start' }); });
 applyTheme();

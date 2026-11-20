@@ -7,7 +7,7 @@ import { PROBLEM_BY_ID } from '../content/problems.js';
 import { getState, update, today, logActivity } from '../store.js';
 import { isCorrect, normalizeAnswer, answerTex, statusOf, lessonProgress, blankLessonRec, recordCheck, markCheckSolution, LESSON_STATE, lessonCQs, lessonCQAnswer, lastCQ, lessonActivity, lessonSteps, recordPredict, recordGoal, recordDerive, recordKeys } from '../model.js';
 import { cqHTML, cqClick, newCQSeed, seedOf } from './cq.js';
-import { tex, esc, CIRCLED, gradeMark, statusGlyph, optionsClass, toast, fmtDate } from '../lib/ui.js';
+import { tex, esc, CIRCLED, gradeMark, statusGlyph, optionsClass, toast, fmtDate, fieldError } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 import { AI_SERVICES, lessonPrompt, explainPrompt, sendToAI } from '../lib/ai.js';
 
@@ -363,8 +363,9 @@ export function renderLesson(view, { args: [lessonId] }) {
 
   function grade(li, response) {
     const c = checks.find((x) => x.id === li.dataset.check);
-    if (response === null || response === undefined || response === '') { toast(c.type === 'mc' ? '보기를 하나 고르세요.' : '답을 입력하세요.'); return; }
-    if (c.type === 'short' && normalizeAnswer(response) === null) { toast('정수, 분수, 소수(예: -3, 10/3, 0.25)로 입력하세요.'); return; }
+    // 단답 입력 오류는 토스트 대신 입력란 옆에 남기고 낭독기에 알린다(#48 2단계)
+    if (response === null || response === undefined || response === '') { if (c.type === 'mc') toast('보기를 하나 고르세요.'); else fieldError(li.querySelector('.short-in'), '답을 입력하세요.'); return; }
+    if (c.type === 'short' && normalizeAnswer(response) === null) { fieldError(li.querySelector('.short-in'), '정수, 분수, 소수(예: -3, 10/3, 0.25)로 입력하세요.'); return; }
     const ok = isCorrect(c, response);
     const isDeep = c.tier === 'deep';
     update((s) => {

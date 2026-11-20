@@ -67,6 +67,11 @@ async function run(viewport, tag) {
   await page.goto(BASE + '#/p/u1-05');
   await page.waitForSelector('.q-text .katex');
   ok(await page.locator('[data-hint="2"]').isDisabled(), `[${tag}] 2단계 힌트는 1단계를 열기 전엔 잠겨 있다`);
+  // 형식이 틀린 답은 토스트 대신 입력란 옆에 오류로 남고 입력란과 연결된다(#48 2단계)
+  await page.fill('.short-in', 'abc');
+  await page.click('.short-form button[type="submit"]');
+  const fe = await page.evaluate(() => { const i = document.querySelector('.short-in'); const e = document.querySelector('.field-err'); return { inv: i.getAttribute('aria-invalid'), linked: !!e && (i.getAttribute('aria-describedby') || '').split(' ').includes(e.id) }; });
+  ok(fe.inv === 'true' && fe.linked, `[${tag}] 답 형식 오류는 입력란 옆에 표시되고 입력란에 연결된다`);
   await page.fill('.short-in', '4');
   await page.click('.short-form button[type="submit"]');
   await page.waitForSelector('.fb-wrong');
@@ -96,6 +101,11 @@ async function run(viewport, tag) {
   // ── 객관식 u4-03
   await page.goto(BASE + '#/p/u4-03');
   await page.waitForSelector('.opt');
+  // 키보드(#48 2단계): 보기 묶음은 방향키로 고르고, 고른 보기 하나만 Tab 순서에 남는다
+  await page.focus('[data-opt="0"]');
+  await page.keyboard.press('ArrowDown');
+  const kb = await page.evaluate(() => ({ focus: document.activeElement.dataset.opt, checked: document.querySelector('.opt[aria-checked="true"]')?.dataset.opt, tabbable: [...document.querySelectorAll('[role="radiogroup"] [role="radio"]')].filter((b) => b.tabIndex === 0).length }));
+  ok(kb.focus === '1' && kb.checked === '1' && kb.tabbable === 1, `[${tag}] 객관식 보기는 방향키로 옮겨 고르고 Tab 정지점은 하나다`);
   await page.click(`[data-opt="${PROBLEM_BY_ID['u4-03'].answer}"]`);
   await page.click('[data-act="submit"]');
   await page.waitForSelector('.fb-right');
@@ -553,6 +563,27 @@ async function run(viewport, tag) {
   await page.goto(BASE + '#/quiz?view=intro');
   await page.click('.diag-history summary >> nth=0');
   ok((await page.locator('.past-items a').count()) >= 1, `[${tag}] 지난 평가를 펼치면 문항을 다시 열 수 있다`);
+
+  // ── 키보드: 본문 건너뛰기는 화면을 유지하고, 백업 불러오기는 Tab으로 닿는다(#48 0·2단계)
+  await page.goto(BASE + '#/settings');
+  await page.waitForSelector('[data-act="export"]');
+  await page.evaluate(() => document.querySelector('.skip').focus());
+  await page.keyboard.press('Enter');
+  const sk = await page.evaluate(() => ({ hash: location.hash, focus: document.activeElement.id }));
+  await page.focus('[data-act="export"]');
+  await page.keyboard.press('Tab');
+  const imp = await page.evaluate(() => document.activeElement.dataset.act);
+  ok(sk.hash === '#/settings' && sk.focus === 'view' && imp === 'pick-import', `[${tag}] 본문 건너뛰기는 화면을 유지하고 백업 불러오기는 키보드로 닿는다`);
+  // 개념 지도: 키보드로 개념을 고르면 상세 제목으로, Esc로 닫으면 그 개념으로 포커스가 돌아온다
+  await page.goto(BASE + '#/map');
+  await page.waitForSelector('.mn');
+  const firstNode = await page.getAttribute('.mn >> nth=0', 'data-id');
+  await page.focus('.mn >> nth=0');
+  await page.keyboard.press('Enter');
+  const inPanel = await page.evaluate(() => !!document.activeElement.closest('.map-panel'));
+  await page.keyboard.press('Escape');
+  const backTo = await page.evaluate(() => document.activeElement.dataset && document.activeElement.dataset.id);
+  ok(inPanel && backTo === firstNode, `[${tag}] 개념 지도는 키보드로 고르면 상세로, Esc면 고른 개념으로 포커스를 옮긴다`);
 
   // ── 백업 내보내기
   await page.goto(BASE + '#/settings');

@@ -7,7 +7,7 @@ import { lessonForProblem } from '../content/lessons/index.js';
 import { getState, update, logActivity } from '../store.js';
 import { saveDraft, loadDraft, clearDraft, onDraftsCleared } from '../lib/draft.js';
 import { isCorrect, normalizeAnswer, answerTex, addWrong, makeQuiz, studiedUnits, activeRegularUnits, activeCourseTitles, activeCourses } from '../model.js';
-import { tex, esc, CIRCLED, toast, gradeMark, fmtDate, fmtMinutes, optionsClass } from '../lib/ui.js';
+import { tex, esc, CIRCLED, toast, gradeMark, fmtDate, fmtMinutes, optionsClass, fieldError } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 
 let run = null; // { items:[{ref, kind, unit, p}], i, responses:{}, sec:{}, shownAt, done }
@@ -193,8 +193,10 @@ function renderItem(view) {
     if (act === 'next') {
       const r = run.responses[key];
       const empty = r == null || (p.type === 'short' && !String(r).trim());
-      if (empty) return toast('답을 고르거나 입력하세요. 모르면 "모르겠어요"를 누르세요.');
-      if (p.type === 'short' && normalizeAnswer(r) === null) return toast('정수, 분수, 소수(예: -3, 10/3, 0.25)로 입력하세요.');
+      // 단답 입력 오류는 입력란 옆에 남긴다(#48 2단계)
+      const inp = view.querySelector('.short-in');
+      if (empty) return inp ? fieldError(inp, '답을 입력하세요. 모르면 "모르겠어요"를 누르세요.') : toast('답을 고르세요. 모르면 "모르겠어요"를 누르세요.');
+      if (p.type === 'short' && normalizeAnswer(r) === null) return fieldError(inp, '정수, 분수, 소수(예: -3, 10/3, 0.25)로 입력하세요.');
       if (run.i === run.items.length - 1) { saveRun(); run.confirming = true; return renderConfirm(view); }
       return go(1);
     }
