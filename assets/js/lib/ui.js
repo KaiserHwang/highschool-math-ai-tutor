@@ -27,6 +27,60 @@ export function plain(html) {
 }
 
 let toastTimer;
+/**
+ * 보기 묶음(role="radiogroup")의 키보드 동작(#48 2단계, WAI-ARIA 라디오 그룹):
+ * - 방향키로 이전·다음 보기로 옮기며 고르고, Home/End로 처음·끝 보기
+ * - 묶음 안에서는 지금 보기 하나만 Tab 순서에 남겨, Tab 한 번으로 묶음을 지나간다
+ * 화면마다 보기를 따로 그리므로 문서 전체에 한 번만 건다.
+ */
+export function installRadioKeys(doc = document) {
+  const radiosOf = (g) => [...g.querySelectorAll('[role="radio"]')].filter((b) => b.closest('[role="radiogroup"]') === g && !b.disabled);
+  doc.addEventListener('focusin', (e) => {
+    const r = e.target.closest && e.target.closest('[role="radio"]');
+    const g = r && r.closest('[role="radiogroup"]');
+    if (!g) return;
+    // 묶음 밖에서 들어올 때 이미 고른 보기가 있으면 그 보기로 포커스를 옮긴다(다시 그린 문항에서도 고른 보기부터)
+    const picked = radiosOf(g).find((b) => b.getAttribute('aria-checked') === 'true');
+    if (picked && picked !== r && !(e.relatedTarget && g.contains(e.relatedTarget))) { picked.focus(); return; }
+    for (const b of radiosOf(g)) b.tabIndex = b === r ? 0 : -1;
+  });
+  doc.addEventListener('keydown', (e) => {
+    const r = e.target.closest && e.target.closest('[role="radio"]');
+    const g = r && r.closest('[role="radiogroup"]');
+    if (!g || e.altKey || e.ctrlKey || e.metaKey) return;
+    const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+    if (step === undefined && e.key !== 'Home' && e.key !== 'End') return;
+    const items = radiosOf(g);
+    if (!items.length) return;
+    e.preventDefault();
+    const i = items.indexOf(r);
+    const next = e.key === 'Home' ? items[0] : e.key === 'End' ? items[items.length - 1] : items[(i + step + items.length) % items.length];
+    next.focus();
+    // 고르면 바로 확정되는 묶음(예측, data-radio-keys="focus")은 포커스만 옮기고 Space/Enter로 고른다
+    if (g.dataset.radioKeys !== 'focus') next.click(); // 고르기는 각 화면의 클릭 처리를 그대로 쓴다
+  });
+}
+
+/** 입력란 옆에 오류 문구를 두고 낭독기에 알린다(토스트 대신). 입력을 고치면 지운다. */
+export function fieldError(input, msg) {
+  if (!input) return;
+  const id = `${input.id || input.getAttribute('aria-describedby')?.split(' ')[0] || 'in'}-err`;
+  let p = document.getElementById(id);
+  if (!p) {
+    p = document.createElement('p');
+    p.id = id;
+    p.className = 'field-err';
+    p.setAttribute('role', 'alert');
+    (input.closest('.short') || input).after(p);
+    input.addEventListener('input', () => { p.remove(); input.removeAttribute('aria-invalid'); input.setAttribute('aria-describedby', (input.getAttribute('aria-describedby') || '').split(' ').filter((x) => x !== id).join(' ')); }, { once: true });
+  }
+  p.textContent = msg;
+  input.setAttribute('aria-invalid', 'true');
+  const d = (input.getAttribute('aria-describedby') || '').split(' ').filter(Boolean);
+  if (!d.includes(id)) input.setAttribute('aria-describedby', [...d, id].join(' '));
+  input.focus();
+}
+
 /** 떠 있는 토스트를 바로 닫는다(화면을 옮길 때 이전 화면의 안내가 남지 않게) */
 export function hideToast() {
   const el = document.getElementById('toast');

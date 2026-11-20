@@ -67,6 +67,11 @@ async function run(viewport, tag) {
   await page.goto(BASE + '#/p/u1-05');
   await page.waitForSelector('.q-text .katex');
   ok(await page.locator('[data-hint="2"]').isDisabled(), `[${tag}] 2단계 힌트는 1단계를 열기 전엔 잠겨 있다`);
+  // 형식이 틀린 답은 토스트 대신 입력란 옆에 오류로 남고 입력란과 연결된다(#48 2단계)
+  await page.fill('.short-in', 'abc');
+  await page.click('.short-form button[type="submit"]');
+  const fe = await page.evaluate(() => { const i = document.querySelector('.short-in'); const e = document.querySelector('.field-err'); return { inv: i.getAttribute('aria-invalid'), linked: !!e && (i.getAttribute('aria-describedby') || '').split(' ').includes(e.id) }; });
+  ok(fe.inv === 'true' && fe.linked, `[${tag}] 답 형식 오류는 입력란 옆에 표시되고 입력란에 연결된다`);
   await page.fill('.short-in', '4');
   await page.click('.short-form button[type="submit"]');
   await page.waitForSelector('.fb-wrong');
@@ -96,6 +101,11 @@ async function run(viewport, tag) {
   // ── 객관식 u4-03
   await page.goto(BASE + '#/p/u4-03');
   await page.waitForSelector('.opt');
+  // 키보드(#48 2단계): 보기 묶음은 방향키로 고르고, 고른 보기 하나만 Tab 순서에 남는다
+  await page.focus('[data-opt="0"]');
+  await page.keyboard.press('ArrowDown');
+  const kb = await page.evaluate(() => ({ focus: document.activeElement.dataset.opt, checked: document.querySelector('.opt[aria-checked="true"]')?.dataset.opt, tabbable: [...document.querySelectorAll('[role="radiogroup"] [role="radio"]')].filter((b) => b.tabIndex === 0).length }));
+  ok(kb.focus === '1' && kb.checked === '1' && kb.tabbable === 1, `[${tag}] 객관식 보기는 방향키로 옮겨 고르고 Tab 정지점은 하나다`);
   await page.click(`[data-opt="${PROBLEM_BY_ID['u4-03'].answer}"]`);
   await page.click('[data-act="submit"]');
   await page.waitForSelector('.fb-right');
@@ -254,6 +264,10 @@ async function run(viewport, tag) {
   // 보강: 먼저 예측하기, 탐구 그래프, 유도 따라가기, 오답 설명, 심화 확인, 직접 설명하기
   const PL = LESSON_BY_ID['u2-l1'];
   const wrongPd = PL.predict.answer === 0 ? 1 : 0;
+  // 예측은 고르면 바로 확정되므로 방향키는 포커스만 옮긴다(#48 2단계)
+  await page.focus('[data-pd-opt="0"]');
+  await page.keyboard.press('ArrowRight');
+  ok((await page.locator('[data-pd].answered').count()) === 0 && (await page.evaluate(() => document.activeElement.dataset.pdOpt)) === '1', `[${tag}] 예측 보기는 방향키로 옮겨도 답이 확정되지 않는다`);
   await page.click(`[data-pd-opt="${wrongPd}"]`);
   await page.locator('.pd-fb .fb-note').waitFor();
   ok(await page.locator(`[data-pd-opt="${PL.predict.answer}"].is-ans`).count() === 1 && (await page.locator('[data-pd-opt]:not([disabled])').count()) === 0, `[${tag}] 예측을 고르면 정답과 설명이 나오고 다시 고를 수 없다`);
@@ -553,6 +567,27 @@ async function run(viewport, tag) {
   await page.goto(BASE + '#/quiz?view=intro');
   await page.click('.diag-history summary >> nth=0');
   ok((await page.locator('.past-items a').count()) >= 1, `[${tag}] 지난 평가를 펼치면 문항을 다시 열 수 있다`);
+
+  // ── 키보드: 본문 건너뛰기는 화면을 유지하고, 백업 불러오기는 Tab으로 닿는다(#48 0·2단계)
+  await page.goto(BASE + '#/settings');
+  await page.waitForSelector('[data-act="export"]');
+  await page.evaluate(() => document.querySelector('.skip').focus());
+  await page.keyboard.press('Enter');
+  const sk = await page.evaluate(() => ({ hash: location.hash, focus: document.activeElement.id }));
+  await page.focus('[data-act="export"]');
+  await page.keyboard.press('Tab');
+  const imp = await page.evaluate(() => document.activeElement.dataset.act);
+  ok(sk.hash === '#/settings' && sk.focus === 'view' && imp === 'pick-import', `[${tag}] 본문 건너뛰기는 화면을 유지하고 백업 불러오기는 키보드로 닿는다`);
+  // 개념 지도: 키보드로 개념을 고르면 상세 제목으로, Esc로 닫으면 그 개념으로 포커스가 돌아온다
+  await page.goto(BASE + '#/map');
+  await page.waitForSelector('.mn');
+  const firstNode = await page.getAttribute('.mn >> nth=0', 'data-id');
+  await page.focus('.mn >> nth=0');
+  await page.keyboard.press('Enter');
+  const inPanel = await page.evaluate(() => !!document.activeElement.closest('.map-panel'));
+  await page.keyboard.press('Escape');
+  const backTo = await page.evaluate(() => document.activeElement.dataset && document.activeElement.dataset.id);
+  ok(inPanel && backTo === firstNode, `[${tag}] 개념 지도는 키보드로 고르면 상세로, Esc면 고른 개념으로 포커스를 옮긴다`);
 
   // ── 백업 내보내기
   await page.goto(BASE + '#/settings');

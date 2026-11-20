@@ -7,7 +7,7 @@ import { PROBLEM_BY_ID } from '../content/problems.js';
 import { getState, update, today, logActivity } from '../store.js';
 import { isCorrect, normalizeAnswer, answerTex, statusOf, lessonProgress, blankLessonRec, recordCheck, markCheckSolution, LESSON_STATE, lessonCQs, lessonCQAnswer, lastCQ, lessonActivity, lessonSteps, recordPredict, recordGoal, recordDerive, recordKeys } from '../model.js';
 import { cqHTML, cqClick, newCQSeed, seedOf } from './cq.js';
-import { tex, esc, CIRCLED, gradeMark, statusGlyph, optionsClass, toast, fmtDate } from '../lib/ui.js';
+import { tex, esc, CIRCLED, gradeMark, statusGlyph, optionsClass, toast, fmtDate, fieldError } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 import { AI_SERVICES, lessonPrompt, explainPrompt, sendToAI } from '../lib/ai.js';
 
@@ -89,7 +89,7 @@ function predictHTML(pd) {
   return `<div class="pd" data-pd>
     <p class="pd-tag">먼저 예측해 보기</p>
     <div class="q-text compact">${tex(pd.q)}</div>
-    <div class="options${optionsClass(pd.options)}" role="radiogroup" aria-label="예측">${pd.options.map((o, k) => `<button type="button" class="opt" role="radio" aria-checked="false" data-pd-opt="${k}"><span class="opt-n">${CIRCLED[k]}</span><span class="opt-t">${tex(o)}</span></button>`).join('')}</div>
+    <div class="options${optionsClass(pd.options)}" role="radiogroup" aria-label="예측" data-radio-keys="focus">${pd.options.map((o, k) => `<button type="button" class="opt" role="radio" aria-checked="false" data-pd-opt="${k}"><span class="opt-n">${CIRCLED[k]}</span><span class="opt-t">${tex(o)}</span></button>`).join('')}</div>
     <div class="pd-fb" aria-live="polite"></div>
   </div>`;
 }
@@ -296,6 +296,14 @@ export function renderLesson(view, { args: [lessonId] }) {
     b.textContent = target === 'done' ? (lessonProgress(L).done ? '이해 표시 확인하기' : '이해했어요 표시하러 가기') : `다음: ${STEP_LABEL[target]}`;
     box.hidden = false;
   }
+  // 개념 질문을 다시 그린 뒤 포커스가 body로 빠지지 않게 같은 문항 안의 요소로 옮긴다
+  function focusCQ(qid, sel) {
+    const box = [...view.querySelectorAll('[data-cq]')].find((x) => x.dataset.cq === qid);
+    const el = box && box.querySelector(sel);
+    if (!el) return;
+    if (!el.matches('button, a, input, [tabindex]')) el.tabIndex = -1;
+    el.focus({ preventScroll: true });
+  }
   function goStep(id) {
     const h = view.querySelector(`#h-${id}`);
     if (!h) return;
@@ -363,8 +371,9 @@ export function renderLesson(view, { args: [lessonId] }) {
 
   function grade(li, response) {
     const c = checks.find((x) => x.id === li.dataset.check);
-    if (response === null || response === undefined || response === '') { toast(c.type === 'mc' ? '보기를 하나 고르세요.' : '답을 입력하세요.'); return; }
-    if (c.type === 'short' && normalizeAnswer(response) === null) { toast('정수, 분수, 소수(예: -3, 10/3, 0.25)로 입력하세요.'); return; }
+    // 단답 입력 오류는 토스트 대신 입력란 옆에 남기고 낭독기에 알린다(#48 2단계)
+    if (response === null || response === undefined || response === '') { if (c.type === 'mc') toast('보기를 하나 고르세요.'); else fieldError(li.querySelector('.short-in'), '답을 입력하세요.'); return; }
+    if (c.type === 'short' && normalizeAnswer(response) === null) { fieldError(li.querySelector('.short-in'), '정수, 분수, 소수(예: -3, 10/3, 0.25)로 입력하세요.'); return; }
     const ok = isCorrect(c, response);
     const isDeep = c.tier === 'deep';
     update((s) => {
@@ -409,8 +418,9 @@ export function renderLesson(view, { args: [lessonId] }) {
         update((s) => { lessonCQAnswer(s, L.id, q.id, a, r); logActivity({ checks: 1 }); }); // 틀리면 다음 날 재확인을 예약한다
         li.outerHTML = cqHTML(q, { num: li.dataset.num, done: { a, r }, retry: true, missAfter: traceLink, seed: seedOf(li) }); // 채점 결과는 풀던 순서 그대로
         paintProgress();
+        focusCQ(q.id, '[data-act="cq-retry"], .fb'); // 채점 뒤에는 다시 풀기(없으면 결과)로 포커스
       },
-      redraw: (li, q) => { li.outerHTML = cqHTML(q, { num: li.dataset.num, seed: newCQSeed() }); }, // 다시 풀 때는 순서를 새로 섞는다
+      redraw: (li, q) => { li.outerHTML = cqHTML(q, { num: li.dataset.num, seed: newCQSeed() }); focusCQ(q.id, '[role="radio"]'); }, // 다시 풀 때는 순서를 새로 섞고 답 묶음으로 포커스
     })) return;
     const pdo = t.closest('[data-pd-opt]');
     if (pdo) {

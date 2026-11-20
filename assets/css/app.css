@@ -311,6 +311,8 @@ img, svg { display: block; }
 }
 .short-in { font: 500 18px var(--serif); max-width: 240px; }
 .short-in::placeholder { font: 400 15px var(--sans); }
+.field-err { flex-basis: 100%; margin: 4px 0 0; font-size: 13px; font-weight: 600; color: var(--red-pen); }
+.short-in[aria-invalid='true'] { border-color: var(--red-pen); box-shadow: 0 0 0 1px var(--red-pen); }
 .short-help { flex-basis: 100%; margin: 0; font-size: 12px; color: var(--pencil); }
 .field textarea { resize: vertical; line-height: 1.6; }
 
@@ -619,7 +621,7 @@ img, svg { display: block; }
 /* 좁은 화면 보정 */
 .tbl .num { white-space: nowrap; }
 @media (max-width: 560px) {
-  .tbl td:nth-child(2), .tbl th:nth-child(2) { display: none; }
+  .tbl:not(.radar-tbl) td:nth-child(2), .tbl:not(.radar-tbl) th:nth-child(2) { display: none; }
 }
 .jump { margin-top: 12px; }
 @media (max-width: 480px) {
@@ -790,6 +792,7 @@ img, svg { display: block; }
 
 /* ── 개념 학습 ─────────────────────────── */
 .lstrip { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 14px; }
+.lstrip-i, .strip-i { min-width: 40px; min-height: 40px; } /* 터치 영역(#48 2단계) */
 .lstrip-i { display: grid; place-items: center; min-width: 34px; height: 34px; padding: 0 6px; border: 1px solid var(--rule); border-radius: 999px; background: var(--paper); text-decoration: none; font: 600 13px var(--serif); color: var(--ink-2); }
 .lstrip-i.st-self, .lstrip-i.st-partial { border-color: var(--ok); color: var(--ok); }
 .lstrip-i.st-verified { border-color: var(--ok); color: var(--paper); background: var(--ok); }
@@ -1059,7 +1062,18 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .mmap .mn.st-recheck rect { stroke: var(--red-pen); stroke-dasharray: 5 3; }
 .mmap .mn.st-recheck .mn-ic { fill: var(--red-pen); }
 .mmap .mn:hover rect, .mmap .mn:focus-visible rect { stroke: var(--ink); stroke-width: 2; }
-.mmap.has-sel .mn:not(.is-sel):not(.is-anc):not(.is-dep) { opacity: .32; }
+/* 관계 밖 개념은 상태 색을 빼고 옅은 면으로 바꾸되, 글자는 읽을 수 있는 대비로 남긴다(#48 2단계) */
+.mmap.has-sel .mn:not(.is-sel):not(.is-anc):not(.is-dep) rect { fill: var(--paper-2); stroke: var(--grid); }
+.mmap.has-sel .mn:not(.is-sel):not(.is-anc):not(.is-dep) .mn-t { fill: var(--pencil); }
+.mmap.has-sel .mn:not(.is-sel):not(.is-anc):not(.is-dep) :is(.mn-ic, .mn-weak) { opacity: .4; }
+.mmap .mn:focus-visible rect { stroke: var(--blue-pen) !important; stroke-width: 3; }
+/* 개념 찾기 */
+.mp-find { margin: 0 0 16px; }
+.mp-results { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
+.mp-all { margin-top: 8px; }
+.mp-all summary { cursor: pointer; font-weight: 600; }
+.mp-all-h { margin: 12px 0 4px; font-size: 13px; color: var(--pencil); font-weight: 700; }
+.mp-all-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .mmap.has-sel .me:not(.on-anc):not(.on-dep) { opacity: .12; }
 .mmap .mn.is-sel rect { stroke: var(--ink); stroke-width: 3; }
 .mmap .mn.is-anc rect { stroke: var(--blue-pen); stroke-width: 2.2; }
@@ -1125,3 +1139,6 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .tr-mis { font-size: 13px; color: var(--red-pen); }
 .pre-row .chip-trace { border-color: var(--blue-pen); color: var(--blue-pen); }
 .concept-link .cl-trace { font-size: 13px; font-weight: 500; color: var(--blue-pen); }
+
+/* 번호 줄 터치 영역 44px(#48 2단계): 뒤쪽 규칙보다 우선 */
+.strip .strip-i, .lstrip .lstrip-i { min-width: 44px; min-height: 44px; }

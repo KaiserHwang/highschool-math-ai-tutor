@@ -4,7 +4,7 @@ import { UNIT_BY_ID, LEVELS, unitLabel } from '../content/units.js';
 import { makeVariant, generatorFor, newSeed, GENERATORS } from '../content/generators.js';
 import { getState, update, logActivity, today } from '../store.js';
 import { isCorrect, normalizeAnswer, addWrong, reviewResult, REASONS, REVIEW_GAPS, statusOf } from '../model.js';
-import { tex, esc, CIRCLED, gradeMark, toast, fmtDate, statusGlyph, optionsClass } from '../lib/ui.js';
+import { tex, esc, CIRCLED, gradeMark, toast, fmtDate, statusGlyph, optionsClass, fieldError } from '../lib/ui.js';
 import { mountScratchpad, scratchpadHTML } from '../lib/scratchpad.js';
 import { figure } from '../lib/plot.js';
 import { AI_SERVICES, problemPrompt, sendToAI, copyText } from '../lib/ai.js';
@@ -275,8 +275,9 @@ export function renderProblem(view, { args: [ref], params }) {
 
   function submit(response) {
     if (p.type === 'short') {
-      if (!String(response).trim()) return toast('답을 입력하세요.');
-      if (normalizeAnswer(response) === null) return toast('정수, 분수, 소수(예: -3, 10/3, 0.25)로 입력하세요.');
+      // 단답 입력 오류는 토스트 대신 입력란 옆에 남기고 낭독기에 알린다(#48 2단계)
+      if (!String(response).trim()) return fieldError($('.short-in'), '답을 입력하세요.');
+      if (normalizeAnswer(response) === null) return fieldError($('.short-in'), '정수, 분수, 소수(예: -3, 10/3, 0.25)로 입력하세요.');
     }
     const ok = isCorrect(p, response);
     const firstSubmitThisVisit = !session.submitted;

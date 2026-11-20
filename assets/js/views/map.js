@@ -122,6 +122,15 @@ export function renderMap(view, { args: [selArg] }) {
     ${roots.length ? `<section class="paper mp-roots"><h2 class="h3">먼저 다지면 좋은 개념</h2><p class="hint-text">다시 볼 개념 중 그 위에 쌓이는 개념이 많은 순서예요. 여기가 흔들리면 뒤 개념이 함께 막힙니다.</p>
       <ol class="mp-root-list">${roots.map(({ l, sig, above }) => `<li><button type="button" class="link-btn" data-sel="${l.id}">${esc(l.title)}</button><span class="hint-text">${esc(weakText(sig))} · 위에 쌓인 개념 ${above}개</span></li>`).join('')}</ol></section>` : ''}
     <p class="mp-legend" aria-label="범례"><span class="lg st-new">아직</span><span class="lg st-partial">확인 중</span><span class="lg st-self">이해 표시</span><span class="lg st-verified">혼자 확인 ✓</span><span class="lg st-kept">오래 기억함 ★</span><span class="lg st-recheck">다시 확인 ↻</span><span class="lg lg-weak">다시 볼 것 있음</span></p>
+    <section class="mp-find" aria-labelledby="mp-find-h"><h2 id="mp-find-h" class="sr">개념 찾기</h2>
+      <label class="field"><span class="field-l">개념 찾기</span><input type="search" data-find placeholder="예: 인수분해, 미분계수" autocomplete="off" aria-describedby="mp-find-hint"></label>
+      <p class="hint-text" id="mp-find-hint">이름을 입력하면 아래에 개념이 나와요. 지도를 순서대로 지나지 않아도 바로 열 수 있어요.</p>
+      <ul class="mp-results" data-results aria-live="polite"></ul>
+      <details class="mp-all"><summary>과목별 목록으로 보기</summary>${UNITS.map((u) => {
+        const ls = lessonsOfUnit(u.id);
+        return ls.length ? `<p class="mp-all-h">${esc(unitLabel(u))}</p><ul class="mp-all-list">${ls.map((l) => `<li><button type="button" class="link-btn" data-sel="${l.id}">${esc(l.title)}</button></li>`).join('')}</ul>` : '';
+      }).join('')}</details>
+    </section>
     <div class="map-grid">
       <div class="map-wrap paper" data-map></div>
       <aside class="map-panel" data-panel ${sel ? '' : 'data-empty'} aria-live="polite"></aside>
@@ -194,13 +203,40 @@ export function renderMap(view, { args: [selArg] }) {
     const n = e.target.closest('.mn');
     if (n) { select(n.dataset.id === sel ? null : n.dataset.id); return; }
     const c = e.target.closest('[data-sel]');
-    if (c) { select(c.dataset.sel, { scroll: true }); return; }
-    if (e.target.closest('[data-act="mp-close"]')) select(null);
+    if (c) {
+      select(c.dataset.sel, { scroll: true });
+      const h = sel && panel.querySelector('h2, h3');
+      if (h && e.detail === 0) { h.tabIndex = -1; h.focus({ preventScroll: true }); } // 키보드로 골랐으면 상세 제목으로
+      return;
+    }
+    if (e.target.closest('[data-act="mp-close"]')) {
+      const back = sel;
+      select(null);
+      wrap.querySelector(`.mn[data-id="${back}"]`)?.focus({ preventScroll: true }); // 닫기도 Esc처럼 고른 개념으로 돌아간다
+    }
   };
   view.onkeydown = (e) => {
     const n = e.target.closest && e.target.closest('.mn');
-    if (n && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); select(n.dataset.id === sel ? null : n.dataset.id); }
-    if (e.key === 'Escape' && sel) select(null);
+    if (n && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      select(n.dataset.id === sel ? null : n.dataset.id);
+      // 키보드로 개념을 고르면 상세 카드 제목으로 포커스를 옮겨, 다음 Tab이 "개념 보기" 등 상세 행동으로 가게 한다(#48 2단계)
+      const h = sel && panel.querySelector('h2, h3');
+      if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
+    }
+    if (e.key === 'Escape' && sel) {
+      const back = sel;
+      select(null);
+      wrap.querySelector(`.mn[data-id="${back}"]`)?.focus({ preventScroll: true }); // 닫으면 고른 개념으로 돌아간다
+    }
+  };
+  // 개념 찾기: 이름에 입력한 글자가 들어 있는 소단원을 최대 8개까지 보여 주고, 누르면 지도 상세를 연다
+  const results = view.querySelector('[data-results]');
+  view.oninput = (e) => {
+    if (!e.target.matches('[data-find]')) return;
+    const qv = e.target.value.trim().replace(/\s+/g, '');
+    const hits = qv ? LESSONS.filter((l) => l.title.replace(/\s+/g, '').includes(qv)).slice(0, 8) : [];
+    results.innerHTML = qv ? (hits.length ? hits.map((l) => `<li><button type="button" class="link-btn" data-sel="${l.id}">${esc(l.title)}</button> <span class="hint-text">${esc(unitLabel(UNIT_BY_ID[l.unit]))}</span></li>`).join('') : '<li class="hint-text">맞는 개념이 없어요.</li>') : '';
   };
   let t = 0;
   const onResize = () => { clearTimeout(t); t = setTimeout(drawMap, 120); };
@@ -209,5 +245,5 @@ export function renderMap(view, { args: [selArg] }) {
   drawMap();
   drawPanel();
   if (sel) { view.querySelector('.map-page').classList.add('has-sheet'); setTimeout(() => { const n = wrap.querySelector(`.mn[data-id="${sel}"]`); if (n) reveal(n); }, 50); }
-  return () => { window.removeEventListener('resize', onResize); view.onclick = null; view.onkeydown = null; };
+  return () => { window.removeEventListener('resize', onResize); view.onclick = null; view.onkeydown = null; view.oninput = null; };
 }
