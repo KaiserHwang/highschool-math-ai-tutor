@@ -486,6 +486,15 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
     const g = model.gradeDiagnosis(Object.fromEntries(its.filter((q) => q.unit !== 'u2').map((q) => [q.id, { response: q.answer, conf: 'sure', sec: 30 }])));
     const fl = model.diagFirstLesson(g);
     ok(fl && fl.unitId === 'u2' && fl.lesson.unit === 'u2', '진단 결과는 준비도가 가장 낮은 단원(u2만 비움)의 아직 배우지 않은 첫 소단원을 먼저 보여 준다');
+    // 소단원 단계 막대: 활동이 있는 단계만 진행 수를 센다
+    const { LESSON_BY_ID: LB } = await import('../assets/js/content/lessons/index.js');
+    const L1 = LB['u2-l1'];
+    const s0 = model.lessonSteps(L1);
+    store.update((s) => { s.lessons['u2-l1'] = { ...(s.lessons['u2-l1'] || {}), checks: { [L1.checks[0].id]: { tries: 1, solved: true, firstCorrect: true } }, derive: 2 }; });
+    const s1 = model.lessonSteps(L1);
+    store.resetAll();
+    ok(s0.ck.total === L1.checks.length && s0.ck.done === 0 && !('core' in s0) && !('ex' in s0) && s1.ck.done === 1 && s1.why.done === 2 && s0.deep.total === L1.deep.checks.length,
+      '소단원 단계 막대는 확인·유도·심화처럼 활동이 있는 단계의 진행을 세고, 읽기 단계(정리·예제)는 세지 않는다');
     ok(fresh && picked && studied && otherCourse && byDiag, '진단도 트랙 선택도 없으면 트랙을 정하지 않은 것으로, 공부하는 과목의 문제·소단원 기록이나 그 과목 진단이 있으면 근거가 있는 것으로 본다(다른 과목 기록은 제외)');
   }
   store.resetAll();

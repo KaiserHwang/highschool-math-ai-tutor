@@ -5,11 +5,20 @@ import { LESSONS, LESSON_BY_ID, lessonsOfUnit, allChecks } from '../content/less
 import { UNIT_BY_ID, LEVELS, unitLabel } from '../content/units.js';
 import { PROBLEM_BY_ID } from '../content/problems.js';
 import { getState, update, today, logActivity } from '../store.js';
-import { isCorrect, normalizeAnswer, answerTex, statusOf, lessonProgress, blankLessonRec, recordCheck, markCheckSolution, LESSON_STATE, lessonCQs, lessonCQAnswer, lastCQ, lessonActivity, recordPredict, recordGoal, recordDerive, recordKeys } from '../model.js';
+import { isCorrect, normalizeAnswer, answerTex, statusOf, lessonProgress, blankLessonRec, recordCheck, markCheckSolution, LESSON_STATE, lessonCQs, lessonCQAnswer, lastCQ, lessonActivity, lessonSteps, recordPredict, recordGoal, recordDerive, recordKeys } from '../model.js';
 import { cqHTML, cqClick, newCQSeed, seedOf } from './cq.js';
 import { tex, esc, CIRCLED, gradeMark, statusGlyph, optionsClass, toast, fmtDate } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 import { AI_SERVICES, lessonPrompt, explainPrompt, sendToAI } from '../lib/ai.js';
+
+// 소단원마다 마지막으로 본 단계(이어서 보기용). 이 기기의 편의 기능이라 학습 기록·백업에는 넣지 않는다.
+const POS_KEY = 'mathpulse.lessonpos';
+function readLessonPos() {
+  try { const v = JSON.parse(localStorage.getItem(POS_KEY) || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; }
+}
+function saveLessonPos(id, step) {
+  try { const v = readLessonPos(); if (v[id] === step) return; v[id] = step; localStorage.setItem(POS_KEY, JSON.stringify(v)); } catch { /* 저장할 수 없으면 이어서 보기만 안 된다 */ }
+}
 
 const figs = (list) => (list && list.length
   ? `<div class="c-figs">${list.map((f) => `<div class="c-fig">${figure(f.fig)}<p class="c-cap">${tex(f.cap)}</p></div>`).join('')}</div>`
@@ -120,6 +129,14 @@ export function renderLesson(view, { args: [lessonId] }) {
   // 섹션 번호는 있는 섹션만 차례로 매긴다
   let n = 0;
   const sec = (id, title, body, cls = '') => `<section class="l-sec ${cls}" aria-labelledby="h-${id}"><h2 class="l-h" id="h-${id}"><span class="l-no">${++n}</span>${title}</h2>${body}</section>`;
+  // 단계 이동 막대(#48 1-B): 있는 섹션만, 화면 이름은 짧게
+  const STEP_LABEL = { warm: '생각', core: '정리', why: '왜', ex: '예제', ck: '확인', cq: '이유', deep: '심화', say: '설명' };
+  const stepIds = [
+    L.predict || (L.explore && L.explore.length) ? 'warm' : null, 'core', 'why', 'ex', 'ck',
+    L.cq && L.cq.length ? 'cq' : null, deep ? 'deep' : null, L.explain ? 'say' : null,
+  ].filter(Boolean);
+  const lastPos = readLessonPos()[L.id];
+  const resumeAt = stepIds.indexOf(lastPos) > 0 ? lastPos : null;
   const warm = L.predict || (L.explore && L.explore.length)
     ? sec('warm', '먼저 생각해 보기', `${L.predict ? predictHTML(L.predict) : ''}${(L.explore || []).map(exploreHTML).join('')}`, 'l-warm') : '';
 
@@ -135,8 +152,10 @@ export function renderLesson(view, { args: [lessonId] }) {
       <h1 class="page-title">${esc(L.title)}</h1>
       <p class="lead">${tex(L.summary)}</p>
       <p class="pre-row">${pre.length ? `<span class="pre-l">먼저 알아야 할 것</span>${pre.map((l) => `<a class="chip" href="#/l/${l.id}">${esc(l.title)}${lessonProgress(l).verified ? ' ✓' : ''}</a>`).join('')}` : ''}<a class="chip chip-trace" href="#/map/${L.id}">개념 지도</a>${pre.length ? `<a class="chip chip-trace" href="#/t/${L.id}">막히면 앞 개념 거꾸로 확인</a>` : ''}</p>
-      <p class="meta" data-progress></p>
+      ${resumeAt ? `<p class="resume-row"><button type="button" class="btn btn-quiet" data-step="${resumeAt}">지난번에 '${STEP_LABEL[resumeAt]}'까지 봤어요 · 이어서 보기</button></p>` : ''}
+      <details class="l-stats"><summary>자세한 진행 상황</summary><p class="meta" data-progress></p></details>
     </header>
+    <nav class="lsteps" aria-label="이 개념의 학습 단계"><ol>${stepIds.map((id) => `<li><button type="button" class="ls-i" data-step="${id}"><span class="ls-mark" aria-hidden="true"></span><span class="ls-t">${STEP_LABEL[id]}</span><span class="ls-n"></span></button></li>`).join('')}</ol></nav>
     <article class="paper lesson">
       ${warm}
       ${sec('core', '핵심 정리', `<div class="c-body">${tex(L.core)}</div>${figs(L.figs)}`, 'l-core')}
@@ -253,6 +272,56 @@ export function renderLesson(view, { args: [lessonId] }) {
       : `<p class="l-done-msg">예제와 확인 문제까지 마쳤다면 표시해 두세요. 확인 문제를 아직 다 풀지 않았어도 표시할 수 있지만, 그때는 "이해 표시"로만 기록됩니다.</p><p class="row"><button type="button" class="btn btn-primary" data-act="done">이해했어요</button></p>`;
     $('[data-done]').innerHTML = recheckHTML(pr) + self;
     view.querySelectorAll('.lstrip-i.is-cur').forEach((a) => { a.className = a.className.replace(/st-\w+/, `st-${pr.state}`); });
+    paintSteps();
+  }
+  // 단계 막대: 활동이 있는 단계는 "2/3"과 완료 표시, 읽기 단계는 이름만
+  function paintSteps() {
+    const st = lessonSteps(L);
+    view.querySelectorAll('.ls-i').forEach((b) => {
+      const s = st[b.dataset.step];
+      b.classList.toggle('is-done', !!s && s.done >= s.total);
+      b.classList.toggle('is-part', !!s && s.done > 0 && s.done < s.total);
+      b.querySelector('.ls-n').textContent = s && s.total > 1 ? `${s.done}/${s.total}` : '';
+      b.setAttribute('aria-label', `${b.querySelector('.ls-t').textContent}${s ? (s.done >= s.total ? ' 완료' : ` ${s.done}/${s.total}`) : ''}`);
+    });
+  }
+  function goStep(id) {
+    const h = view.querySelector(`#h-${id}`);
+    if (!h) return;
+    if (id === 'deep') { const d = view.querySelector('.deep-fold'); if (d) d.open = true; }
+    h.setAttribute('tabindex', '-1');
+    h.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    h.focus({ preventScroll: true });
+  }
+  // 심화는 처음에 접어 둔다(기본 확인을 마친 뒤 펼쳐 보게). 이미 심화를 풀었거나 지난번에 심화까지 봤으면 펼친다.
+  const dsec = view.querySelector('.l-sec[aria-labelledby="h-deep"]');
+  if (dsec) {
+    const det = document.createElement('details');
+    det.className = 'deep-fold';
+    det.open = (deep.checks || []).some((c) => rec.checks[c.id]?.tries) || lastPos === 'deep' || lastPos === 'say';
+    const sum = document.createElement('summary');
+    const ex = deep.ideas.filter((x) => x.example).length;
+    sum.textContent = `심화 예제 ${ex}개 · 심화 확인 ${deep.checks.length}개 펼쳐 보기`;
+    det.append(sum, ...[...dsec.children].slice(1));
+    dsec.append(det);
+  }
+  // 지금 보고 있는 단계를 막대에 표시하고, 마지막으로 본 단계를 기억한다
+  let observer = null;
+  if ('IntersectionObserver' in window) {
+    observer = new IntersectionObserver((entries) => {
+      const vis = entries.filter((e) => e.isIntersecting).map((e) => e.target.getAttribute('aria-labelledby').slice(2));
+      if (!vis.length) return;
+      const cur = stepIds.find((id) => vis.includes(id));
+      if (!cur) return;
+      view.querySelectorAll('.ls-i').forEach((b) => {
+        if (b.dataset.step !== cur) { b.removeAttribute('aria-current'); return; }
+        b.setAttribute('aria-current', 'step');
+        const ol = b.closest('ol'); // 좁은 화면에서 지금 단계가 막대 안에 보이게 가로로만 옮긴다
+        if (ol) ol.scrollTo({ left: Math.max(0, b.parentElement.offsetLeft - 16), behavior: 'smooth' });
+      });
+      saveLessonPos(L.id, cur);
+    }, { rootMargin: '-30% 0px -60% 0px' });
+    view.querySelectorAll('.l-sec').forEach((s) => observer.observe(s));
   }
   // 처음 그릴 때: 탐구 그래프를 그리고, 지난번에 한 예측·유도·설명 점검을 되살린다
   (L.explore || []).forEach((_, i) => paintExplore(i));
@@ -309,6 +378,8 @@ export function renderLesson(view, { args: [lessonId] }) {
   const cqFind = (id) => (L.cq || []).find((q) => q.id === id);
   view.onclick = (e) => {
     const t = e.target;
+    const step = t.closest('[data-step]');
+    if (step) { goStep(step.dataset.step); return; }
     if (cqClick(t, {
       find: cqFind,
       onGrade: (li, q, a, r) => {
@@ -389,5 +460,6 @@ export function renderLesson(view, { args: [lessonId] }) {
     const v = view.querySelector('[data-note]')?.value;
     if (v !== undefined && v !== (getState().lessons[L.id]?.note || '')) update((s) => { (s.lessons[L.id] ||= blankLessonRec()).note = v.slice(0, 4000); });
     view.onclick = null; view.onsubmit = null; view.oninput = null;
+    if (observer) observer.disconnect();
   };
 }
