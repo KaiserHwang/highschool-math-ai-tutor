@@ -4,6 +4,7 @@ import { latestDiagnosis, activeCourses, activeCourseTitles } from '../model.js'
 import { COURSES } from '../content/courses.js';
 import { esc, toast } from '../lib/ui.js';
 import { AI_SERVICES, tutorRules, copyText } from '../lib/ai.js';
+import { clearAllDrafts } from '../lib/draft.js';
 
 const AI_HELP = {
   claude: 'Claude의 프로젝트(Projects)를 만들고 지침에 붙여넣은 뒤, 그 프로젝트 주소를 넣으세요.',
@@ -139,6 +140,7 @@ export function renderSettings(view) {
     if (a.dataset.act === 'reset') {
       if (confirm('모든 기록을 지울까요? 되돌릴 수 없습니다.')) {
         resetAll();
+        clearAllDrafts(); // 풀던 진단·평가의 임시 저장도 함께 지운다
         toast('모든 기록을 지웠어요.');
         renderSettings(view);
       }

@@ -195,6 +195,22 @@ export function diagUnitReadiness(d) {
   return out;
 }
 
+/** 진단 결과에서 먼저 볼 소단원: 준비도가 가장 낮은 단원(같으면 단원 순서)의 아직 배우지 않은 첫 소단원.
+ *  { lesson, unitId, pct } 또는 null(모든 단원을 이미 배웠으면 준비도가 가장 낮은 단원의 첫 소단원) */
+export function diagFirstLesson(d) {
+  const ready = diagUnitReadiness(d);
+  const order = REGULAR_UNITS.map((u) => u.id);
+  const units = Object.keys(ready).filter((id) => order.includes(id)).sort((a, b) => ready[a].pct - ready[b].pct || order.indexOf(a) - order.indexOf(b));
+  if (!units.length) return null;
+  const st = getState();
+  for (const id of units) {
+    const l = lessonsOfUnit(id).find((x) => !learnedOn(x, st.lessons[x.id]));
+    if (l) return { lesson: l, unitId: id, pct: ready[id].pct };
+  }
+  const l = lessonsOfUnit(units[0])[0];
+  return l ? { lesson: l, unitId: units[0], pct: ready[units[0]].pct } : null;
+}
+
 /**
  * 진단 채점. 진단 묶음(setId)의 문항만 채점한다.
  * 트랙 추천: 보정 점수 50 이상이면 내신 1등급, 75 이상이고 심화·최상위 문항의 3분의 2 이상을 맞히면 최상위 도전.
