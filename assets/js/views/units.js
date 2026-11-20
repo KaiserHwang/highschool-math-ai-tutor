@@ -1,7 +1,7 @@
 import { UNITS, UNIT_BY_ID, LEVELS, TRACKS, NEXT_SUBJECTS_NOTE, isFusion, courseTitle } from '../content/units.js';
 import { COURSES } from '../content/courses.js';
 import { problemsOfUnit } from '../content/problems.js';
-import { unitMastery, statusOf, activeTrack, latestDiagnosis, unitLessonStats, lessonProgress, LESSON_STATE, unitReadiness, activeCourses, activeCourseTitles, isActiveUnit } from '../model.js';
+import { unitMastery, statusOf, activeTrack, latestDiagnosis, unitLessonStats, lessonProgress, LESSON_STATE, unitReadiness, activeCourses, activeCourseTitles, isActiveUnit, trackChosen } from '../model.js';
 import { tex, esc, statusGlyph } from '../lib/ui.js';
 import { lessonsOfUnit } from '../content/lessons/index.js';
 import { generatorsOfUnit, newSeed } from '../content/generators.js';
@@ -38,7 +38,7 @@ export function renderUnits(view) {
   <section class="page">
     <header class="page-head">
       <h1 class="page-title">개념 학습</h1>
-      <p class="lead">2022 개정 교육과정 ${esc(activeCourseTitles().join('·'))}의 단원입니다. 소단원마다 예측 → 탐구 → 정리 → 예제 → 확인 → 심화 → 설명 순서로 공부하고, 배운 개념은 1주·3주·2개월 뒤 "오늘의 개념 확인"에서 다시 꺼내 봅니다. 지금 트랙은 <a href="#/settings">${TRACKS[track].label}</a>입니다.</p>
+      <p class="lead">2022 개정 교육과정 ${esc(activeCourseTitles().join('·'))}의 단원입니다. 소단원마다 예측 → 탐구 → 정리 → 예제 → 확인 → 심화 → 설명 순서로 공부하고, 배운 개념은 1주·3주·2개월 뒤 "오늘의 개념 확인"에서 다시 꺼내 봅니다. ${trackChosen() ? `지금 트랙은 <a href="#/settings">${TRACKS[track].label}</a>입니다.` : '<a href="#/diagnosis">수준 진단</a>을 보면 학습 트랙을 추천해 드려요.'}</p>
       <p class="row"><a class="btn btn-primary" href="#/map">개념 지도</a><a class="btn btn-quiet" href="#/quiz?view=intro">배운 범위 혼합 평가</a></p>
     </header>
     ${groups.filter((g) => g.on).map(block).join('')}
@@ -74,7 +74,7 @@ export function renderUnit(view, { args: [unitId] }) {
 
   view.innerHTML = `
   <section class="page">
-    <nav class="crumbs" aria-label="위치"><a href="#/units">단원</a><span aria-hidden="true">/</span><span>${esc(courseTitle(u))}</span></nav>
+    <nav class="crumbs" aria-label="위치"><a href="#/units">개념 학습</a><span aria-hidden="true">/</span><span>${esc(courseTitle(u))}</span></nav>
     <header class="page-head unit-head">
       <h1 class="page-title"><span class="unit-no">${u.no}</span>${esc(u.title)}</h1>
       <p class="lead">${esc(u.sub)}</p>

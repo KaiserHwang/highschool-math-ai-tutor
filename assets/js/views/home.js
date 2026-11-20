@@ -1,7 +1,7 @@
 import { getState, today, addDays } from '../store.js';
 import { TRACKS, UNIT_BY_ID, LEVELS, unitLabel, isFusion, courseShort } from '../content/units.js';
 import { generatorsOfUnit, newSeed } from '../content/generators.js';
-import { latestDiagnosis, recommendNext, dueReviews, unitMastery, streak, activeTrack, totals, weakestUnit, lessonTotals, lessonRechecks, conceptsDue, conceptQueue, conceptMemory, learnedOn, rootWeaknesses, studyCount, activeUnits, activeLessons, activeCourseTitles, activeDiagSets, missingDiagSets, latestDiagnosisOf } from '../model.js';
+import { latestDiagnosis, recommendNext, dueReviews, unitMastery, streak, activeTrack, totals, weakestUnit, lessonTotals, lessonRechecks, conceptsDue, conceptQueue, conceptMemory, learnedOn, rootWeaknesses, studyCount, activeUnits, activeLessons, activeCourseTitles, activeDiagSets, missingDiagSets, latestDiagnosisOf, trackChosen, hasStudyHistory } from '../model.js';
 import { lessonForProblem, lessonsOfUnit } from '../content/lessons/index.js';
 import { CONCEPT_SET } from './concepts.js';
 import { tex, esc, fmtDate } from '../lib/ui.js';
@@ -67,7 +67,10 @@ export function renderHome(view) {
 
   // ② 다음에 배울 개념
   const unlearned = (l) => !learnedOn(l, st.lessons[l.id]);
-  const learnNext = (nextLesson && unlearned(nextLesson) ? nextLesson : null)
+  const fresh = !hasStudyHistory();
+  // 기록이 없으면 추천 문제에서 거꾸로 찾지 않고 공부하는 과목의 첫 소단원부터 안내한다
+  const learnNext = (fresh ? activeLessons().find(unlearned) : null)
+    || (nextLesson && unlearned(nextLesson) ? nextLesson : null)
     || lessonsOfUnit(weak.id).find(unlearned) || activeLessons().find(unlearned) || null; // 공부하는 과목 안에서 고른다
   const rechecksDue = lessonRechecks().filter((x) => x.pr.recheckDue);
   if (rechecksDue.length) {
@@ -87,12 +90,12 @@ export function renderHome(view) {
             <span class="meta">${esc(unitLabel(UNIT_BY_ID[next.unit]))} · ${esc(next.topic)} · <span class="lv lv-${next.level}">${LEVELS[next.level].label}</span></span>
           </header>
           <div class="q-text">${tex(next.q)}</div>${figure(next.fig)}
-          <p class="row"><a class="btn btn-primary" href="#/p/${next.id}">이 문제 풀기</a>${lessonFirst ? `<a class="btn btn-quiet" href="#/l/${nextLesson.id}">개념 먼저: ${esc(nextLesson.title)}</a>` : ''}<span class="hint-text">${track.label} 트랙 기준으로 고른 문제</span></p>
+          <p class="row"><a class="btn btn-primary" href="#/p/${next.id}">이 문제 풀기</a>${lessonFirst ? `<a class="btn btn-quiet" href="#/l/${nextLesson.id}">개념 먼저: ${esc(nextLesson.title)}</a>` : ''}<span class="hint-text">${trackChosen() ? `${track.label} 트랙 기준으로 고른 문제` : '진단을 보면 수준에 맞춰 문제를 골라 드려요'}</span></p>
         </article>
       </li>`
     : `<li class="plan-step"><div class="plan-body"><h2 class="h3">문제 은행을 모두 풀었어요</h2><p class="hint-text">비슷한 문제 연습과 오답 복습으로 실력을 굳혀 보세요.</p></div></li>`);
   if (gens.length) {
-    steps.push(`<li class="plan-step"><div class="plan-body"><h2 class="h3">숫자를 바꿔 한 유형 더: ${esc(unitLabel(weak))}</h2><p class="hint-text">지금 가장 약한 단원입니다. 같은 유형을 숫자만 바꿔 원하는 만큼 풀 수 있어요.</p>
+    steps.push(`<li class="plan-step"><div class="plan-body"><h2 class="h3">숫자를 바꿔 한 유형 더: ${esc(unitLabel(weak))}</h2><p class="hint-text">${fresh ? '' : '지금 가장 약한 단원입니다. '}같은 유형을 숫자만 바꿔 원하는 만큼 풀 수 있어요.</p>
       <div class="gen-chips">${gens.map((g) => `<a class="chip" href="#/v/${g.key}?s=${newSeed()}">${esc(g.topic)}</a>`).join('')}</div></div></li>`);
   }
 

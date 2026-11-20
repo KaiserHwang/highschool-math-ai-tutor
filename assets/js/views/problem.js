@@ -66,7 +66,7 @@ export function renderProblem(view, { args: [ref], params }) {
   const answerUI = p.type === 'mc'
     ? `<div class="options${optCls}" role="radiogroup" aria-label="보기">${p.options.map((o, k) => `<button type="button" class="opt" role="radio" aria-checked="false" data-opt="${k}"><span class="opt-n">${CIRCLED[k]}</span><span class="opt-t">${tex(o)}</span></button>`).join('')}</div>
        <div class="row"><button type="button" class="btn btn-primary" data-act="submit">채점하기</button></div>`
-    : `<form class="short-form" data-form="short"><label class="short"><span class="short-l">답</span><input class="short-in" name="ans" inputmode="text" autocomplete="off" placeholder="정수, 분수, 소수(예: -3, 10/3, 0.25)" aria-describedby="fb"></label><button class="btn btn-primary" type="submit">채점하기</button></form>`;
+    : `<form class="short-form" data-form="short"><label class="short"><span class="short-l">답</span><input class="short-in" name="ans" inputmode="text" autocomplete="off" placeholder="예: -3, 10/3, 0.25" aria-describedby="short-help fb"></label><button class="btn btn-primary" type="submit">채점하기</button><p class="short-help" id="short-help">정수, 분수, 소수로 입력해요.</p></form>`;
 
   const note = isVariant ? '' : st.notes[pid] || '';
   const wrongEntry = isVariant ? null : st.wrong[pid];
@@ -88,7 +88,7 @@ export function renderProblem(view, { args: [ref], params }) {
 
   view.innerHTML = `
   <section class="page study">
-    <nav class="crumbs" aria-label="위치"><a href="#/units">단원</a><span aria-hidden="true">/</span><a href="#/u/${unit.id}">${esc(unitLabel(unit))}</a><span aria-hidden="true">/</span><span>${isVariant ? '비슷한 문제 연습' : `${n}번`}</span></nav>
+    <nav class="crumbs" aria-label="위치"><a href="#/units">개념 학습</a><span aria-hidden="true">/</span><a href="#/u/${unit.id}">${esc(unitLabel(unit))}</a><span aria-hidden="true">/</span><span>${isVariant ? '비슷한 문제 연습' : `${n}번`}</span></nav>
     <h1 class="sr">${esc(unit.title)} ${isVariant ? '비슷한 문제' : `${n}번 문제`}</h1>
     ${strip}
     ${variantBanner}
@@ -98,6 +98,7 @@ export function renderProblem(view, { args: [ref], params }) {
           <header class="paper-head">
             <span class="meta">${esc(p.topic)} · <span class="lv lv-${p.level}">${LEVELS[p.level].label}</span> · ${p.type === 'mc' ? '객관식' : '단답형'}${p.fig ? ' · 그림' : ''}</span>
             ${wasSolved ? '<span class="meta done-tag">해결한 문제</span>' : ''}
+            <button type="button" class="pad-fab" data-act="pad-open" aria-label="연습장 열기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16zM14 6l3 3"/></svg>연습장</button>
           </header>
           <div class="q-row" id="q-${esc(pid)}"><span class="q-num">${isVariant ? '<span class="q-var">연습</span>' : n}<span class="mark-slot"></span></span><div class="q-text">${tex(p.q)}</div></div>
           ${figure(p.fig)}
@@ -141,7 +142,6 @@ export function renderProblem(view, { args: [ref], params }) {
         ${scratchpadHTML()}
       </aside>
     </div>
-    <button type="button" class="pad-fab" data-act="pad-open" aria-label="연습장 열기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16zM14 6l3 3"/></svg>연습장</button>
     <nav class="pager" aria-label="다른 문제">
       ${isVariant
         ? `${fromPid ? `<a class="btn btn-quiet" href="${link(`/p/${fromPid}`)}">원래 문제로</a>` : '<span></span>'}<a class="btn btn-quiet" href="${link(`/u/${unit.id}`)}">단원으로</a><a class="btn btn-quiet" href="${link(`/v/${ref}`, { s: newSeed(), from: fromPid })}">다른 숫자로 한 문제 더</a>`
@@ -319,7 +319,7 @@ export function renderProblem(view, { args: [ref], params }) {
       lockAnswer();
       view.querySelectorAll('[data-hint]').forEach((b) => (b.disabled = false));
       openSolutionQuiet();
-      let msg = '<p class="fb-right">정답입니다.</p>';
+      let msg = '<p class="fb-right">맞았어요.</p>';
       if (reviewOutcome && !reviewOutcome.counted) {
         msg += {
           early: `<p class="fb-note">예정일 전이라 연습으로 기록했어요. 복습 단계는 ${fmtDate(reviewOutcome.entry.due)}에 다시 풀어 맞히면 오릅니다.</p>`,

@@ -1,7 +1,7 @@
 {
-  "name": "MathPulse 고1 수학",
+  "name": "MathPulse 고등 수학",
   "short_name": "MathPulse",
-  "description": "2022 개정 공통수학1·2 수준 진단과 심화 코칭",
+  "description": "2022 개정 고등학교 수학 개념 학습, 수준 진단과 심화 코칭",
   "lang": "ko",
   "start_url": "./#/",
   "scope": "./",

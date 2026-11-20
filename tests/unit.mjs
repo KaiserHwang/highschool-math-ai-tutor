@@ -456,6 +456,23 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   ok(model.answerTex('57/2500') === '0.0228\\left(=\\dfrac{57}{2500}\\right)' && model.answerTex('1587/10000').startsWith('0.1587') && model.answerTex('-3/1000').startsWith('-0.003')
     && model.answerTex('1/4') === '1/4' && model.answerTex('10/3') === '10/3' && model.answerTex('12') === '12' && model.normalizeAnswer('0.0228') === '57/2500',
     '표로 구한 확률(소수 셋째 자리 이상)은 소수와 기약분수를 함께 보이고, 다른 정답은 그대로 보인다. 소수 입력은 같은 기약분수로 채점된다');
+  {
+    store.resetAll();
+    const fresh = !model.trackChosen() && !model.hasStudyHistory();
+    store.update((s) => { s.profile.track = 'killer'; });
+    const picked = model.trackChosen();
+    const first = model.activeProblems()[0];
+    store.update((s) => { s.attempts[first.id] = { tries: 1, solved: true, firstCorrect: true, hints: 0, sawSolution: false }; });
+    const studied = model.hasStudyHistory();
+    // 다른 과목에서만 푼 기록은 지금 과목의 근거가 아니다(일별 activity에는 과목 구분이 없다)
+    store.update((s) => { s.profile.courses = ['common2']; });
+    const otherCourse = model.hasStudyHistory() === (model.activeProblems().some((p) => p.id === first.id));
+    store.resetAll();
+    store.update((s) => { s.diagnoses.push(model.gradeDiagnosis({})); });
+    const byDiag = model.hasStudyHistory();
+    store.resetAll();
+    ok(fresh && picked && studied && otherCourse && byDiag, '진단도 트랙 선택도 없으면 트랙을 정하지 않은 것으로, 공부하는 과목의 문제·소단원 기록이나 그 과목 진단이 있으면 근거가 있는 것으로 본다(다른 과목 기록은 제외)');
+  }
   store.resetAll();
   ok(model.studiedUnits().join() === 'u1,u2,u3,u4,u5,u6,u7', '공부한 흔적이 없으면 혼합 평가 범위는 교과서 단원 전체다');
   store.update((s) => {

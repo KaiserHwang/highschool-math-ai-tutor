@@ -26,7 +26,7 @@ export function renderSettings(view) {
     <section class="set-sec">
       <h2 class="h3">학생</h2>
       <label class="field"><span class="field-l">이름(화면 인사에만 사용)</span><input data-k="name" value="${esc(st.profile.name)}" maxlength="20"></label>
-      <label class="field"><span class="field-l">하루 목표 <span class="hint-text">개념 문항 풀이 + 문제 해결을 더한 수</span></span><input data-k="goal" type="number" min="1" max="30" value="${st.profile.dailyGoal}"></label>
+      <label class="field"><span class="field-l">하루 목표 <span class="hint-text">개념 문항 풀이 + 문제 해결을 더한 수, 1~30개</span></span><input data-k="goal" type="number" min="1" max="30" value="${st.profile.dailyGoal}"></label>
       <fieldset class="field"><legend class="field-l">공부하는 과목</legend>
         <div class="row" role="group">${COURSES.map((c) => `<label class="chip-check"><input type="checkbox" data-course="${c.id}" ${active.includes(c.id) ? 'checked' : ''}> ${esc(c.title)}</label>`).join('')}</div>
         <p class="hint-text">고른 과목만 오늘 할 일(추천 문제, 약한 단원, 개념 확인, 복습)과 혼합 평가, 리포트에 나옵니다. 과목을 꺼도 기록과 복습 예정일은 그대로 남고, 다시 켜면 이어집니다. 꺼 둔 과목의 단원도 개념 학습에서 언제든 열어 볼 수 있어요.</p>
@@ -57,7 +57,7 @@ export function renderSettings(view) {
       <p>브라우저 데이터를 지우면 기록도 사라집니다. 가끔 백업 파일을 내려받아 두세요.</p>
       <div class="row">
         <button type="button" class="btn" data-act="export">백업 파일 내려받기</button>
-        <label class="btn btn-quiet file-btn">백업 파일 불러오기<input type="file" accept="application/json,.json" data-act="import" hidden></label>
+        <button type="button" class="btn btn-quiet" data-act="pick-import">백업 파일 불러오기</button><input type="file" accept="application/json,.json" data-act="import" hidden aria-label="백업 파일 선택">
       </div>
     </section>
 
@@ -83,7 +83,11 @@ export function renderSettings(view) {
       return;
     }
     if (t.dataset.k === 'name') update((s) => (s.profile.name = t.value.trim().slice(0, 20)));
-    if (t.dataset.k === 'goal') update((s) => (s.profile.dailyGoal = Math.max(1, Math.min(30, parseInt(t.value, 10) || 5))));
+    if (t.dataset.k === 'goal') {
+      const v = Math.max(1, Math.min(30, parseInt(t.value, 10) || 5));
+      if (String(v) !== t.value) { t.value = String(v); toast(`하루 목표는 1~30개 사이로 정해요. ${v}개로 맞췄어요.`); }
+      update((s) => (s.profile.dailyGoal = v));
+    }
     if (t.dataset.ai) {
       const v = t.value.trim();
       if (v && !/^https:\/\//.test(v)) { toast('https://로 시작하는 주소를 넣으세요.'); return; }
@@ -105,14 +109,15 @@ export function renderSettings(view) {
   }
 
   function onClick(e) {
+    // closest는 <html data-theme>까지 올라가므로 이 화면 안의 요소만 본다
     const tr = e.target.closest('[data-track]');
-    if (tr) {
+    if (tr && view.contains(tr)) {
       update((s) => (s.profile.track = tr.dataset.track || null));
       view.querySelectorAll('[data-track]').forEach((b) => b.setAttribute('aria-pressed', String(b === tr)));
       return;
     }
     const th = e.target.closest('[data-theme]');
-    if (th) {
+    if (th && view.contains(th)) {
       update((s) => (s.settings.theme = th.dataset.theme));
       view.querySelectorAll('[data-theme]').forEach((b) => b.setAttribute('aria-pressed', String(b === th)));
       return;
@@ -120,6 +125,8 @@ export function renderSettings(view) {
     const a = e.target.closest('[data-act]');
     if (!a) return;
     if (a.dataset.act === 'copy-rules') copyText(rules()).then((ok) => toast(ok ? '튜터 지침을 복사했어요.' : '복사하지 못했습니다. 지침 내용을 직접 선택해 복사하세요.'));
+    // 숨긴 파일 입력은 키보드로 닿지 않으므로 실제 버튼이 파일 선택기를 연다
+    if (a.dataset.act === 'pick-import') view.querySelector('[data-act="import"]').click();
     if (a.dataset.act === 'export') {
       const blob = new Blob([exportData()], { type: 'application/json' });
       const url = URL.createObjectURL(blob);

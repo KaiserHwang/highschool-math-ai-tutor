@@ -75,7 +75,7 @@ function renderItem(view) {
   run.shownAt = Date.now();
   const answerUI = p.type === 'mc'
     ? `<div class="options${optionsClass(p.options)}" role="radiogroup" aria-label="보기">${p.options.map((o, k) => `<button type="button" class="opt" role="radio" aria-checked="${resp === k}" data-opt="${k}"><span class="opt-n">${CIRCLED[k]}</span><span class="opt-t">${tex(o)}</span></button>`).join('')}</div>`
-    : `<label class="short"><span class="short-l">답</span><input class="short-in" inputmode="text" autocomplete="off" value="${esc(resp ?? '')}" placeholder="정수, 분수, 소수(예: 10/3, 0.25)"></label>`;
+    : `<label class="short"><span class="short-l">답</span><input class="short-in" inputmode="text" autocomplete="off" value="${esc(resp ?? '')}" placeholder="예: -3, 10/3, 0.25" aria-describedby="short-help"></label><p class="short-help" id="short-help">정수, 분수, 소수로 입력해요.</p>`;
   view.innerHTML = `
   <section class="page narrow diag quiz">
     <header class="diag-head">
