@@ -1,5 +1,5 @@
 import { subscribe, getState, isMemoryOnly } from './store.js';
-import { dueReviews, conceptsDue, lessonRechecks, activeCourseTitles } from './model.js';
+import { conceptsDue, reviewToday, activeCourseTitles } from './model.js';
 import { toast, hideToast, esc } from './lib/ui.js';
 import { ID_PART } from './lib/ids.js';
 import { renderHome } from './views/home.js';
@@ -89,7 +89,7 @@ function setActive(nav) {
 
 function updateBadges() {
   const counts = {
-    review: dueReviews().length + lessonRechecks().filter((x) => x.pr.recheckDue).length,
+    review: reviewToday().total, // 복습 화면의 "오늘 할 복습"과 같은 수
     concepts: conceptsDue().length,
   };
   for (const [k, n] of Object.entries(counts)) {

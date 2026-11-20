@@ -216,6 +216,7 @@ export function renderProblem(view, { args: [ref], params }) {
       if (session.selected == null) return toast('보기를 하나 고르세요.');
       return submit(session.selected);
     }
+    if (act === 'hint1') { view.querySelector('[data-hint="1"]')?.click(); view.querySelector('[data-hint="1"]')?.scrollIntoView({ block: 'center', behavior: 'smooth' }); e.target.closest('.row')?.remove(); return; }
     if (act === 'pad-open') return togglePad(true);
     if (act === 'pad-close') return togglePad(false);
     if (act === 'open-ask') {
@@ -342,7 +343,9 @@ export function renderProblem(view, { args: [ref], params }) {
     } else {
       const tries = isVariant ? 2 : getState().attempts[pid].tries;
       const reopened = reviewOutcome && reviewOutcome.why === 'reopened' ? '<p class="fb-note">졸업했던 문제를 틀려 오답노트로 다시 넣었어요. 내일 다시 복습합니다.</p>' : '';
-      fb.innerHTML = `<p class="fb-wrong">다시 생각해 보세요.${tries >= 2 && session.hints === 0 ? ' 1단계 힌트를 열어 보는 것도 방법입니다.' : ''}</p>${reopened}
+      // 오답 바로 아래에서 1단계 힌트를 열 수 있게(#48 1-C)
+      const hintBtn = session.hints === 0 && view.querySelector('[data-hint="1"]') ? '<p class="row"><button type="button" class="btn btn-quiet" data-act="hint1">1단계 힌트 보기</button></p>' : '';
+      fb.innerHTML = `<p class="fb-wrong">다시 생각해 보세요.${tries >= 2 && session.hints === 0 ? ' 1단계 힌트를 열어 보는 것도 방법입니다.' : ''}</p>${hintBtn}${reopened}
         ${isVariant ? '' : `<p class="fb-note">틀린 문제는 오답노트에 저장됩니다. 어디서 틀렸는지 골라 두면 복습할 때 도움이 됩니다.</p>${reasonPicker()}`}
         <p class="row"><button type="button" class="btn btn-quiet" data-act="open-ask">AI에게 물어보기</button></p>`;
       if (p.type === 'mc') {

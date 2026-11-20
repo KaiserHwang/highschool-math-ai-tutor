@@ -67,6 +67,23 @@ export function renderQuiz(view, { params }) {
   return renderIntro(view);
 }
 
+/** 지난 평가의 문항 목록: 문항마다 맞힘·틀림, 펼치면 문제·정답·해설, 그리고 다시 풀기(#48 1-C).
+ *  숫자를 바꾼 문제는 같은 시드로 다시 풀 수 있다. 은행 문제는 이미 기록이 있으므로 해설만 보이고 문제 화면으로 연결한다. */
+function pastItems(q) {
+  return `<ol class="past-items">${q.items.map((it) => {
+    const ref = String(it.ref);
+    const isBank = !ref.includes(':');
+    let p = null;
+    try { p = isBank ? PROBLEM_BY_ID[ref] : itemOf({ ref, kind: 'variant' }); } catch { p = null; }
+    const u = UNIT_BY_ID[it.unit];
+    const head = `${u ? esc(unitLabel(u)) : ''} · ${it.correct ? '맞힘' : '틀림'}`;
+    if (!p) return `<li>${head}</li>`;
+    const [k, sd] = ref.split(':');
+    const again = isBank ? `<a href="#/p/${ref}">문제 화면에서 보기</a>` : GENERATORS[k] ? `<a href="#/v/${k}?s=${encodeURIComponent(sd)}">같은 문제 다시 풀기</a>` : '';
+    const ans = p.type === 'mc' ? `${CIRCLED[p.answer]} ${tex(p.options[p.answer])}` : tex(`$${answerTex(p.answer)}$`);
+    return `<li><details><summary>${head}</summary><div class="dr-body"><div class="q-text">${tex(p.q)}</div>${figure(p.fig)}<p><strong>정답</strong> ${ans}</p><div class="sol">${tex(p.solution)}</div>${again ? `<p class="row">${again}</p>` : ''}</div></details></li>`;
+  }).join('')}</ol>`;
+}
 function renderIntro(view) {
   const st = getState();
   const studied = studiedUnits();
@@ -92,7 +109,7 @@ function renderIntro(view) {
       <p class="hint-text">공부한 흔적이 있는 단원을 미리 골라 두었습니다.</p>
     </fieldset>
     <p class="row"><button class="btn btn-primary" data-act="start">평가 시작</button></p>
-    ${history.length ? `<section class="side-block"><h2 class="h3">지난 평가</h2><ol class="diag-history">${history.map((q) => `<li>${fmtDate(q.date)} · ${q.items.length}문제 중 ${q.items.filter((i) => i.correct).length}문제 정답 · ${[...new Set(q.items.map((i) => UNIT_BY_ID[i.unit].no))].join(', ')}</li>`).join('')}</ol></section>` : ''}
+    ${history.length ? `<section class="side-block"><h2 class="h3">지난 평가</h2><ol class="diag-history">${history.map((q) => `<li><details><summary>${fmtDate(q.date)} · ${q.items.length}문제 중 ${q.items.filter((i) => i.correct).length}문제 정답 · ${[...new Set(q.items.map((i) => UNIT_BY_ID[i.unit].no))].join(', ')}</summary>${pastItems(q)}</details></li>`).join('')}</ol></section>` : ''}
   </section>`;
   view.onclick = (e) => {
     if (e.target.closest('[data-act="resume"]') && resume) {
@@ -178,6 +195,7 @@ function renderItem(view) {
       const empty = r == null || (p.type === 'short' && !String(r).trim());
       if (empty) return toast('답을 고르거나 입력하세요. 모르면 "모르겠어요"를 누르세요.');
       if (p.type === 'short' && normalizeAnswer(r) === null) return toast('정수, 분수, 소수(예: -3, 10/3, 0.25)로 입력하세요.');
+      if (run.i === run.items.length - 1) { saveRun(); run.confirming = true; return renderConfirm(view); }
       return go(1);
     }
   };
