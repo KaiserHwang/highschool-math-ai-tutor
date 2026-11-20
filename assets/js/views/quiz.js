@@ -67,6 +67,16 @@ export function renderQuiz(view, { params }) {
   return renderIntro(view);
 }
 
+/** 지난 평가의 문항 목록: 문항마다 맞힘·틀림과 다시 여는 링크(은행 문제는 그 문제, 숫자를 바꾼 문제는 같은 시드로) */
+function pastItems(q) {
+  return `<ol class="past-items">${q.items.map((it, i) => {
+    const isBank = !String(it.ref).includes(':');
+    const href = isBank ? (PROBLEM_BY_ID[it.ref] ? `#/p/${it.ref}` : '') : (() => { const [k, sd] = String(it.ref).split(':'); return GENERATORS[k] ? `#/v/${k}?s=${encodeURIComponent(sd)}` : ''; })();
+    const u = UNIT_BY_ID[it.unit];
+    return `<li><span>${i + 1}. ${u ? esc(unitLabel(u)) : ''} · ${it.correct ? '맞힘' : '틀림'}</span>${href ? ` <a href="${href}">다시 풀어 보기</a>` : ''}</li>`;
+  }).join('')}</ol>`;
+}
+
 function renderIntro(view) {
   const st = getState();
   const studied = studiedUnits();
@@ -92,7 +102,7 @@ function renderIntro(view) {
       <p class="hint-text">공부한 흔적이 있는 단원을 미리 골라 두었습니다.</p>
     </fieldset>
     <p class="row"><button class="btn btn-primary" data-act="start">평가 시작</button></p>
-    ${history.length ? `<section class="side-block"><h2 class="h3">지난 평가</h2><ol class="diag-history">${history.map((q) => `<li>${fmtDate(q.date)} · ${q.items.length}문제 중 ${q.items.filter((i) => i.correct).length}문제 정답 · ${[...new Set(q.items.map((i) => UNIT_BY_ID[i.unit].no))].join(', ')}</li>`).join('')}</ol></section>` : ''}
+    ${history.length ? `<section class="side-block"><h2 class="h3">지난 평가</h2><ol class="diag-history">${history.map((q) => `<li><details><summary>${fmtDate(q.date)} · ${q.items.length}문제 중 ${q.items.filter((i) => i.correct).length}문제 정답 · ${[...new Set(q.items.map((i) => UNIT_BY_ID[i.unit].no))].join(', ')}</summary>${pastItems(q)}</details></li>`).join('')}</ol></section>` : ''}
   </section>`;
   view.onclick = (e) => {
     if (e.target.closest('[data-act="resume"]') && resume) {

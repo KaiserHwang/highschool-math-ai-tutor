@@ -9,6 +9,13 @@ import { AI_SERVICES, reportPrompt, sendToAI } from '../lib/ai.js';
 
 export function renderReport(view) {
   const st = getState();
+  // 기록이 하나도 없으면 0과 "–"로 찬 표 대신 시작 안내만 보인다(#48 1-C)
+  if (!Object.keys(st.activity || {}).length && !st.diagnoses.length && !Object.keys(st.attempts || {}).length && !Object.keys(st.lessons || {}).length) {
+    view.innerHTML = `<section class="page narrow"><header class="page-head"><h1 class="page-title">학습 리포트</h1>
+      <p class="lead">아직 기록이 없어요. 진단을 보거나 첫 개념을 공부하면 학습량, 숙련도, 역량 변화가 여기에 쌓여요.</p></header>
+      <p class="row"><a class="btn btn-primary" href="#/diagnosis">수준 진단 시작</a><a class="btn btn-quiet" href="#/units">첫 개념 공부하기</a></p></section>`;
+    return;
+  }
   const diag = latestDiagnosis();
   const now = currentSkills();
   const w7 = periodStats(7);

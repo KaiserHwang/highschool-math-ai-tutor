@@ -549,6 +549,10 @@ async function run(viewport, tag) {
   const qz = await page.evaluate(() => JSON.parse(localStorage.getItem('mathpulse:v2')).quizzes);
   ok(qz.length === 1 && qz[0].items.length === nq && (await page.locator('.dr-item').count()) === nq, `[${tag}] 혼합 평가 결과를 기록하고 문항별 정답과 풀이를 공개한다`);
   await shot('quiz-result');
+  // 지난 평가는 문항마다 다시 풀어 볼 링크를 남긴다(#48 1-C)
+  await page.goto(BASE + '#/quiz?view=intro');
+  await page.click('.diag-history summary >> nth=0');
+  ok((await page.locator('.past-items a').count()) >= 1, `[${tag}] 지난 평가를 펼치면 문항을 다시 열 수 있다`);
 
   // ── 백업 내보내기
   await page.goto(BASE + '#/settings');

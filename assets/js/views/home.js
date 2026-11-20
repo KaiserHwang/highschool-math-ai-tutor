@@ -126,6 +126,7 @@ export function renderHome(view) {
         <ol class="plan">${steps.join('')}</ol>
       </div>
       <aside class="home-side">
+        ${fresh ? `<section class="side-block empty-note"><h2 class="h3">내 기록</h2><p class="hint-text">첫 개념을 공부하거나 문제를 풀면 이번 주 학습량, 단원별 숙련도, 개념 기억이 여기에 쌓여요.</p><p class="row"><a class="btn btn-quiet" href="#/map">개념 지도 보기</a></p></section>` : `
         <section class="side-block">
           <h2 class="h3">이번 주</h2>
           <ol class="week" aria-label="최근 7일 학습량(개념 문항 풀이 + 문제 해결)">${week.join('')}</ol>
@@ -145,6 +146,7 @@ export function renderHome(view) {
         </section>
         <section class="side-block"><h2 class="h3">혼합 평가</h2><p class="hint-text">공부한 단원에서 처음 보는 문제 8개를 단원 이름 없이 섞어 풉니다. 힌트와 정답은 끝나고 공개됩니다.</p><p class="row"><a class="btn btn-quiet" href="#/quiz?view=intro">혼합 평가 보기</a></p></section>
         ${diag ? `<section class="side-block"><h2 class="h3">수준 진단</h2><p class="hint-text">${activeDiagSets().map((s) => { const d = latestDiagnosisOf(s.id); return d ? `${esc(s.title)} ${d.overall}점(${TRACKS[d.track].label} 트랙 추천)` : `${esc(s.title)} 아직 안 봄`; }).join(' · ')}</p><p class="row"><a class="btn btn-quiet" href="#/diagnosis?view=result&set=${diag.set || 'common'}">결과 보기</a><a class="btn btn-quiet" href="#/diagnosis">다시 진단</a></p></section>` : ''}
+        `}
       </aside>
     </div>
   </section>`;
