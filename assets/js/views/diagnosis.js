@@ -133,7 +133,7 @@ function renderQuestion(view) {
   view.innerHTML = `
   <section class="page narrow diag">
     <header class="diag-head">
-      <p class="diag-progress" id="dq-h" tabindex="-1"><span>${run.i + 1}</span> / ${ITEMS.length}<span class="sr"> 번째 문제</span></p>
+      <p class="diag-progress" id="dq-h" tabindex="-1" aria-label="${ITEMS.length}문제 중 ${run.i + 1}번째 문제"><span>${run.i + 1}</span> / ${ITEMS.length}</p>
       <div class="meter wide" role="progressbar" aria-valuemin="0" aria-valuemax="${ITEMS.length}" aria-valuenow="${run.i + 1}"><span style="--v:${((run.i + 1) / ITEMS.length) * 100}%"></span></div>
       <p class="meta">${esc(courseTitle(unit))} · ${esc(unit.title)}</p>
     </header>
