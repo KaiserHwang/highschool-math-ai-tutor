@@ -536,6 +536,10 @@ async function run(viewport, tag) {
     if (await page.locator('.quiz .sol, .quiz .fb-right, .quiz .fb-wrong').count()) revealed = true;
     await page.click('[data-act="skip"]');
   }
+  // 마지막 문항을 비워 넘기면 바로 제출하지 않고 응답 수와 돌아보기·제출을 먼저 보여 준다(#48 1-A)
+  await page.waitForSelector('[data-act="submit"]');
+  ok(await page.locator('[data-act="back"]').count() === 1, `[${tag}] 혼합 평가 마지막 문항을 비우면 제출 전에 돌아보기를 고를 수 있다`);
+  await page.click('[data-act="submit"]');
   await page.waitForSelector('text=혼합 평가 결과');
   ok(nq >= 3 && !leaked && !revealed, `[${tag}] 혼합 평가는 단원 이름과 정답을 제출 전에 보여 주지 않는다 (${nq}문제)`);
   const qz = await page.evaluate(() => JSON.parse(localStorage.getItem('mathpulse:v2')).quizzes);
