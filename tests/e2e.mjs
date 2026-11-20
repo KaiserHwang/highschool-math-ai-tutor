@@ -270,6 +270,10 @@ async function run(viewport, tag) {
   await ckb.locator('button[type="submit"]').click();
   await ckb.locator('.trap-why').waitFor();
   ok(/i\^2/.test(await ckb.locator('.trap-why').innerHTML()) || (await ckb.locator('.trap-why .katex').count()) > 0, `[${tag}] 예상되는 오답에는 그 답이 나온 이유를 짚어 준다`);
+  // 심화는 처음에 접혀 있고, 단계 막대의 "심화"를 누르면 펼쳐진다(#48 1-B)
+  ok(!(await page.locator('.deep-fold').evaluate((d) => d.open)), `[${tag}] 처음 보는 소단원의 심화는 접혀 있다`);
+  await page.click('.lsteps [data-step="deep"]');
+  ok(await page.locator('.deep-fold').evaluate((d) => d.open), `[${tag}] 단계 막대의 심화를 누르면 심화가 펼쳐진다`);
   const dk = page.locator('[data-check="u2-l1-d2"]');
   await dk.locator('.short-in').fill('2');
   await dk.locator('button[type="submit"]').click();

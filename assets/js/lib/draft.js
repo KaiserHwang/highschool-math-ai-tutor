@@ -22,7 +22,11 @@ export function clearDraft(name) {
 // 모든 기록을 지울 때 화면이 메모리에 들고 있는 진행 상태도 버리도록 알린다(같은 탭에서 되살아나지 않게)
 const clearListeners = new Set();
 export const onDraftsCleared = (fn) => clearListeners.add(fn);
-export const clearAllDrafts = () => { clearDraft('diag'); clearDraft('quiz'); clearListeners.forEach((fn) => fn()); };
+export const clearAllDrafts = () => {
+  clearDraft('diag'); clearDraft('quiz');
+  try { localStorage.removeItem('mathpulse.lessonpos'); } catch { /* 무시 */ } // 소단원에서 마지막으로 본 단계도 지운다
+  clearListeners.forEach((fn) => fn());
+};
 
 const isObj = (x) => x && typeof x === 'object' && !Array.isArray(x);
 

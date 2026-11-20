@@ -613,6 +613,22 @@ export function lessonProgress(lesson) {
   };
 }
 
+/** 소단원 단계 표시(#48 1-B): 활동이 있는 단계마다 { done, total }. 읽기만 하는 단계(정리, 예제)는 넣지 않는다.
+ *  warm: 예측 + 찾아보기 과제, why: 유도 단계, ck: 맞힌 확인 문제, cq: 답한 개념 질문, deep: 맞힌 심화 확인, say: 설명 쓰기·비교 */
+export function lessonSteps(lesson) {
+  const pr = lessonProgress(lesson);
+  const a = pr.act;
+  const out = {};
+  const warmT = (a.predict ? 1 : 0) + (a.goals ? a.goals.total : 0);
+  if (warmT) out.warm = { done: (a.predict && a.predict.answered ? 1 : 0) + (a.goals ? a.goals.done : 0), total: warmT };
+  if (a.derive) out.why = { done: a.derive.done, total: a.derive.total };
+  if (pr.total) out.ck = { done: pr.right, total: pr.total };
+  if (pr.cqTotal) out.cq = { done: pr.cqTried, total: pr.cqTotal };
+  if (pr.deepTotal) out.deep = { done: pr.deepRight, total: pr.deepTotal };
+  if (a.explain) out.say = { done: a.explain.wrote || a.explain.opened ? 1 : 0, total: 1 };
+  return out;
+}
+
 export const LESSON_STATE = {
   kept: '오래 기억함',
   verified: '혼자 확인',
