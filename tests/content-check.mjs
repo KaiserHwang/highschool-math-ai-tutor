@@ -376,7 +376,8 @@ for (const u of REGULAR_UNITS) {
 // 성취기준(#63): 문장은 수식까지 렌더링되고, 단원의 코드는 모두 등록된 성취기준이며,
 // 모든 소단원이 자기 단원의 성취기준에 이어지고, 모든 성취기준은 소단원 하나 이상과 이어진다
 {
-  const { STANDARDS, STANDARD_BY_CODE, LESSON_STANDARDS, lessonsOfStandard } = await import('../assets/js/content/standards.js');
+  const { STANDARDS, STANDARD_BY_CODE, LESSON_STANDARDS, PARTIAL, lessonsOfStandard } = await import('../assets/js/content/standards.js');
+  for (const c of Object.keys(PARTIAL)) if (!STANDARD_BY_CODE[c]) fail(`PARTIAL: 모르는 성취기준 ${c}`);
   const LB = Object.fromEntries(LESSONS.map((l) => [l.id, l]));
   if (new Set(STANDARDS.map((s) => s.code)).size !== STANDARDS.length) fail('성취기준 코드 중복');
   for (const s of STANDARDS) {
