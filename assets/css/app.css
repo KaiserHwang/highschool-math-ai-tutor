@@ -1208,7 +1208,10 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .lesson .l-done:not(:empty) { margin-top: 14px; background: var(--paper); border: 1px solid var(--grid); border-radius: var(--r); box-shadow: var(--shadow); padding: 18px 20px; }
 .lesson .l-h { font-size: 18px; }
 /* ── 단원 목록(#48 3단계 3-D): 과목 탭, 과목 색, 단원 카드 ── */
-:root { --c-common1: #4f46e5; --c-common2: #0f766e; --c-algebra: #b45309; --c-calculus1: #7c3aed; --c-statistics: #be185d; }
+:root { --c-common1: #4f46e5; --c-common2: #0f766e; --c-algebra: #92400e; --c-calculus1: #7c3aed; --c-statistics: #be185d; }
+/* 어둡게: 과목색을 밝혀 번호 글자 4.5:1, 막대 3:1 이상 */
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) { --c-common1: #a5b4fc; --c-common2: #5eead4; --c-algebra: #fbbf24; --c-calculus1: #c4b5fd; --c-statistics: #f9a8d4; } }
+:root[data-theme='dark'] { --c-common1: #a5b4fc; --c-common2: #5eead4; --c-algebra: #fbbf24; --c-calculus1: #c4b5fd; --c-statistics: #f9a8d4; }
 [data-course='common1'] { --cc: var(--c-common1); }
 [data-course='common2'] { --cc: var(--c-common2); }
 [data-course='algebra'] { --cc: var(--c-algebra); }
@@ -1247,3 +1250,16 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 /* 섹션 끝의 "다음 단계"(키보드 순서용). 모바일의 떠 있는 버튼은 같은 동작을 시각적으로만 보인다 */
 .sec-next { margin: 18px 0 0; display: flex; justify-content: flex-end; }
 @media print { .sec-next, .lnext { display: none !important; } }
+/* 단원 목록 검토 반영(#48 3-D) */
+.toc-row, .toc-row:hover { border-left: 4px solid var(--cc, var(--brand)); }
+.toc-link:focus-visible, .toc-next:focus-visible { outline: 3px solid var(--brand); outline-offset: -3px; border-radius: calc(var(--r) - 4px); }
+.course-tabs [role='tab'] { min-height: 44px; }
+.toc-next { min-height: 44px; }
+.toc-stat:has(.toc-ml) { grid-template-columns: auto 1fr auto; }
+.toc-ml { font-size: 12px; color: var(--pencil); white-space: nowrap; }
+.toc-stat:has(.toc-ml) .toc-n { grid-column: 1 / -1; }
+.course-tabs.more-r { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
+.course-tabs.more-l { -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent); }
+.course-tabs.more-l.more-r { -webkit-mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .toc-group .meter { background: #3a404c; } }
+:root[data-theme='dark'] .toc-group .meter { background: #3a404c; }
