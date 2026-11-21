@@ -1,11 +1,14 @@
 import { getState, today, addDays } from '../store.js';
-import { UNIT_BY_ID, SKILLS, TRACKS, unitLabel, NEXT_SUBJECTS_NOTE } from '../content/units.js';
+import { UNIT_BY_ID, SKILLS, TRACKS, unitLabel, NEXT_SUBJECTS_NOTE, isFusion, courseTitle } from '../content/units.js';
 import { hasStudyHistory, latestDiagnosis, currentSkills, unitMastery, periodStats, wrongList, REASONS, streak, totals, activeTrack, lessonTotals, conceptMemory, rootWeaknesses, misconceptionStats, studyCount, activeDiagSets, latestDiagnosisOf, activeUnits, activeCourseTitles, hiddenReviews } from '../model.js';
 import { MISCONCEPTIONS } from '../content/misconceptions.js';
 import { LESSON_BY_ID } from '../content/lessons/index.js';
 import { radar } from '../lib/radar.js';
 import { esc, fmtMinutes, fmtDate } from '../lib/ui.js';
 import { AI_SERVICES, reportPrompt, sendToAI } from '../lib/ai.js';
+import { COURSES } from '../content/courses.js';
+
+const FOCUS_KEY = 'mathpulse.reportFocus';
 
 export function renderReport(view) {
   const st = getState();
@@ -43,10 +46,23 @@ export function renderReport(view) {
 
   const scope = activeCourseTitles().join('·');
   const hidden = hiddenReviews();
-  const unitRows = activeUnits().map((u) => {
+  // 단원별 숙련도: 과목별로 묶은 한 줄 카드 목록(#60). 좁은 화면에서도 막대가 보이고, 과목 색 띠는 3-D 토큰을 쓴다
+  // 과목 소제목이 보이면 화면 제목은 "Ⅰ. 다항식"처럼 줄이고, 낭독기에는 과목 이름을 남긴다
+  const courseIds = new Set(COURSES.map((c) => c.id));
+  const byCourse = [...COURSES.map((c) => ({ c, us: activeUnits().filter((u) => u.course === c.id) })),
+    { c: { id: 'fusion', title: '단원 융합' }, us: activeUnits().filter((u) => !courseIds.has(u.course)) }].filter((g) => g.us.length); // 과목이 없는 융합 단원은 따로 묶는다
+  const grouped = byCourse.length > 1;
+  const unitRow = (u) => {
     const m = unitMastery(u.id);
-    return `<tr><th scope="row">${esc(unitLabel(u))}</th><td><span class="meter" role="img" aria-label="현재 숙련도 ${m.pct}%"><span style="--v:${m.pct}%"></span></span></td><td class="num">${m.pct}%</td><td class="num">${m.firstPct}%</td><td class="num">${m.triedPct == null ? '–' : m.triedPct + '%'}</td><td class="num">${m.solved}/${m.total}</td></tr>`;
-  }).join('');
+    const tried = m.triedPct == null ? '–' : m.triedPct + '%';
+    return `<li class="mst" data-course="${esc(u.course)}"><a class="mst-link" href="#/u/${u.id}">
+      <span class="mst-t">${grouped && !isFusion(u) ? `<span class="sr">${esc(courseTitle(u))} </span>${esc(u.no)}. ${esc(u.title)}` : esc(unitLabel(u))}</span>
+      <span class="mst-p"><span class="sr">현재 숙련도 </span>${m.pct}%</span>
+      <span class="meter" aria-hidden="true"><span style="--v:${m.pct}%"></span></span>
+      <span class="mst-sub"><span>처음 ${m.firstPct}%</span><span>푼 문제만 ${tried}</span><span>해결 ${m.solved}/${m.total}</span></span>
+    </a></li>`;
+  };
+  const unitRows = byCourse.map(({ c, us }) => `${byCourse.length > 1 ? `<h3 class="mst-h" data-course="${c.id}">${esc(c.title)}</h3>` : ''}<ol class="mst-list">${us.map(unitRow).join('')}</ol>`).join('');
 
   const summary = buildSummary({ st, diag, now, w7, tt, wr });
 
@@ -110,7 +126,7 @@ export function renderReport(view) {
     })()}
     <section class="side-block">
       <h2 class="h3">단원별 숙련도</h2>
-      <div class="tbl-wrap"><table class="tbl"><thead><tr><th scope="col">단원</th><th scope="col"><span class="sr">막대</span></th><th scope="col" class="num">현재</th><th scope="col" class="num">처음</th><th scope="col" class="num">푼 문제만</th><th scope="col" class="num">해결</th></tr></thead><tbody>${unitRows}</tbody></table></div>
+      ${unitRows}
       <ul class="hint-list">
         <li><b>현재</b>: 단원 전체 문제 기준 숙련도. 처음에 틀렸거나 풀이를 본 문제도 날짜 간격을 두고 힌트 없이 다시 맞히면 회복하고, 복습에서 다시 틀리면 내려갑니다. 아직 안 푼 문제는 0으로 계산합니다.</li>
         <li><b>처음</b>: 처음 풀었을 때의 성과. 복습해도 바뀌지 않습니다.</li>
@@ -127,7 +143,19 @@ export function renderReport(view) {
     </section>
   </section>`;
 
+  // 단원 카드로 이동했다가 돌아오면 그 카드에 포커스를 돌려 다음 Tab이 근처에서 이어지게 한다(30분 안, 한 번만)
+  try {
+    const back = JSON.parse(sessionStorage.getItem(FOCUS_KEY) || 'null');
+    // 바로 지우면 e2e의 뒤로 가기에서 포커스가 본문에 남았다. 돌아온 직후 리포트가 다시 그려져도 복원되도록 잠시 뒤에 지운다
+    setTimeout(() => { try { sessionStorage.removeItem(FOCUS_KEY); } catch { /* 무시 */ } }, 1500);
+    if (back && Date.now() - back.at < 30 * 60 * 1000) {
+      const a = [...view.querySelectorAll('.mst-link')].find((x) => x.getAttribute('href') === back.href);
+      if (a) setTimeout(() => { a.focus(); a.scrollIntoView({ block: 'center' }); }, 0); // 라우터가 본문에 포커스를 준 뒤
+    }
+  } catch { /* 저장소를 쓸 수 없으면 그대로 */ }
   view.onclick = (e) => {
+    const card = e.target.closest('.mst-link');
+    if (card) { try { sessionStorage.setItem(FOCUS_KEY, JSON.stringify({ href: card.getAttribute('href'), at: Date.now() })); } catch { /* 무시 */ } }
     const ai = e.target.closest('[data-ai]');
     if (ai) return sendToAI(ai.dataset.ai, reportPrompt(summary, scope));
     if (e.target.closest('[data-act="print"]')) window.print();
