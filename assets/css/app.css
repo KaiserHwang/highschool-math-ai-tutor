@@ -1207,3 +1207,27 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 @media (min-width: 640px) { .lesson .l-sec + .l-sec { padding-top: 26px; } }
 .lesson .l-done:not(:empty) { margin-top: 14px; background: var(--paper); border: 1px solid var(--grid); border-radius: var(--r); box-shadow: var(--shadow); padding: 18px 20px; }
 .lesson .l-h { font-size: 18px; }
+/* ── 단원 목록(#48 3단계 3-D): 과목 탭, 과목 색, 단원 카드 ── */
+:root { --c-common1: #4f46e5; --c-common2: #0f766e; --c-algebra: #b45309; --c-calculus1: #7c3aed; --c-statistics: #be185d; }
+[data-course='common1'] { --cc: var(--c-common1); }
+[data-course='common2'] { --cc: var(--c-common2); }
+[data-course='algebra'] { --cc: var(--c-algebra); }
+[data-course='calculus1'] { --cc: var(--c-calculus1); }
+[data-course='statistics'] { --cc: var(--c-statistics); }
+.course-tabs { display: flex; gap: 4px; margin: 0 0 18px; padding: 4px; background: var(--paper-2); border: 1px solid var(--grid); border-radius: 14px; overflow-x: auto; scrollbar-width: none; }
+.course-tabs::-webkit-scrollbar { display: none; }
+.course-tabs [role='tab'] { flex: none; min-height: 40px; padding: 6px 14px; border: 0; border-radius: 10px; background: transparent; color: var(--pencil); font: 600 14px var(--sans); white-space: nowrap; cursor: pointer; }
+.course-tabs [role='tab'][aria-selected='true'] { background: var(--paper); color: var(--ink); box-shadow: var(--shadow); }
+.course-tabs [role='tab'][aria-selected='true']::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--cc, var(--brand)); margin-right: 6px; vertical-align: 1px; }
+.toc { background: transparent; border: 0; display: grid; gap: 12px; }
+.toc-row { background: var(--paper); border: 1px solid var(--grid); border-radius: var(--r); box-shadow: var(--shadow); overflow: hidden; }
+.toc-row + .toc-row { border-top: 1px solid var(--grid); }
+.toc-link:hover { background: transparent; }
+.toc-row:hover { border-color: var(--rule); }
+.toc-no { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font: 800 16px var(--sans); color: var(--cc, var(--brand)); background: color-mix(in srgb, var(--cc, var(--brand)) 13%, transparent); }
+.toc-group .meter > span { background: var(--cc, var(--brand)); }
+.toc-next { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0 18px 14px 74px; padding: 9px 12px; border-radius: 10px; background: var(--paper-2); color: var(--ink-2); font-size: 14px; font-weight: 600; text-decoration: none; }
+.toc-next:hover { background: color-mix(in srgb, var(--cc, var(--brand)) 10%, var(--paper-2)); }
+@media (min-width: 720px) { .toc-next { margin-left: 82px; } }
+/* 탭이 있으면 과목 제목은 탭이 대신하므로 낭독기에만 남긴다 */
+.toc-group[role='tabpanel'] > .toc-h { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
