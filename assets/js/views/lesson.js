@@ -5,7 +5,7 @@ import { LESSONS, LESSON_BY_ID, lessonsOfUnit, allChecks } from '../content/less
 import { UNIT_BY_ID, LEVELS, unitLabel } from '../content/units.js';
 import { PROBLEM_BY_ID } from '../content/problems.js';
 import { getState, update, today, logActivity } from '../store.js';
-import { isCorrect, normalizeAnswer, answerTex, statusOf, lessonProgress, blankLessonRec, recordCheck, markCheckSolution, LESSON_STATE, lessonCQs, lessonCQAnswer, lastCQ, lessonActivity, lessonSteps, recordPredict, recordGoal, recordDerive, recordKeys } from '../model.js';
+import { isCorrect, normalizeAnswer, answerTex, statusOf, lessonProgress, blankLessonRec, recordCheck, markCheckSolution, LESSON_STATE, lessonCQs, lessonCQAnswer, lastCQ, lessonActivity, lessonSteps, posStep, recordPredict, recordGoal, recordDerive, recordKeys } from '../model.js';
 import { cqHTML, cqClick, newCQSeed, seedOf } from './cq.js';
 import { tex, esc, CIRCLED, gradeMark, statusGlyph, optionsClass, toast, fmtDate, fieldError } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
@@ -17,7 +17,8 @@ function readLessonPos() {
   try { const v = JSON.parse(localStorage.getItem(POS_KEY) || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; }
 }
 function saveLessonPos(id, step) {
-  try { const v = readLessonPos(); if (v[id] === step) return; v[id] = step; localStorage.setItem(POS_KEY, JSON.stringify(v)); } catch { /* 저장할 수 없으면 이어서 보기만 안 된다 */ }
+  // 단계와 시각을 함께 남겨 홈의 "이어서 하기"가 가장 최근에 본 소단원을 고르게 한다(같은 단계는 1분에 한 번만 갱신)
+  try { const v = readLessonPos(); const o = v[id]; if (posStep(o) === step && o && o.at && Date.now() - o.at < 60000) return; v[id] = { s: step, at: Date.now() }; localStorage.setItem(POS_KEY, JSON.stringify(v)); } catch { /* 저장할 수 없으면 이어서 보기만 안 된다 */ }
 }
 
 const figs = (list) => (list && list.length
@@ -105,7 +106,7 @@ function deriveHTML(dv) {
   </div>`;
 }
 
-export function renderLesson(view, { args: [lessonId] }) {
+export function renderLesson(view, { args: [lessonId], params }) {
   const L = LESSON_BY_ID[lessonId];
   if (!L) { location.replace('#/units'); return; }
   const unit = UNIT_BY_ID[L.unit];
@@ -135,7 +136,7 @@ export function renderLesson(view, { args: [lessonId] }) {
     L.predict || (L.explore && L.explore.length) ? 'warm' : null, 'core', 'why', 'ex', 'ck',
     L.cq && L.cq.length ? 'cq' : null, deep ? 'deep' : null, L.explain ? 'say' : null,
   ].filter(Boolean);
-  const lastPos = readLessonPos()[L.id];
+  const lastPos = posStep(readLessonPos()[L.id]);
   const resumeAt = stepIds.indexOf(lastPos) > 0 ? lastPos : null;
   const warm = L.predict || (L.explore && L.explore.length)
     ? sec('warm', '먼저 생각해 보기', `${L.predict ? predictHTML(L.predict) : ''}${(L.explore || []).map(exploreHTML).join('')}`, 'l-warm') : '';
@@ -348,6 +349,9 @@ export function renderLesson(view, { args: [lessonId] }) {
     }, { rootMargin: '-30% 0px -60% 0px' });
     view.querySelectorAll('.l-sec').forEach((s) => observer.observe(s));
   }
+  // 홈의 "이어서 공부하기"는 ?go=단계로 들어와 그 단계로 바로 이동한다(#48 3-B)
+  const goParam = params && params.get('go');
+  if (goParam && stepIds.includes(goParam)) setTimeout(() => goStep(goParam), 60);
   // 처음 그릴 때: 탐구 그래프를 그리고, 지난번에 한 예측·유도·설명 점검을 되살린다
   (L.explore || []).forEach((_, i) => paintExplore(i));
   if (act0.predict && act0.predict.answered) showPredict(act0.predict.picked);

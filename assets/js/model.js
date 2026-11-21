@@ -721,6 +721,32 @@ export const CONCEPT_GAPS = [7, 21, 60];
 export const KEEP_GAP = 180;
 
 /** 개념을 배운 날: 이해 표시 날짜, 없으면 기본 확인 문제를 모두 맞힌 마지막 날. 아직 배우지 않았으면 null */
+/**
+ * 홈의 "이어서 하기"(#48 3-B): 공부하는 과목에서 시작했지만 아직 배우지 않은 소단원 중 가장 최근에 손댄 것.
+ * 시작: 지난번 위치가 있거나 확인 문제·개념 질문·예측·찾아보기·유도·설명 기록이 있음.
+ * 최근: 지난번 위치의 시각과 확인 문제의 마지막 풀이 시각 중 늦은 쪽. 시각이 없으면 학습 순서상 앞선 것.
+ * pos: 소단원 id → 마지막으로 본 단계({ s, at } 또는 예전 형식의 단계 문자열). 이 기기의 화면 기록이라 인자로 받는다.
+ */
+export function continueLesson(pos = {}) {
+  const st = getState();
+  let best = null, bestT = null;
+  for (const l of activeLessons()) {
+    const r = st.lessons[l.id];
+    if (learnedOn(l, r)) continue;
+    const p = pos[l.id];
+    const checks = Object.values((r && r.checks) || {});
+    const started = !!p || checks.some((c) => c.tries) || Object.keys((r && r.cq) || {}).length > 0 || !!(r && (r.predict || (r.goals || []).length || r.derive || (r.note || '').trim()));
+    if (!started) continue;
+    const times = [p && typeof p === 'object' && p.at ? new Date(p.at).toISOString() : '', ...checks.map((c) => c.lastAt || '')].filter(Boolean).sort();
+    const t = times.length ? times[times.length - 1] : '';
+    if (!best || t > bestT) { best = l; bestT = t; }
+  }
+  return best;
+}
+
+/** 지난번 위치 값에서 단계 이름만 꺼낸다(예전 형식은 문자열, 지금은 { s, at }) */
+export const posStep = (v) => (v && typeof v === 'object' ? v.s : v) || null;
+
 export function learnedOn(lesson, rec) {
   if (!rec) return null;
   if (rec.done) return rec.done;
