@@ -625,6 +625,7 @@ async function run(viewport, tag) {
     await page.waitForSelector('.quiz .q-text');
     await page.goto(BASE + '#/settings');
     await page.waitForSelector('[data-course="common2"]');
+    await page.click('.settings .set-fold > summary'); // 구독 AI 연결은 접혀 있다(#48 3-E)
     await page.click('.settings details.prompt-preview > summary');
     await page.uncheck('[data-course="common2"]');
     const rulesNow = await page.textContent('[data-rules]');
