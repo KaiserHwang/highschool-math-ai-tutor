@@ -55,6 +55,7 @@ export function renderProblem(view, { args: [ref], params }) {
     solvedNow: false,
     lastResponse: att0 ? att0.lastResponse ?? null : null,
     submitted: false,
+    looked: false, // 이번 방문에서 힌트·풀이를 열었는지(다시 보기의 공부 시간 기록용, #53)
     reviewDone: false,
     started: Date.now(),
     selected: null,
@@ -249,6 +250,7 @@ export function renderProblem(view, { args: [ref], params }) {
       const nb = view.querySelector(`[data-hint="${step + 1}"]`);
       if (nb) nb.disabled = false;
     }
+    session.looked = true;
     if (unlockedAll || session.solvedNow) return;
     session.hints = Math.max(session.hints, step);
     if (isVariant) return;
@@ -372,7 +374,7 @@ export function renderProblem(view, { args: [ref], params }) {
     const secs = (Date.now() - session.started) / 1000;
     update((s) => {
       if (!isVariant && v !== undefined) { if (v.trim()) s.notes[pid] = v; else delete s.notes[pid]; }
-      if (session.submitted || session.hints) {
+      if (session.submitted || session.hints || session.looked) {
         const a = isVariant || unlockedAll ? null : s.attempts[pid]; // 다시 보기는 공부 시간만 더한다
         if (a) a.sec = (a.sec || 0) + Math.round(Math.min(secs, 3600));
         logActivity({ seconds: Math.min(secs, 3600) });

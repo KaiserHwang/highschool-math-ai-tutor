@@ -231,6 +231,17 @@ async function run(viewport, tag) {
   const strip = (act) => JSON.stringify(Object.fromEntries(Object.entries(act).map(([d, v]) => [d, { ...v, seconds: 0 }])));
   ok(JSON.stringify(after53[0]) === JSON.stringify(b53[0]) && strip(after53[1]) === strip(b53[1]) && after53[2] === b53[2],
     `[${tag}] 해결한 문제를 다시 풀어 틀려도 시도·정오·학습량·오답노트가 바뀌지 않는다(공부 시간만 더함)`);
+  // 답을 내지 않고 풀이만 읽어도 공부 시간은 더한다
+  const secOf = () => page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('mathpulse:v2')).activity).reduce((a, d) => a + (d.seconds || 0), 0));
+  const sec0 = await secOf();
+  await page.goto(BASE + '#/p/u1-05');
+  await page.waitForSelector('.fb-note:has-text("지난번 답")');
+  await page.click('[data-hint="3"]');
+  await page.waitForTimeout(1500);
+  await page.goto(BASE + '#/report');
+  const sec1 = await secOf();
+  const att1 = await page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('mathpulse:v2')).attempts['u1-05']));
+  ok(sec1 > sec0 && att1 === JSON.stringify(after53[0]), `[${tag}] 해결한 문제의 풀이만 읽어도 공부 시간은 더하고 풀이 기록은 그대로다`);
 
   // ── 리포트
   await page.goto(BASE + '#/report');
