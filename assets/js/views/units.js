@@ -13,37 +13,88 @@ export function renderUnits(view) {
   // 과목별로 묶는다. 공부하는 과목을 먼저 보이고, 꺼 둔 과목은 접어 둔다(기록은 그대로이고 언제든 열어 볼 수 있다).
   const active = activeCourses();
   const groups = [
-    ...COURSES.map((c) => ({ title: c.title, on: active.includes(c.id), units: UNITS.filter((u) => !isFusion(u) && u.course === c.id) })),
+    ...COURSES.map((c) => ({ title: c.title, course: c.id, on: active.includes(c.id), units: UNITS.filter((u) => !isFusion(u) && u.course === c.id) })),
     { title: '단원 융합', on: UNITS.some((u) => isFusion(u) && isActiveUnit(u, active)), units: UNITS.filter((u) => isFusion(u)) },
   ].filter((g) => g.units.length);
-  const block = (g) => {
+  const block = (g, i = -1) => {
     const list = g.units.map((u) => {
       const m = unitMastery(u.id);
       const dr = unitReadiness(u.id); // 그 단원이 속한 과목 진단의 준비도
       const ready = dr ? `진단 ${dr.pct}(${dr.n}문항)` : '';
       const ls = unitLessonStats(u.id);
+      // 이어서 할 소단원: 아직 배우지 않은 첫 소단원(#48 3단계 3-D)
+      const nextL = ls.next && (ls.done || ls.verified || m.tried) ? ls.next : null; // 시작한 단원에만
       return `<li class="toc-row">
         <a class="toc-link" href="#/u/${u.id}">
-          <span class="toc-no">${u.no}</span>
-          <span class="toc-body"><span class="toc-t">${esc(u.title)}</span><span class="toc-sub">${esc(u.sub)}</span></span>
-          <span class="toc-stat"><span class="meter" role="img" aria-label="숙련도 ${m.pct}%"><span style="--v:${m.pct}%"></span></span><span class="toc-p">${m.pct}%</span><span class="toc-n">개념 ${ls.verified}/${ls.total} 혼자 확인 · ${m.solved}/${m.total}문제${ready ? ` · ${ready}` : ''}</span></span>
-          <span class="toc-dots" aria-hidden="true">${problemsOfUnit(u.id).map((p) => `<i class="dot d-${statusOf(p.id)} lv-${p.level}"></i>`).join('')}</span>
+          <span class="toc-no" aria-hidden="true">${u.no}</span>
+          <span class="toc-body"><span class="toc-t"><span class="sr">${u.no}. </span>${esc(u.title)}</span><span class="toc-sub">${esc(u.sub)}</span></span>
+          <span class="toc-stat"><span class="toc-ml">문제 숙련도</span><span class="meter" role="img" aria-label="문제 숙련도 ${m.pct}%"><span style="--v:${m.pct}%"></span></span><span class="toc-p">${m.pct}%</span><span class="toc-n">소단원 ${ls.done}/${ls.total} 배움 · ${ls.verified} 혼자 확인 · ${m.solved}/${m.total}문제${ready ? ` · ${ready}` : ''}</span></span>
         </a>
+        ${nextL ? `<a class="toc-next" href="#/l/${nextL.id}"><span>이어서: ${esc(nextL.title)}</span><span aria-hidden="true">▸</span></a>` : ''}
       </li>`;
     }).join('');
-    return `<section class="toc-group"><h2 class="toc-h">${esc(g.title)}</h2><ol class="toc">${list}</ol></section>`;
+    const course = g.course ? ` data-course="${g.course}"` : '';
+    return i >= 0
+      ? `<section class="toc-group" id="cg-${i}" role="tabpanel" aria-labelledby="ct-${i}"${course}><h2 class="toc-h">${esc(g.title)}</h2><ol class="toc">${list}</ol></section>`
+      : `<section class="toc-group"${course}><h2 class="toc-h">${esc(g.title)}</h2><ol class="toc">${list}</ol></section>`;
   };
+  // 과목 탭(#48 3단계 3-D): 공부하는 과목이 둘 이상이면 한 과목씩 보인다. 고른 탭은 이 기기에 기억한다.
+  const onGroups = groups.filter((g) => g.on);
+  let pick = 0;
+  try { const t = localStorage.getItem('mathpulse.unitsTab'); const k = onGroups.findIndex((g) => g.title === t); if (k >= 0) pick = k; } catch { /* 기본은 첫 과목 */ }
+  const tabs = onGroups.length > 1
+    ? `<div class="course-tabs" role="tablist" aria-label="과목">${onGroups.map((g, i) => `<button type="button" role="tab" id="ct-${i}" aria-controls="cg-${i}" aria-selected="${i === pick}" tabindex="${i === pick ? 0 : -1}" data-tab="${i}"${g.course ? ` data-course="${g.course}"` : ''}>${esc(g.title)}</button>`).join('')}</div>`
+    : '';
   const off = groups.filter((g) => !g.on);
   view.innerHTML = `
   <section class="page">
     <header class="page-head">
       <h1 class="page-title">개념 학습</h1>
-      <p class="lead">2022 개정 교육과정 ${esc(activeCourseTitles().join('·'))}의 단원입니다. 소단원마다 예측 → 탐구 → 정리 → 예제 → 확인 → 심화 → 설명 순서로 공부하고, 배운 개념은 1주·3주·2개월 뒤 "오늘의 개념 확인"에서 다시 꺼내 봅니다. ${trackChosen() ? `지금 트랙은 <a href="#/settings">${TRACKS[track].label}</a>입니다.` : '<a href="#/diagnosis">수준 진단</a>을 보면 학습 트랙을 추천해 드려요.'}</p>
+      <p class="lead">소단원마다 예측 → 탐구 → 정리 → 예제 → 확인 → 심화 → 설명 순서로 공부해요. ${trackChosen() ? `지금 트랙은 <a href="#/settings">${TRACKS[track].label}</a>입니다.` : '<a href="#/diagnosis">수준 진단</a>을 보면 학습 트랙을 추천해 드려요.'}</p>
       <p class="row"><a class="btn btn-primary" href="#/map">개념 지도</a><a class="btn btn-quiet" href="#/quiz?view=intro">배운 범위 혼합 평가</a></p>
     </header>
-    ${groups.filter((g) => g.on).map(block).join('')}
-    ${off.length ? `<details class="toc-off"><summary class="h3">공부하지 않는 과목 ${off.length}개 <span class="hint-text">${off.map((g) => esc(g.title)).join(', ')} · 추천과 복습에 나오지 않습니다. <a href="#/settings">설정</a>에서 바꿀 수 있어요.</span></summary>${off.map(block).join('')}</details>` : ''}
+    ${tabs}
+    ${onGroups.map((g, i) => (tabs ? block(g, i).replace('<section class="toc-group"', i === pick ? '<section class="toc-group"' : '<section hidden class="toc-group"') : block(g))).join('')}
+    ${off.length ? `<details class="toc-off"><summary class="h3">공부하지 않는 과목 ${off.length}개 <span class="hint-text">${off.map((g) => esc(g.title)).join(', ')} · 추천과 복습에 나오지 않습니다. <a href="#/settings">설정</a>에서 바꿀 수 있어요.</span></summary>${off.map((g) => block(g)).join('')}</details>` : ''}
   </section>`;
+  view.onclick = (e) => {
+    const t = e.target.closest('[data-tab]');
+    if (t) selectTab(Number(t.dataset.tab));
+  };
+  view.onkeydown = (e) => {
+    const t = e.target.closest('[data-tab]');
+    if (!t) return;
+    const n = onGroups.length, cur = Number(t.dataset.tab);
+    const to = { ArrowRight: (cur + 1) % n, ArrowLeft: (cur - 1 + n) % n, Home: 0, End: n - 1 }[e.key];
+    if (to === undefined) return;
+    e.preventDefault();
+    selectTab(to, true);
+  };
+  // 탭 줄이 넘치면 고른 탭이 보이게 탭 줄만 가로로 옮기고(페이지 스크롤·포커스는 그대로), 양쪽에 탭이 더 있는지 표시한다
+  function revealTab() {
+    const bar = view.querySelector('.course-tabs');
+    const on = bar && bar.querySelector('[aria-selected="true"]');
+    if (!on) return;
+    const l = on.offsetLeft - 8, r = on.offsetLeft + on.offsetWidth + 8;
+    if (l < bar.scrollLeft) bar.scrollLeft = l;
+    else if (r > bar.scrollLeft + bar.clientWidth) bar.scrollLeft = r - bar.clientWidth;
+    markMore();
+  }
+  function markMore() {
+    const bar = view.querySelector('.course-tabs');
+    if (!bar) return;
+    bar.classList.toggle('more-l', bar.scrollLeft > 2);
+    bar.classList.toggle('more-r', bar.scrollLeft + bar.clientWidth < bar.scrollWidth - 2);
+  }
+  const tabBar = view.querySelector('.course-tabs');
+  if (tabBar) { tabBar.addEventListener('scroll', markMore, { passive: true }); requestAnimationFrame(revealTab); }
+  function selectTab(i, focus = false) {
+    view.querySelectorAll('[data-tab]').forEach((b) => { const on = Number(b.dataset.tab) === i; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); });
+    view.querySelectorAll('[role="tabpanel"]').forEach((p) => (p.hidden = p.id !== `cg-${i}`));
+    try { localStorage.setItem('mathpulse.unitsTab', onGroups[i].title); } catch { /* 무시 */ }
+    revealTab();
+  }
+  return () => { view.onclick = null; view.onkeydown = null; };
 }
 
 export function renderUnit(view, { args: [unitId] }) {
