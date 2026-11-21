@@ -7,6 +7,7 @@ import { PROBLEMS, PROBLEM_BY_ID } from '../assets/js/content/problems.js';
 import { DIAGNOSIS } from '../assets/js/content/diagnosis.js';
 import { LESSONS, lessonsOfUnit } from '../assets/js/content/lessons/index.js';
 import { GENERATORS } from '../assets/js/content/generators.js';
+import { STANDARDS, PARTIAL, lessonsOfStandard } from '../assets/js/content/standards.js';
 
 const LV = Object.keys(LEVELS);
 const short = { basic: '기', core: '필', adv: '심', killer: '최' };
@@ -48,6 +49,20 @@ export function renderCoverage() {
     const goals = (l.explore || []).reduce((a, x) => a + (x.goals || []).length, 0);
     const deepCell = l.deep ? `${l.deep.ideas.filter((d) => d.example).length}·${l.deep.checks.length}` : '–';
     L.push(`| ${l.id} ${l.title} | ${(l.pre || []).join(' ') || '–'} | ${l.examples.length} | ${l.checks.length} | ${l.cq.length} | ${goals || '–'} | ${deepCell} | ${rel.map((p) => `${p.id}(${short[p.level]})`).join(' ')} | ${gens.join(' ') || '–'} | ${dq.join(' ') || '–'} |`);
+  }
+  L.push('');
+  L.push('## 성취기준별 연결');
+  L.push('');
+  L.push('교육부 고시 제2022-33호 [별책 8] 수학과 교육과정의 성취기준(문장은 고시문 그대로)과, 그 성취기준을 다루는 소단원·확인 문제·문제 은행·진단 문항입니다. 연결은 `assets/js/content/standards.js`에 있고, 모든 성취기준이 소단원 하나 이상과 이어져 있는지 `tests/content-check.mjs`가 검사합니다. 확인 문제·문제 은행 수는 이어진 소단원 전체의 수입니다(그 성취기준만 묻는 문항 수가 아님). 일부만 다루는 성취기준은 비고에 빠진 내용을 적었습니다.');
+  L.push('');
+  L.push('| 성취기준 | 내용 | 소단원 | 확인 문제 | 문제 은행 | 진단 | 비고 |');
+  L.push('|---|---|---|---:|---:|---|---|');
+  for (const s of STANDARDS) {
+    const ids = lessonsOfStandard(s.code);
+    const ls = LESSONS.filter((l) => ids.includes(l.id));
+    const bank = new Set(ls.flatMap((l) => l.related));
+    const dq = DIAGNOSIS.filter((q) => ids.includes(q.lesson)).map((q) => q.id);
+    L.push(`| ${s.code} | ${s.text} | ${ls.map((l) => `${l.id} ${l.title}`).join('<br>') || '–'} | ${ls.reduce((a, l) => a + l.checks.length, 0)} | ${bank.size} | ${dq.join(' ') || '–'} | ${PARTIAL[s.code] ? `부분: ${PARTIAL[s.code]}` : ''} |`);
   }
   L.push('');
   return L.join('\n');
