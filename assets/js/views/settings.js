@@ -30,10 +30,10 @@ export function renderSettings(view) {
       <label class="field"><span class="field-l">하루 목표 <span class="hint-text">개념 문항 풀이 + 문제 해결을 더한 수, 1~30개</span></span><input data-k="goal" type="number" min="1" max="30" value="${st.profile.dailyGoal}"></label>
       <fieldset class="field"><legend class="field-l">공부하는 과목</legend>
         <div class="course-list" role="group">${COURSES.map((c) => `<label class="course-opt" style="--cc: var(--c-${c.id})"><input type="checkbox" data-course="${c.id}" ${active.includes(c.id) ? 'checked' : ''}><span class="co-dot" aria-hidden="true"></span><span class="co-t">${esc(c.title)}</span><span class="co-n">${UNITS.filter((u) => u.course === c.id).length}개 단원</span></label>`).join('')}</div>
-        <p class="hint-text">고른 과목만 오늘 할 일(추천 문제, 약한 단원, 개념 확인, 복습)과 혼합 평가, 리포트에 나옵니다. 과목을 꺼도 기록과 복습 예정일은 그대로 남고, 다시 켜면 이어집니다. 꺼 둔 과목의 단원도 개념 학습에서 언제든 열어 볼 수 있어요.</p>
+        <p class="hint-text">고른 과목만 오늘 할 일(추천 문제, 약한 단원, 개념 확인, 복습)과 혼합 평가, 리포트의 단원별 숙련도에 나옵니다. 연속 학습과 최근 7일 학습량은 모든 과목을 합해 셉니다. 과목을 꺼도 기록과 복습 예정일은 그대로 남고, 다시 켜면 이어집니다. 꺼 둔 과목의 단원도 개념 학습에서 언제든 열어 볼 수 있어요.</p>
       </fieldset>
       <fieldset class="field"><legend class="field-l">학습 트랙</legend>
-        <div class="row">
+        <div class="seg-ctl">
           <button type="button" class="chip" data-track="" aria-pressed="${!st.profile.track}">진단 추천 따르기${diagTrack ? ` (${TRACKS[diagTrack].label})` : ''}</button>
           ${Object.entries(TRACKS).map(([k, v]) => `<button type="button" class="chip" data-track="${k}" aria-pressed="${st.profile.track === k}">${v.label}</button>`).join('')}
         </div>
@@ -66,11 +66,11 @@ export function renderSettings(view) {
       </div>
     </section>
 
-    <section class="set-sec danger">
-      <h2 class="h3">초기화</h2>
+    <details class="set-sec set-fold danger">
+      <summary><span class="h3">초기화</span><span class="hint-text">모든 기록 지우기</span></summary>
       <p>진단 결과, 풀이 기록, 오답노트, 설정이 모두 지워집니다.</p>
       <button type="button" class="btn btn-danger" data-act="reset">모든 기록 지우기</button>
-    </section>
+    </details>
   </section>`;
 
   view.onchange = onChange;

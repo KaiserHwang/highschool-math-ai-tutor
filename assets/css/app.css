@@ -1299,3 +1299,9 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 
 /* 설정의 선택 칩도 터치 영역 44px 이상 */
 .settings .chip { min-height: 44px; }
+
+/* 검토 반영(#48 3-E): 선택한 세그먼트는 테두리와 체크로 구별, 리포트 칩 보조 설명 */
+.seg-ctl .chip[aria-pressed='true'] { box-shadow: inset 0 0 0 2px var(--brand); color: var(--ink); }
+.seg-ctl .chip[aria-pressed='true']::before { content: '✓ '; color: var(--brand); font-weight: 800; }
+.stats .stat-note { margin: 2px 0 0; font: 500 11px var(--sans); color: var(--pencil); }
+.stats-more > .hint-text { margin: 0 0 8px; }

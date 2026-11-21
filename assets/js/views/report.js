@@ -58,12 +58,13 @@ export function renderReport(view) {
       <p class="hint-text">${esc(NEXT_SUBJECTS_NOTE)} 이 리포트의 숙련도는 앱에서 공부한 기록이며, 수능 준비도 전체를 나타내지 않습니다.</p>
     </header>
     <dl class="stats stats-key">
-      <div><dt>연속 학습</dt><dd>${streak()}<small>일</small></dd></div>
-      <div><dt>최근 7일 해결</dt><dd>${w7.solved}<small>문제</small></dd></div>
+      <div><dt>연속 학습</dt><dd>${streak()}<small>일</small></dd><dd class="stat-note">모든 과목</dd></div>
+      <div><dt>최근 7일 해결</dt><dd>${w7.solved}<small>문제</small></dd><dd class="stat-note">모든 과목</dd></div>
       <div><dt>혼자 확인한 개념</dt><dd>${lessonTotals().verified}<small>/${lessonTotals().total}</small></dd></div>
     </dl>
     <details class="stats-more">
-      <summary>최근 7일 자세히 보기</summary>
+      <summary>학습 지표 자세히 보기</summary>
+      <p class="hint-text">오래 기억한 개념은 지금까지의 기록, 나머지는 최근 7일 기록입니다.</p>
       <dl class="stats">
         <div><dt>오래 기억한 개념</dt><dd>${conceptMemory().learned ? `${conceptMemory().kept}<small>/${conceptMemory().learned}</small>` : '<small class="dd-note">첫 기억 확인을 기다려요</small>'}</dd></div>
         <div><dt>개념 확인 문제</dt><dd>${w7.checks}<small>번 풀이</small></dd></div>
@@ -159,3 +160,13 @@ function buildSummary({ diag, now, w7, tt, wr }) {
   }
   return lines.join('\n');
 }
+
+// 인쇄할 때는 접힌 상세 지표도 펼쳐 싣고, 끝나면 원래 열림 상태로 돌린다(#48 3-E)
+function openFoldsForPrint() {
+  const ds = [...document.querySelectorAll('.stats-more')].filter((d) => !d.open);
+  ds.forEach((d) => (d.open = true));
+  return () => ds.forEach((d) => (d.open = false));
+}
+let restoreFolds = null;
+window.addEventListener('beforeprint', () => { restoreFolds = openFoldsForPrint(); });
+window.addEventListener('afterprint', () => { if (restoreFolds) restoreFolds(); restoreFolds = null; });
