@@ -1255,7 +1255,7 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .co-t { font-weight: 600; }
 .co-n { margin-left: auto; font-size: 13px; color: var(--pencil); }
 .seg-ctl { display: inline-flex; gap: 4px; padding: 4px; background: var(--paper-2); border: 1px solid var(--grid); border-radius: 12px; flex-wrap: wrap; }
-.seg-ctl .chip { border: 0; background: transparent; min-height: 38px; border-radius: 9px; }
+.seg-ctl .chip { border: 0; background: transparent; min-height: 44px; border-radius: 9px; }
 .seg-ctl .chip[aria-pressed='true'] { background: var(--paper); color: var(--ink); box-shadow: var(--shadow); border: 0; }
 .set-fold > summary { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; cursor: pointer; list-style: none; }
 .set-fold > summary::-webkit-details-marker { display: none; }
@@ -1296,3 +1296,6 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .course-tabs.more-l.more-r { -webkit-mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .toc-group .meter { background: #3a404c; } }
 :root[data-theme='dark'] .toc-group .meter { background: #3a404c; }
+
+/* 설정의 선택 칩도 터치 영역 44px 이상 */
+.settings .chip { min-height: 44px; }
