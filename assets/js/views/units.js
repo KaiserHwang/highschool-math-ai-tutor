@@ -28,7 +28,7 @@ export function renderUnits(view) {
         <a class="toc-link" href="#/u/${u.id}">
           <span class="toc-no" aria-hidden="true">${u.no}</span>
           <span class="toc-body"><span class="toc-t"><span class="sr">${u.no}. </span>${esc(u.title)}</span><span class="toc-sub">${esc(u.sub)}</span></span>
-          <span class="toc-stat"><span class="meter" role="img" aria-label="숙련도 ${m.pct}%"><span style="--v:${m.pct}%"></span></span><span class="toc-p">${m.pct}%</span><span class="toc-n">개념 ${ls.verified}/${ls.total} 혼자 확인 · ${m.solved}/${m.total}문제${ready ? ` · ${ready}` : ''}</span></span>
+          <span class="toc-stat"><span class="toc-ml">문제 숙련도</span><span class="meter" role="img" aria-label="문제 숙련도 ${m.pct}%"><span style="--v:${m.pct}%"></span></span><span class="toc-p">${m.pct}%</span><span class="toc-n">소단원 ${ls.done}/${ls.total} 배움 · ${ls.verified} 혼자 확인 · ${m.solved}/${m.total}문제${ready ? ` · ${ready}` : ''}</span></span>
         </a>
         ${nextL ? `<a class="toc-next" href="#/l/${nextL.id}"><span>이어서: ${esc(nextL.title)}</span><span aria-hidden="true">▸</span></a>` : ''}
       </li>`;
@@ -64,15 +64,35 @@ export function renderUnits(view) {
   view.onkeydown = (e) => {
     const t = e.target.closest('[data-tab]');
     if (!t) return;
-    const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
-    if (step === undefined) return;
+    const n = onGroups.length, cur = Number(t.dataset.tab);
+    const to = { ArrowRight: (cur + 1) % n, ArrowLeft: (cur - 1 + n) % n, Home: 0, End: n - 1 }[e.key];
+    if (to === undefined) return;
     e.preventDefault();
-    selectTab((Number(t.dataset.tab) + step + onGroups.length) % onGroups.length, true);
+    selectTab(to, true);
   };
+  // 탭 줄이 넘치면 고른 탭이 보이게 탭 줄만 가로로 옮기고(페이지 스크롤·포커스는 그대로), 양쪽에 탭이 더 있는지 표시한다
+  function revealTab() {
+    const bar = view.querySelector('.course-tabs');
+    const on = bar && bar.querySelector('[aria-selected="true"]');
+    if (!on) return;
+    const l = on.offsetLeft - 8, r = on.offsetLeft + on.offsetWidth + 8;
+    if (l < bar.scrollLeft) bar.scrollLeft = l;
+    else if (r > bar.scrollLeft + bar.clientWidth) bar.scrollLeft = r - bar.clientWidth;
+    markMore();
+  }
+  function markMore() {
+    const bar = view.querySelector('.course-tabs');
+    if (!bar) return;
+    bar.classList.toggle('more-l', bar.scrollLeft > 2);
+    bar.classList.toggle('more-r', bar.scrollLeft + bar.clientWidth < bar.scrollWidth - 2);
+  }
+  const tabBar = view.querySelector('.course-tabs');
+  if (tabBar) { tabBar.addEventListener('scroll', markMore, { passive: true }); requestAnimationFrame(revealTab); }
   function selectTab(i, focus = false) {
     view.querySelectorAll('[data-tab]').forEach((b) => { const on = Number(b.dataset.tab) === i; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); });
     view.querySelectorAll('[role="tabpanel"]').forEach((p) => (p.hidden = p.id !== `cg-${i}`));
     try { localStorage.setItem('mathpulse.unitsTab', onGroups[i].title); } catch { /* 무시 */ }
+    revealTab();
   }
   return () => { view.onclick = null; view.onkeydown = null; };
 }
