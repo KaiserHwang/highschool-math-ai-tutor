@@ -19,7 +19,9 @@
   --hl: #ffe867;
   --hl-ink: #17233b;
   --ok: #0b7a54;
-  --ok-soft: #e7f6ef;  --lv-basic: #5d6b80;
+  --ok-soft: #e7f6ef;
+  --retry-soft: #fdeeee;
+  --lv-basic: #5d6b80;
   --lv-core: #2f6b4f;
   --lv-adv: #a85f12;
   --lv-killer: #9b1d33;
@@ -54,7 +56,9 @@
     --hl: rgba(255, 226, 94, 0.22);
     --hl-ink: #f6efc8;
     --ok: #3ecf9b;
-    --ok-soft: #12342a;    --lv-basic: #9aa8bb;
+    --ok-soft: #12342a;
+    --retry-soft: #3a1d20;
+    --lv-basic: #9aa8bb;
     --lv-core: #79c39b;
     --lv-adv: #e2a35a;
     --lv-killer: #ff8a96;
@@ -80,7 +84,9 @@
   --hl: rgba(255, 226, 94, 0.22);
   --hl-ink: #f6efc8;
   --ok: #3ecf9b;
-  --ok-soft: #12342a;  --lv-basic: #9aa8bb;
+  --ok-soft: #12342a;
+  --retry-soft: #3a1d20;
+  --lv-basic: #9aa8bb;
   --lv-core: #79c39b;
   --lv-adv: #e2a35a;
   --lv-killer: #ff8a96;
@@ -630,7 +636,7 @@ img, svg { display: block; }
   .rail, .tabbar, .toast, .no-print, .skip { display: none !important; }
   body { background: #fff; }
   .shell { display: block; }
-  .paper, .tbl, .stats div { box-shadow: none; }
+  .paper, .tbl, .stats div, .lesson .l-sec, .lesson .l-done, .coach, .ask, .tile, .hero, .toc-row, .set-sec { box-shadow: none !important; }
   .page { padding: 0; }
 }
 
@@ -1184,6 +1190,23 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .stat-chips small { font-size: 12px; color: var(--pencil); font-weight: 600; }
 .ring-t { flex-direction: column; line-height: 1.1; }
 .ring-l { font-size: 9.5px; color: var(--pencil); font-weight: 600; }
+/* ── 학습 화면 다듬기(#48 3단계 3-C): 채점 결과 상자, 힌트 단계, 소단원 섹션 카드 ── */
+.fb:has(.fb-right) { padding: 12px 16px; border-radius: 14px; background: var(--ok-soft); }
+.fb:has(.fb-wrong) { padding: 12px 16px; border-radius: 14px; background: var(--retry-soft); }
+.fb .fb-right, .fb .fb-wrong { font-family: var(--sans); }
+.coach, .ask { background: var(--paper); border-color: var(--grid); box-shadow: var(--shadow); }
+.step-btn { border: 1px solid var(--rule); background: var(--paper-2); font-family: var(--sans); font-weight: 600; }
+.step-btn:not(:disabled):hover { border-color: var(--brand); }
+.step.is-open .step-btn { border-color: transparent; background: var(--hl); color: var(--hl-ink); }
+.step.is-open .step-n { border-color: currentColor; }
+/* 소단원: 한 장의 종이 대신 섹션마다 카드 */
+.lesson.paper { background: transparent; border: 0; box-shadow: none; padding: 0; }
+.lesson .l-sec { background: var(--paper); border: 1px solid var(--grid); border-radius: var(--r); box-shadow: var(--shadow); padding: 20px; }
+@media (min-width: 640px) { .lesson .l-sec { padding: 26px 28px; } }
+.lesson .l-sec + .l-sec { margin-top: 14px; padding-top: 20px; border-top: 1px solid var(--grid); }
+@media (min-width: 640px) { .lesson .l-sec + .l-sec { padding-top: 26px; } }
+.lesson .l-done:not(:empty) { margin-top: 14px; background: var(--paper); border: 1px solid var(--grid); border-radius: var(--r); box-shadow: var(--shadow); padding: 18px 20px; }
+.lesson .l-h { font-size: 18px; }
 /* 홈 검토 반영(#48 3-B): 활동 진행 글자, 펼쳐 보기, 칩 보조 설명 */
 .hero-pct { margin: -8px 0 12px; font-size: 12px; color: rgba(255, 255, 255, 0.85); }
 .ct-more, .week-more { margin-top: 10px; }
@@ -1191,3 +1214,12 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .week-more > summary.h3 { font-size: 16px; color: var(--ink); margin: 0; }
 .ct-more[open] .ct-list { margin-top: 8px; }
 .stat-chips .stat-note { margin: 0; font: 500 11px var(--sans); color: var(--pencil); }
+
+/* 긴 이유 보기 수식이 좁은 화면 밖으로 나가지 않게: 칸이 줄어들고 수식은 줄을 바꿀 수 있게(기존 동작 보완) */
+.cq-reasons { grid-template-columns: minmax(0, 1fr); }
+.cq-reasons .opt, .cq-reasons .opt-t { min-width: 0; }
+.cq-reasons .opt .katex { white-space: normal; }
+.cq-reasons .opt-t { overflow-wrap: anywhere; }
+/* 섹션 끝의 "다음 단계"(키보드 순서용). 모바일의 떠 있는 버튼은 같은 동작을 시각적으로만 보인다 */
+.sec-next { margin: 18px 0 0; display: flex; justify-content: flex-end; }
+@media print { .sec-next, .lnext { display: none !important; } }
