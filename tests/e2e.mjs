@@ -216,10 +216,21 @@ async function run(viewport, tag) {
   const st2 = await page.evaluate(() => JSON.parse(localStorage.getItem('mathpulse:v2')).wrong['u1-04'].stage);
   ok(st2 === 1, `[${tag}] 숫자를 바꾼 문제로 복습해도 복습 단계가 오른다 (stage=${st2})`);
 
-  // ── 이미 푼 문제를 다시 열면 지난 답과 채점 표시가 남아 있다
+  // ── 이미 푼 문제를 다시 열면 지난 답은 안내에만 보이고 답칸은 비어 있다. 다시 제출해도 기록은 그대로(#53)
   await page.goto(BASE + '#/p/u1-05');
-  await page.waitForSelector('.mark.static');
-  ok((await page.inputValue('.short-in')) === PROBLEM_BY_ID['u1-05'].answer, `[${tag}] 푼 문제를 다시 열면 지난 답이 보인다`);
+  await page.waitForSelector('.fb-note:has-text("지난번 답")');
+  const ans05 = PROBLEM_BY_ID['u1-05'].answer;
+  ok((await page.inputValue('.short-in')) === '' && (await page.textContent('.fb-note')).includes(`지난번 답: ${ans05}`), `[${tag}] 푼 문제를 다시 열면 지난 답은 안내에 보이고 답칸은 비어 있다`);
+  const before53 = await page.evaluate(() => { const s = JSON.parse(localStorage.getItem('mathpulse:v2')); return JSON.stringify([s.attempts['u1-05'], s.activity, !!s.wrong['u1-05'] && s.wrong['u1-05'].resolved]); });
+  await page.fill('.short-in', String(Number(ans05.split('/')[0]) + 1));
+  await page.click('.short-form button[type="submit"]');
+  await page.waitForSelector('.fb-note:has-text("기록하지 않아요")');
+  await page.goto(BASE + '#/report'); // 화면을 떠나며 공부 시간 저장
+  const after53 = await page.evaluate(() => { const s = JSON.parse(localStorage.getItem('mathpulse:v2')); return [s.attempts['u1-05'], s.activity, !!s.wrong['u1-05'] && s.wrong['u1-05'].resolved]; });
+  const b53 = JSON.parse(before53);
+  const strip = (act) => JSON.stringify(Object.fromEntries(Object.entries(act).map(([d, v]) => [d, { ...v, seconds: 0 }])));
+  ok(JSON.stringify(after53[0]) === JSON.stringify(b53[0]) && strip(after53[1]) === strip(b53[1]) && after53[2] === b53[2],
+    `[${tag}] 해결한 문제를 다시 풀어 틀려도 시도·정오·학습량·오답노트가 바뀌지 않는다(공부 시간만 더함)`);
 
   // ── 리포트
   await page.goto(BASE + '#/report');

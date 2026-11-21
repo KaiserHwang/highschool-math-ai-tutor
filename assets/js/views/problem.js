@@ -161,16 +161,10 @@ export function renderProblem(view, { args: [ref], params }) {
   if (unlockedAll) {
     view.querySelectorAll('[data-hint]').forEach((b) => (b.disabled = false));
     $('[data-coach-note]').textContent = '이미 해결한 문제라 풀이를 자유롭게 볼 수 있어요.';
-    // 지난번에 낸 답과 채점 표시를 보여 준다
-    $('.mark-slot').innerHTML = gradeMark('right').replace('class="mark mark-right"', 'class="mark mark-right static"');
+    // 답칸은 비워 두고(다시 풀어 보도록) 지난번에 맞힌 답은 안내에만 적는다(#53)
     const last = att0.lastResponse;
-    if (p.type === 'mc' && last != null) {
-      const b = view.querySelector(`[data-opt="${last}"]`);
-      if (b) { b.setAttribute('aria-checked', 'true'); session.selected = Number(last); }
-    } else if (p.type === 'short' && last != null) {
-      $('.short-in').value = last;
-    }
-    fb.innerHTML = `<p class="fb-note">${fmtDate(att0.solvedAt || att0.lastAt)}에 맞힌 문제입니다. 다시 풀어 봐도 기록은 바뀌지 않아요.</p>`;
+    const lastTxt = last == null ? '' : p.type === 'mc' ? (CIRCLED[last] || '') : esc(String(last));
+    fb.innerHTML = `<p class="fb-note">${fmtDate(att0.solvedAt || att0.lastAt)}에 맞힌 문제입니다${lastTxt ? `(지난번 답: ${lastTxt})` : ''}. 다시 풀어 봐도 풀이 기록과 오답노트는 바뀌지 않아요.</p>`;
   }
 
   // 풀이 메모 자동 저장(문제 은행 문제만)
@@ -289,7 +283,7 @@ export function renderProblem(view, { args: [ref], params }) {
         const pr = (s.practice[ref] ||= { tried: 0, solved: 0 });
         if (firstSubmitThisVisit) pr.tried += 1;
         if (ok && !session.solvedNow) pr.solved += 1;
-      } else {
+      } else if (!unlockedAll) { // 이미 해결한 문제를 다시 풀 때는 연습이라 시도·정오·오답노트를 바꾸지 않는다(#53)
         const a = (s.attempts[pid] ||= blankAttempt());
         const firstEver = a.tries === 0;
         a.tries += 1;
@@ -309,7 +303,7 @@ export function renderProblem(view, { args: [ref], params }) {
         session.reviewDone = true;
         reviewOutcome = { clean, ...res, entry: s.wrong[reviewPid] };
       }
-      if (firstSubmitThisVisit) logActivity({ attempted: 1 });
+      if (firstSubmitThisVisit && !unlockedAll) logActivity({ attempted: 1 });
       if (ok && !session.solvedNow && (isVariant || !wasSolved || reviewMode)) logActivity({ solved: 1 });
     });
 
@@ -347,7 +341,7 @@ export function renderProblem(view, { args: [ref], params }) {
       // 오답 바로 아래에서 1단계 힌트를 열 수 있게(#48 1-C)
       const hintBtn = session.hints === 0 && view.querySelector('[data-hint="1"]') ? '<p class="row"><button type="button" class="btn btn-quiet" data-act="hint1">1단계 힌트 보기</button></p>' : '';
       fb.innerHTML = `<p class="fb-wrong">다시 생각해 보세요.${tries >= 2 && session.hints === 0 ? ' 1단계 힌트를 열어 보는 것도 방법입니다.' : ''}</p>${hintBtn}${reopened}
-        ${isVariant ? '' : `<p class="fb-note">틀린 문제는 오답노트에 저장됩니다. 어디서 틀렸는지 골라 두면 복습할 때 도움이 됩니다.</p>${reasonPicker()}`}
+        ${isVariant ? '' : unlockedAll ? '<p class="fb-note">이미 해결한 문제라 이번 답은 기록하지 않아요. 풀이 단계를 열어 비교해 보세요.</p>' : `<p class="fb-note">틀린 문제는 오답노트에 저장됩니다. 어디서 틀렸는지 골라 두면 복습할 때 도움이 됩니다.</p>${reasonPicker()}`}
         <p class="row"><button type="button" class="btn btn-quiet" data-act="open-ask">AI에게 물어보기</button></p>`;
       if (p.type === 'mc') {
         const b = view.querySelector(`[data-opt="${response}"]`);
@@ -379,7 +373,7 @@ export function renderProblem(view, { args: [ref], params }) {
     update((s) => {
       if (!isVariant && v !== undefined) { if (v.trim()) s.notes[pid] = v; else delete s.notes[pid]; }
       if (session.submitted || session.hints) {
-        const a = isVariant ? null : s.attempts[pid];
+        const a = isVariant || unlockedAll ? null : s.attempts[pid]; // 다시 보기는 공부 시간만 더한다
         if (a) a.sec = (a.sec || 0) + Math.round(Math.min(secs, 3600));
         logActivity({ seconds: Math.min(secs, 3600) });
       }
