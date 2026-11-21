@@ -247,6 +247,9 @@ async function run(viewport, tag) {
   await page.goto(BASE + '#/report');
   await page.waitForSelector('.stats');
   ok(await page.locator('svg.radar polygon.rd-area').count() === 2, `[${tag}] 리포트에 진단과 현재 역량이 함께 그려진다`);
+  // 단원별 숙련도는 과목별 카드 목록이고, 좁은 화면에서도 막대가 보인다(#60)
+  const mst = await page.evaluate(() => ({ rows: document.querySelectorAll('.mst').length, meters: [...document.querySelectorAll('.mst .meter')].filter((m) => m.offsetWidth > 40).length, sr: document.querySelector('.mst-p .sr')?.textContent || '', link: document.querySelector('.mst-link')?.getAttribute('href') || '' }));
+  ok(mst.rows > 0 && mst.meters === mst.rows && mst.sr.includes('현재 숙련도') && mst.link.startsWith('#/u/'), `[${tag}] 리포트 단원별 숙련도는 막대가 보이는 단원 카드 목록이다 (${mst.rows}개)`);
   await shot('report');
 
   // ── 단원, 홈
