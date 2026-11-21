@@ -1238,3 +1238,37 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .week-more > summary.h3 { font-size: 16px; color: var(--ink); margin: 0; }
 .ct-more[open] .ct-list { margin-top: 8px; }
 .stat-chips .stat-note { margin: 0; font: 500 11px var(--sans); color: var(--pencil); }
+
+/* ── 설정(#48 3단계 3-E): 묶음 카드, 과목 한 줄 목록, 밝기 세그먼트, AI 연결 접기 ── */
+.settings .set-sec { background: var(--paper); border: 1px solid var(--grid); border-radius: var(--r); box-shadow: var(--shadow); padding: 18px 20px; margin: 0 0 14px; }
+.settings .set-sec:first-of-type { padding-top: 18px; border-top: 1px solid var(--grid); }
+.settings .set-sec > .h3 { margin: 0 0 12px; font-size: 17px; }
+.settings .set-sec.danger { border-color: color-mix(in srgb, var(--red-pen) 35%, var(--grid)); }
+.course-list { display: grid; gap: 6px; }
+.course-opt { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 12px; border: 1px solid var(--grid); border-radius: 12px; background: var(--paper-2); cursor: pointer; }
+.course-opt:has(input:checked) { border-color: var(--cc, var(--brand)); background: color-mix(in srgb, var(--cc, var(--brand)) 7%, var(--paper)); }
+.course-opt input { width: 20px; height: 20px; min-height: 0; margin: 0; flex: none; accent-color: var(--cc, var(--brand)); }
+.co-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--cc, var(--brand)); flex: none; }
+.co-t { font-weight: 600; }
+.co-n { margin-left: auto; font-size: 13px; color: var(--pencil); }
+.seg-ctl { display: inline-flex; gap: 4px; padding: 4px; background: var(--paper-2); border: 1px solid var(--grid); border-radius: 12px; flex-wrap: wrap; }
+.seg-ctl .chip { border: 0; background: transparent; min-height: 38px; border-radius: 9px; }
+.seg-ctl .chip[aria-pressed='true'] { background: var(--paper); color: var(--ink); box-shadow: var(--shadow); border: 0; }
+.set-fold > summary { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; cursor: pointer; list-style: none; }
+.set-fold > summary::-webkit-details-marker { display: none; }
+.set-fold > summary::before { content: '+'; font: 600 18px var(--sans); color: var(--pencil); width: 14px; }
+.set-fold[open] > summary::before { content: '−'; }
+.set-fold > summary .h3 { margin: 0; }
+.set-fold > summary .hint-text { margin: 0; }
+.set-fold[open] > summary { margin-bottom: 12px; }
+/* ── 리포트(#48 3단계 3-E): 핵심 지표 3개 크게, 나머지는 펼쳐 보기 ── */
+.stats-key { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+.stats-key div { background: var(--paper); }
+.stats-key dd { font-size: 30px; color: var(--brand); }
+.stats-key dd small { color: var(--pencil); }
+.stats-more { margin: 10px 0 20px; }
+.stats-more > summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.stats-more[open] > summary { margin-bottom: 10px; }
+/* 숫자 카드: 표처럼 1px 선으로 나누던 것을 떨어진 카드로 */
+.stats { gap: 10px; background: transparent; border: 0; overflow: visible; }
+.stats div { border: 1px solid var(--grid); border-radius: 14px; box-shadow: var(--shadow); }

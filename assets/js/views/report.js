@@ -57,17 +57,22 @@ export function renderReport(view) {
       <p class="lead">${st.profile.name ? esc(st.profile.name) + ' · ' : ''}${fmtDate(today())} 기준 · ${TRACKS[activeTrack()].label} 트랙 · 공부하는 과목: ${esc(scope)}</p>
       <p class="hint-text">${esc(NEXT_SUBJECTS_NOTE)} 이 리포트의 숙련도는 앱에서 공부한 기록이며, 수능 준비도 전체를 나타내지 않습니다.</p>
     </header>
-    <dl class="stats">
-      <div><dt>오래 기억한 개념</dt><dd>${conceptMemory().learned ? `${conceptMemory().kept}<small>/${conceptMemory().learned}</small>` : '<small class="dd-note">첫 기억 확인을 기다려요</small>'}</dd></div>
-      <div><dt>혼자 확인한 개념</dt><dd>${lessonTotals().verified}<small>/${lessonTotals().total}</small></dd></div>
-      <div><dt>개념 확인 문제</dt><dd>${w7.checks}<small>번 풀이</small></dd></div>
-      <div><dt>최근 7일 해결</dt><dd>${w7.solved}<small>문제</small></dd></div>
-      <div><dt>공부한 날</dt><dd>${w7.activeDays}<small>/7일</small></dd></div>
-      <div><dt>첫 시도 정답률</dt><dd>${w7.problems ? Math.round(w7.firstRight * 100) : '–'}<small>%</small></dd></div>
-      <div><dt>힌트·풀이 사용률</dt><dd>${w7.problems ? Math.round(w7.hintUse * 100) : '–'}<small>%</small></dd></div>
-      <div><dt>공부 시간</dt><dd class="dd-text">${fmtMinutes(w7.seconds)}</dd></div>
+    <dl class="stats stats-key">
       <div><dt>연속 학습</dt><dd>${streak()}<small>일</small></dd></div>
+      <div><dt>최근 7일 해결</dt><dd>${w7.solved}<small>문제</small></dd></div>
+      <div><dt>혼자 확인한 개념</dt><dd>${lessonTotals().verified}<small>/${lessonTotals().total}</small></dd></div>
     </dl>
+    <details class="stats-more">
+      <summary>최근 7일 자세히 보기</summary>
+      <dl class="stats">
+        <div><dt>오래 기억한 개념</dt><dd>${conceptMemory().learned ? `${conceptMemory().kept}<small>/${conceptMemory().learned}</small>` : '<small class="dd-note">첫 기억 확인을 기다려요</small>'}</dd></div>
+        <div><dt>개념 확인 문제</dt><dd>${w7.checks}<small>번 풀이</small></dd></div>
+        <div><dt>공부한 날</dt><dd>${w7.activeDays}<small>/7일</small></dd></div>
+        <div><dt>첫 시도 정답률</dt><dd>${w7.problems ? Math.round(w7.firstRight * 100) : '–'}<small>%</small></dd></div>
+        <div><dt>힌트·풀이 사용률</dt><dd>${w7.problems ? Math.round(w7.hintUse * 100) : '–'}<small>%</small></dd></div>
+        <div><dt>공부 시간</dt><dd class="dd-text">${fmtMinutes(w7.seconds)}</dd></div>
+      </dl>
+    </details>
     <div class="result-grid">
       <section class="paper chart-paper">
         <h2 class="paper-title">역량 변화</h2>

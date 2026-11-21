@@ -1,5 +1,5 @@
 import { getState, update, exportData, importData, resetAll, today } from '../store.js';
-import { TRACKS } from '../content/units.js';
+import { TRACKS, UNITS } from '../content/units.js';
 import { latestDiagnosis, activeCourses, activeCourseTitles } from '../model.js';
 import { COURSES } from '../content/courses.js';
 import { esc, toast } from '../lib/ui.js';
@@ -25,11 +25,11 @@ export function renderSettings(view) {
     </header>
 
     <section class="set-sec">
-      <h2 class="h3">학생</h2>
+      <h2 class="h3">학습</h2>
       <label class="field"><span class="field-l">이름(화면 인사에만 사용)</span><input data-k="name" value="${esc(st.profile.name)}" maxlength="20"></label>
       <label class="field"><span class="field-l">하루 목표 <span class="hint-text">개념 문항 풀이 + 문제 해결을 더한 수, 1~30개</span></span><input data-k="goal" type="number" min="1" max="30" value="${st.profile.dailyGoal}"></label>
       <fieldset class="field"><legend class="field-l">공부하는 과목</legend>
-        <div class="row" role="group">${COURSES.map((c) => `<label class="chip-check"><input type="checkbox" data-course="${c.id}" ${active.includes(c.id) ? 'checked' : ''}> ${esc(c.title)}</label>`).join('')}</div>
+        <div class="course-list" role="group">${COURSES.map((c) => `<label class="course-opt" style="--cc: var(--c-${c.id})"><input type="checkbox" data-course="${c.id}" ${active.includes(c.id) ? 'checked' : ''}><span class="co-dot" aria-hidden="true"></span><span class="co-t">${esc(c.title)}</span><span class="co-n">${UNITS.filter((u) => u.course === c.id).length}개 단원</span></label>`).join('')}</div>
         <p class="hint-text">고른 과목만 오늘 할 일(추천 문제, 약한 단원, 개념 확인, 복습)과 혼합 평가, 리포트에 나옵니다. 과목을 꺼도 기록과 복습 예정일은 그대로 남고, 다시 켜면 이어집니다. 꺼 둔 과목의 단원도 개념 학습에서 언제든 열어 볼 수 있어요.</p>
       </fieldset>
       <fieldset class="field"><legend class="field-l">학습 트랙</legend>
@@ -39,22 +39,26 @@ export function renderSettings(view) {
         </div>
         <p class="hint-text">트랙은 추천 문제의 난이도만 바꿉니다. 모든 문제는 언제든 풀 수 있어요. 트랙 이름은 학습 목표를 나타낼 뿐, 내신 등급이나 수능 성적을 예측하지 않습니다.</p>
       </fieldset>
-      <fieldset class="field"><legend class="field-l">화면</legend>
-        <div class="row">${[['auto', '기기 설정 따르기'], ['light', '밝게'], ['dark', '어둡게']].map(([k, v]) => `<button type="button" class="chip" data-theme="${k}" aria-pressed="${st.settings.theme === k}">${v}</button>`).join('')}</div>
-      </fieldset>
     </section>
 
     <section class="set-sec">
-      <h2 class="h3">구독 AI 연결</h2>
+      <h2 class="h3">화면</h2>
+      <fieldset class="field"><legend class="field-l">밝기</legend>
+        <div class="seg-ctl">${[['auto', '기기 설정 따르기'], ['light', '밝게'], ['dark', '어둡게']].map(([k, v]) => `<button type="button" class="chip" data-theme="${k}" aria-pressed="${st.settings.theme === k}">${v}</button>`).join('')}</div>
+      </fieldset>
+    </section>
+
+    <details class="set-sec set-fold">
+      <summary><span class="h3">구독 AI 연결</span><span class="hint-text">Claude · ChatGPT · Gemini 전용 튜터 방 설정</span></summary>
       <p>API 키는 필요 없습니다. "AI에게 묻기"를 누르면 질문을 복사해 해당 서비스를 엽니다. Claude와 ChatGPT는 입력창에 질문을 미리 채워 열고, Gemini는 붙여넣기만 하면 됩니다. 로그인은 각 서비스에서 평소처럼 하세요.</p>
       <p>매번 지침을 보내는 대신 학생 전용 튜터 방을 만들어 두면 대화가 이어집니다. 아래 지침을 복사해 각 서비스에 붙여넣고, 만든 방의 주소를 넣으세요. 주소를 넣으면 질문은 클립보드로만 전달됩니다.</p>
       <div class="row"><button type="button" class="btn" data-act="copy-rules">튜터 지침 복사</button></div>
       <details class="prompt-preview"><summary>지침 내용 보기</summary><pre data-rules>${esc(rules())}</pre></details>
       ${Object.entries(AI_SERVICES).map(([k, s]) => `<label class="field"><span class="field-l">${s.name} 전용 방 주소 <span class="hint-text">선택</span></span><input data-ai="${k}" type="url" inputmode="url" placeholder="${s.home}…" value="${esc(st.settings.ai[k])}"><span class="hint-text">${AI_HELP[k]}</span></label>`).join('')}
-    </section>
+    </details>
 
     <section class="set-sec">
-      <h2 class="h3">기록 백업</h2>
+      <h2 class="h3">기록과 백업</h2>
       <p>브라우저 데이터를 지우면 기록도 사라집니다. 가끔 백업 파일을 내려받아 두세요.</p>
       <div class="row">
         <button type="button" class="btn" data-act="export">백업 파일 내려받기</button>
