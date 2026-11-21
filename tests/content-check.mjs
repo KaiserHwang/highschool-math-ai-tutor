@@ -373,6 +373,31 @@ for (const u of REGULAR_UNITS) {
   }
 }
 
+// 성취기준(#63): 문장은 수식까지 렌더링되고, 단원의 코드는 모두 등록된 성취기준이며,
+// 모든 소단원이 자기 단원의 성취기준에 이어지고, 모든 성취기준은 소단원 하나 이상과 이어진다
+{
+  const { STANDARDS, STANDARD_BY_CODE, LESSON_STANDARDS, lessonsOfStandard } = await import('../assets/js/content/standards.js');
+  const LB = Object.fromEntries(LESSONS.map((l) => [l.id, l]));
+  if (new Set(STANDARDS.map((s) => s.code)).size !== STANDARDS.length) fail('성취기준 코드 중복');
+  for (const s of STANDARDS) {
+    if (!/^(10공수[12]-\d\d-\d\d|12대수\d\d-\d\d|12미적Ⅰ-\d\d-\d\d|12확통\d\d-\d\d)$/.test(s.code)) fail(`성취기준 코드 형식: ${s.code}`);
+    check(`성취기준 ${s.code}`, s.text);
+    if (!lessonsOfStandard(s.code).length) fail(`성취기준 ${s.code}: 이어진 소단원이 없음`);
+  }
+  for (const u of UNITS) for (const c of u.standards || []) if (!STANDARD_BY_CODE[c]) fail(`${u.id}.standards: 모르는 성취기준 ${c}`);
+  for (const s of STANDARDS) if (!UNITS.some((u) => (u.standards || []).includes(s.code))) fail(`성취기준 ${s.code}: 어느 단원에도 없음`);
+  for (const l of LESSONS) if (!(LESSON_STANDARDS[l.id] || []).length) fail(`${l.id}: 성취기준 연결이 없음`);
+  for (const [id, codes] of Object.entries(LESSON_STANDARDS)) {
+    if (!LB[id]) { fail(`성취기준 연결: 없는 소단원 ${id}`); continue; }
+    const unit = UNITS.find((u) => u.id === LB[id].unit);
+    for (const c of codes) {
+      if (!STANDARD_BY_CODE[c]) fail(`${id}: 모르는 성취기준 ${c}`);
+      else if (!(unit.standards || []).includes(c)) fail(`${id}: ${c}는 단원 ${unit.id}의 성취기준이 아님`);
+    }
+    if (new Set(codes).size !== codes.length) fail(`${id}: 성취기준 중복`);
+  }
+}
+
 // 범위 표가 최신인지
 const { renderCoverage } = await import('../tools/coverage.mjs');
 if (readFileSync(new URL('../docs/COVERAGE.md', import.meta.url), 'utf8') !== renderCoverage()) fail('docs/COVERAGE.md 가 최신이 아닙니다. node tools/coverage.mjs 를 실행하세요.');

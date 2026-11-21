@@ -1,6 +1,6 @@
 // 자동 생성 파일입니다. 직접 고치지 말고 node tools/gen-sw.mjs 를 실행하세요.
 // 오프라인에서도 열리도록 앱 파일을 미리 받아 두고, 온라인일 때는 항상 서버의 최신 파일을 먼저 씁니다.
-const VERSION = 'mathpulse-5ac422ea87d1';
+const VERSION = 'mathpulse-a6ef19b1e94c';
 const ASSETS = [
   './',
   'assets/css/app.css',
@@ -86,6 +86,7 @@ const ASSETS = [
   'assets/js/content/misconceptions.js',
   'assets/js/content/problems.js',
   'assets/js/content/registry.js',
+  'assets/js/content/standards.js',
   'assets/js/content/units.js',
   'assets/js/lib/ai.js',
   'assets/js/lib/draft.js',
