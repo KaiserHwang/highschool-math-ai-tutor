@@ -636,7 +636,7 @@ img, svg { display: block; }
   .rail, .tabbar, .toast, .no-print, .skip { display: none !important; }
   body { background: #fff; }
   .shell { display: block; }
-  .paper, .tbl, .stats div { box-shadow: none; }
+  .paper, .tbl, .stats div, .lesson .l-sec, .lesson .l-done, .coach, .ask, .tile, .hero, .toc-row, .set-sec { box-shadow: none !important; }
   .page { padding: 0; }
 }
 
@@ -1214,3 +1214,12 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .week-more > summary.h3 { font-size: 16px; color: var(--ink); margin: 0; }
 .ct-more[open] .ct-list { margin-top: 8px; }
 .stat-chips .stat-note { margin: 0; font: 500 11px var(--sans); color: var(--pencil); }
+
+/* 긴 이유 보기 수식이 좁은 화면 밖으로 나가지 않게: 칸이 줄어들고 수식은 줄을 바꿀 수 있게(기존 동작 보완) */
+.cq-reasons { grid-template-columns: minmax(0, 1fr); }
+.cq-reasons .opt, .cq-reasons .opt-t { min-width: 0; }
+.cq-reasons .opt .katex { white-space: normal; }
+.cq-reasons .opt-t { overflow-wrap: anywhere; }
+/* 섹션 끝의 "다음 단계"(키보드 순서용). 모바일의 떠 있는 버튼은 같은 동작을 시각적으로만 보인다 */
+.sec-next { margin: 18px 0 0; display: flex; justify-content: flex-end; }
+@media print { .sec-next, .lnext { display: none !important; } }

@@ -186,7 +186,7 @@ export function renderLesson(view, { args: [lessonId], params }) {
       <div class="row ai-row">${Object.entries(AI_SERVICES).map(([k, s]) => `<button type="button" class="btn btn-ai ai-${k}" data-ai="${k}">${s.name}에게 묻기</button>`).join('')}</div>
     </details>
 
-    <div class="lnext" data-lnext hidden><button type="button" class="btn btn-primary" data-next-step></button></div>
+    <div class="lnext" data-lnext hidden aria-hidden="true"><button type="button" class="btn btn-primary" data-next-step tabindex="-1"></button></div>
     <nav class="pager" aria-label="다른 개념">
       ${prev ? `<a class="btn btn-quiet" href="#/l/${prev.id}">이전: ${esc(prev.title)}</a>` : '<span></span>'}
       ${next ? `<a class="btn btn-quiet" href="#/l/${next.id}">다음: ${esc(next.title)}</a>` : `<a class="btn btn-quiet" href="#/u/${unit.id}">단원으로</a>`}
@@ -327,6 +327,16 @@ export function renderLesson(view, { args: [lessonId], params }) {
     det.append(sum, ...[...dsec.children].slice(1));
     dsec.append(det);
   }
+  // 섹션마다 끝에 "다음 단계" 버튼을 둔다(키보드·낭독기 순서대로 닿게). 모바일 하단의 떠 있는 버튼은 같은 동작을 화면에만 보인다
+  stepIds.forEach((id, i) => {
+    const sec = view.querySelector(`.l-sec[aria-labelledby="h-${id}"]`);
+    if (!sec) return;
+    const target = i < stepIds.length - 1 ? stepIds[i + 1] : 'done';
+    const p = document.createElement('p');
+    p.className = 'sec-next';
+    p.innerHTML = `<button type="button" class="btn btn-quiet" data-next-step="${target}">${target === 'done' ? '이해했어요 표시하러 가기' : `다음: ${STEP_LABEL[target]}`} ▸</button>`;
+    sec.append(p);
+  });
   // 지금 보고 있는 단계를 막대에 표시하고, 마지막으로 본 단계를 기억한다
   let observer = null;
   if ('IntersectionObserver' in window) {
