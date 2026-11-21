@@ -1317,7 +1317,16 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .mst-p { font: 800 18px var(--sans); font-variant-numeric: tabular-nums; color: var(--ink); }
 .mst .meter { grid-column: 1 / -1; }
 .mst .meter > span { background: var(--cc, var(--brand)); }
-.mst-sub { grid-column: 1 / -1; font-size: 12px; color: var(--pencil); font-variant-numeric: tabular-nums; }
+.mst-sub { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; font-size: 12px; color: var(--pencil); font-variant-numeric: tabular-nums; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .mst .meter { background: #3a404c; } }
 :root[data-theme='dark'] .mst .meter { background: #3a404c; }
-@media print { .mst { box-shadow: none !important; break-inside: avoid; } .mst .meter > span { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+@media print { .mst { box-shadow: none !important; break-inside: avoid; } .mst .meter > span { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }/* 검토 반영(#60): 넓은 화면은 카드를 낮게, 인쇄는 밝은 과목색·짙은 글자·막대 테두리, 제목이 첫 카드와 함께 넘어가게 */
+@media (min-width: 720px) { .mst-list { gap: 6px; } .mst-link { padding: 9px 14px; gap: 4px 12px; } .mst-p { font-size: 16px; } }
+@media print {
+  :root, :root[data-theme='dark'], :root:not([data-theme='light']) { --c-common1: #4f46e5; --c-common2: #0f766e; --c-algebra: #92400e; --c-calculus1: #7c3aed; --c-statistics: #be185d; }
+  .mst, .mst-link { background: #fff !important; }
+  .mst-t, .mst-p, .mst-h { color: #111827 !important; }
+  .mst-sub { color: #374151 !important; }
+  .mst .meter { background: #fff !important; border: 1px solid #6b7280; }
+  .side-block > .h3, .mst-h { break-after: avoid-page; page-break-after: avoid; }
+}
