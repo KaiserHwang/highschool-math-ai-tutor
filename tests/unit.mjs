@@ -495,6 +495,16 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
     store.resetAll();
     ok(s0.ck.total === L1.checks.length && s0.ck.done === 0 && !('core' in s0) && !('ex' in s0) && s1.ck.done === 1 && s1.why.done === 2 && s0.deep.total === L1.deep.checks.length,
       '소단원 단계 막대는 확인·유도·심화처럼 활동이 있는 단계의 진행을 세고, 읽기 단계(정리·예제)는 세지 않는다');
+    // 홈의 "이어서 하기": 시작했지만 아직 배우지 않은 소단원 중 가장 최근에 손댄 것(위치 시각과 확인 문제 풀이 시각)
+    store.resetAll();
+    const posA = { 'u1-l1': { s: 'ex', at: Date.parse('2026-11-20T10:00:00Z') }, 'u1-l3': { s: 'ck', at: Date.parse('2026-11-21T10:00:00Z') } };
+    const pickA = model.continueLesson(posA);
+    const pickOld = model.continueLesson({ 'u1-l2': 'ex' }); // 예전 형식(단계 문자열)
+    store.update((s) => { s.lessons['u1-l1'] = { checks: { 'u1-l1-c1': { tries: 1, solved: false, firstCorrect: false, lastAt: '2026-11-22T09:00:00.000Z' } } }; });
+    const pickTry = model.continueLesson({});
+    store.resetAll();
+    ok(pickA && pickA.id === 'u1-l3' && pickOld && pickOld.id === 'u1-l2' && pickTry && pickTry.id === 'u1-l1' && model.continueLesson({}) === null && model.posStep({ s: 'ck', at: 1 }) === 'ck' && model.posStep('ex') === 'ex',
+      '이어서 하기는 가장 최근에 본 소단원을 고르고, 틀린 확인 문제만 있어도 시작한 것으로 본다(예전 위치 형식도 읽음)');
     ok(fresh && picked && studied && otherCourse && byDiag, '진단도 트랙 선택도 없으면 트랙을 정하지 않은 것으로, 공부하는 과목의 문제·소단원 기록이나 그 과목 진단이 있으면 근거가 있는 것으로 본다(다른 과목 기록은 제외)');
   }
   store.resetAll();

@@ -1,7 +1,7 @@
 import { getState, today, addDays } from '../store.js';
 import { TRACKS, UNIT_BY_ID, LEVELS, unitLabel, isFusion, courseShort } from '../content/units.js';
 import { generatorsOfUnit, newSeed } from '../content/generators.js';
-import { latestDiagnosis, recommendNext, dueReviews, unitMastery, streak, activeTrack, lessonSteps, totals, weakestUnit, lessonTotals, lessonRechecks, conceptsDue, conceptQueue, conceptMemory, learnedOn, rootWeaknesses, studyCount, activeUnits, activeLessons, activeCourseTitles, activeDiagSets, missingDiagSets, latestDiagnosisOf, trackChosen, hasStudyHistory } from '../model.js';
+import { latestDiagnosis, recommendNext, dueReviews, unitMastery, streak, activeTrack, lessonSteps, continueLesson, posStep, totals, weakestUnit, lessonTotals, lessonRechecks, conceptsDue, conceptQueue, conceptMemory, learnedOn, rootWeaknesses, studyCount, activeUnits, activeLessons, activeCourseTitles, activeDiagSets, missingDiagSets, latestDiagnosisOf, trackChosen, hasStudyHistory } from '../model.js';
 import { lessonForProblem, lessonsOfUnit } from '../content/lessons/index.js';
 import { CONCEPT_SET } from './concepts.js';
 import { tex, esc, fmtDate } from '../lib/ui.js';
@@ -57,9 +57,11 @@ export function renderHome(view) {
   if (cDue.length) {
     const n = Math.min(cDue.length, CONCEPT_SET);
     tiles.push(`<article class="paper tile concept-today" aria-labelledby="ct-h">
-        <header class="paper-head"><h2 id="ct-h" class="paper-title">오늘의 개념 확인</h2><span class="meta">${n}개 · 약 ${n * 2}분${cDue.length > n ? ` · 남은 ${cDue.length - n}개는 이어서` : ''}</span></header>
-        <ul class="ct-list">${cDue.slice(0, n).map(({ l, sp }) => `<li><span class="ct-t">${esc(l.title)}</span><span class="hint-text">${sp.keptAt ? '6개월 유지 확인' : `${['1주', '3주', '2개월'][sp.stage] || ''} 간격 확인`}</span></li>`).join('')}</ul>
+        <header class="paper-head"><h2 id="ct-h" class="paper-title">오늘의 개념 확인</h2><span class="meta">약 ${n * 2}분</span></header>
+        <p class="tile-n">${n}<small>개념${cDue.length > n ? ` · 남은 ${cDue.length - n}개는 이어서` : ''}</small></p>
         <p class="row"><a class="btn btn-primary" href="#/cr">개념 확인 시작</a></p>
+        <details class="ct-more"><summary>어떤 개념인지 보기</summary><ul class="ct-list">${cDue.slice(0, n).map(({ l, sp }) => `<li><span class="ct-t">${esc(l.title)}</span><span class="hint-text">${sp.keptAt ? '6개월 유지 확인' : `${['1주', '3주', '2개월'][sp.stage] || ''} 간격 확인`}</span></li>`).join('')}</ul></details>
+
       </article>`);
   } else if (mem.learned) {
     steps.push(`<li class="plan-step"><div class="plan-body"><h2 class="h3">오늘 확인할 개념은 없어요</h2><p class="hint-text">배운 개념 ${mem.learned}개${mem.kept ? ` · 오래 기억함 ${mem.kept}개` : ''}${upNext ? ` · 다음 확인 ${fmtDate(upNext.sp.due)} (${esc(upNext.l.title)})` : ''}</p></div></li>`);
@@ -72,8 +74,7 @@ export function renderHome(view) {
   // 공부하다 만 소단원(활동이나 지난번 위치가 있고 아직 배우지 않음)이 있으면 그것부터 이어서 한다(#48 3단계)
   let posMap = {};
   try { posMap = JSON.parse(localStorage.getItem('mathpulse.lessonpos') || '{}') || {}; } catch { posMap = {}; }
-  const started = (l) => !!posMap[l.id] || Object.values(lessonSteps(l)).some((x) => x.done > 0);
-  const inProgress = activeLessons().find((l) => unlearned(l) && started(l)) || null;
+  const inProgress = continueLesson(posMap); // 가장 최근에 손댄, 아직 배우지 않은 소단원(model.js)
   const learnNext = inProgress
     || (fresh ? activeLessons().find(unlearned) : null)
     || (nextLesson && unlearned(nextLesson) ? nextLesson : null)
@@ -108,21 +109,22 @@ export function renderHome(view) {
     const stp = lessonSteps(learnNext);
     const vals = Object.values(stp);
     const pct = vals.length ? Math.round((vals.reduce((a, x) => a + Math.min(x.done, x.total) / x.total, 0) / vals.length) * 100) : 0;
-    const pos = posMap[learnNext.id] || null;
+    const pos = posStep(posMap[learnNext.id]);
+    const isCont = learnNext === inProgress; // 시작한 소단원이면 제목·버튼·이동 위치를 모두 이어서 하기 기준으로
     const LABEL = { warm: '생각', core: '정리', why: '왜', ex: '예제', ck: '확인', cq: '이유', deep: '심화', say: '설명' };
     const left = stp.ck ? stp.ck.total - stp.ck.done : 0;
     const sub = [pos && LABEL[pos] && pos !== 'warm' ? `'${LABEL[pos]}'까지 봤어요` : '', pct ? (left ? `확인 문제 ${left}개 남음` : '확인 문제를 모두 맞혔어요') : ''].filter(Boolean).join(' · ') || '아직 시작하지 않은 개념이에요';
     hero = `<section class="hero" aria-labelledby="hero-h">
-      <p class="hero-k">${pct ? '이어서 하기' : '다음에 배울 개념'} · ${esc(unitLabel(UNIT_BY_ID[learnNext.unit]))}</p>
+      <p class="hero-k">${isCont ? '이어서 하기' : '다음에 배울 개념'} · ${esc(unitLabel(UNIT_BY_ID[learnNext.unit]))}</p>
       <h2 id="hero-h" class="hero-t">${esc(learnNext.title)}</h2>
       <p class="hero-s">${sub}</p>
-      <div class="hero-bar" role="img" aria-label="진행 ${pct}%"><span style="--v:${pct}%"></span></div>
-      <a class="btn hero-btn" href="#/l/${learnNext.id}">${pct || pos ? '이어서 공부하기' : '개념 배우기'}</a>
+      <div class="hero-bar" role="img" aria-label="활동 진행 ${pct}%"><span style="--v:${pct}%"></span></div><p class="hero-pct">활동 진행 ${pct}%</p>
+      <a class="btn hero-btn" href="#/l/${learnNext.id}${isCont && pos && pos !== 'warm' ? `?go=${pos}` : ''}">${isCont ? '이어서 공부하기' : '개념 배우기'}</a>
     </section>`;
   }
   const lt = lessonTotals();
   const weekSum = Array.from({ length: 7 }, (_, i) => studyCount(st.activity[addDays(today(), -i)])).reduce((a, b) => a + b, 0);
-  const statChips = `<dl class="stat-chips"><div><dt>이번 주</dt><dd>${weekSum}</dd></div><div><dt>혼자 확인</dt><dd>${lt.verified}<small>/${lt.total}</small></dd></div><div><dt>오래 기억</dt><dd>${mem.kept}</dd></div></dl>`;
+  const statChips = `<dl class="stat-chips"><div><dt>최근 7일</dt><dd>${weekSum}</dd><dd class="stat-note">모든 과목</dd></div><div><dt>혼자 확인</dt><dd>${lt.verified}<small>/${lt.total}</small></dd></div><div><dt>오래 기억</dt><dd>${mem.kept}</dd></div></dl>`;
 
   const units = activeUnits().map((u) => {
     const m = unitMastery(u.id);
@@ -155,11 +157,11 @@ export function renderHome(view) {
       <aside class="home-side">
         ${fresh ? '' : `<section class="side-block"><h2 class="h3">내 기록</h2>${statChips}</section>`}
         ${fresh ? `<section class="side-block empty-note"><h2 class="h3">내 기록</h2><p class="hint-text">첫 개념을 공부하거나 문제를 풀면 이번 주 학습량, 단원별 숙련도, 개념 기억이 여기에 쌓여요.</p><p class="row"><a class="btn btn-quiet" href="#/map">개념 지도 보기</a></p></section>` : `
-        <section class="side-block">
-          <h2 class="h3">이번 주</h2>
+        <details class="side-block week-more"${fresh ? ' open' : ''}>
+          <summary class="h3">최근 7일 막대 보기</summary>
           <ol class="week" aria-label="최근 7일 학습량(개념 문항 풀이 + 문제 해결)">${week.join('')}</ol>
           <p class="hint-text">오늘 개념 문항 ${todayAct.checks || 0}개 풀이 · 문제 ${todayAct.solved || 0}개 해결. 하루 목표는 둘을 더해 ${goal}개입니다.</p>
-        </section>
+        </details>
         <section class="side-block">
           <h2 class="h3">단원별 숙련도</h2>
           <ul class="unit-minis">${units}</ul>

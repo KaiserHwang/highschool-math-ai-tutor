@@ -1231,3 +1231,10 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 @media (min-width: 720px) { .toc-next { margin-left: 82px; } }
 /* 탭이 있으면 과목 제목은 탭이 대신하므로 낭독기에만 남긴다 */
 .toc-group[role='tabpanel'] > .toc-h { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+/* 홈 검토 반영(#48 3-B): 활동 진행 글자, 펼쳐 보기, 칩 보조 설명 */
+.hero-pct { margin: -8px 0 12px; font-size: 12px; color: rgba(255, 255, 255, 0.85); }
+.ct-more, .week-more { margin-top: 10px; }
+.ct-more > summary, .week-more > summary { cursor: pointer; font-size: 13px; color: var(--pencil); font-weight: 600; }
+.week-more > summary.h3 { font-size: 16px; color: var(--ink); margin: 0; }
+.ct-more[open] .ct-list { margin-top: 8px; }
+.stat-chips .stat-note { margin: 0; font: 500 11px var(--sans); color: var(--pencil); }
