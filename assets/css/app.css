@@ -1184,3 +1184,10 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .stat-chips small { font-size: 12px; color: var(--pencil); font-weight: 600; }
 .ring-t { flex-direction: column; line-height: 1.1; }
 .ring-l { font-size: 9.5px; color: var(--pencil); font-weight: 600; }
+/* 홈 검토 반영(#48 3-B): 활동 진행 글자, 펼쳐 보기, 칩 보조 설명 */
+.hero-pct { margin: -8px 0 12px; font-size: 12px; color: rgba(255, 255, 255, 0.85); }
+.ct-more, .week-more { margin-top: 10px; }
+.ct-more > summary, .week-more > summary { cursor: pointer; font-size: 13px; color: var(--pencil); font-weight: 600; }
+.week-more > summary.h3 { font-size: 16px; color: var(--ink); margin: 0; }
+.ct-more[open] .ct-list { margin-top: 8px; }
+.stat-chips .stat-note { margin: 0; font: 500 11px var(--sans); color: var(--pencil); }
