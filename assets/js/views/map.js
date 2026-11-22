@@ -73,7 +73,7 @@ function mapSVG(cols) {
   for (const L of LESSONS) for (const p of L.pre || []) edges.push(`<path class="me" data-from="${p}" data-to="${L.id}" d="${edgePath(pos[p], pos[L.id])}" marker-end="url(#mk)"/>`);
   return `<svg class="mmap" viewBox="0 0 ${w} ${h}" width="${w}" style="max-width:100%;height:auto" role="group" aria-label="개념 지도: 소단원 ${LESSONS.length}개와 선수 관계 ${edges.length}개">
     <defs>${['mk', 'mk-anc', 'mk-dep'].map((m) => `<marker id="${m}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="${m}" d="M0,0 L8,4 L0,8 z"/></marker>`).join('')}</defs>
-    ${heads.map(({ u, x, y }) => `<g class="mh"><text x="${x}" y="${y + 15}" class="mh-c">${esc(courseTitle(u))}</text><text x="${x}" y="${y + 33}" class="mh-t"><a href="#/u/${u.id}">${esc(u.no)} ${esc(u.title)}</a></text></g>`).join('')}
+    ${heads.map(({ u, x, y }) => `<g class="mh"><text x="${x}" y="${y + 15}" class="mh-c">${esc(courseTitle(u))}</text><a href="#/u/${u.id}" class="mh-a"><rect class="mh-hit" x="${x - 4}" y="${y + 18}" width="${G.colW + 8}" height="24"/><text x="${x}" y="${y + 33}" class="mh-t">${esc(u.no)} ${esc(u.title)}</text></a></g>`).join('')}
     <g class="me-all">${edges.join('')}</g>
     ${LESSONS.map((L) => nodeSVG(L, pos[L.id])).join('')}
   </svg>`;

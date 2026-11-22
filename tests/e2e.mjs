@@ -335,6 +335,23 @@ async function run(viewport, tag) {
   ok(await page.locator('.say-model .say-keys li').count() === PL.explain.keys.length, `[${tag}] 직접 설명하기에서 모범 설명과 점검 항목을 볼 수 있다`);
   await page.goto(BASE + '#/u/u2');
   await page.waitForSelector('.lesson-toc');
+  // 전체 점검 반영: 시작하지 않은 소단원 글자는 읽을 수 있는 대비(4.5:1 이상)
+  const newRatio = await page.evaluate(() => {
+    const el = [...document.querySelectorAll('.lesson-toc .st-new, .lesson-toc .lt-t')].find((e) => e.closest('.st-new')) || document.querySelector('.st-new');
+    if (!el) return 99;
+    const rgb = (c) => c.match(/[\d.]+/g).slice(0, 3).map(Number);
+    const L = (c) => { const [r, g, b] = rgb(c).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+    let bg = 'rgba(0, 0, 0, 0)', p = el; while (p && /rgba\(0, 0, 0, 0\)/.test(bg)) { bg = getComputedStyle(p).backgroundColor; p = p.parentElement; }
+    const a = L(getComputedStyle(el).color), b = L(bg); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  });
+  ok(newRatio >= 4.5, `[${tag}] 시작하지 않은 소단원 글자 대비 ${newRatio.toFixed(2)}:1`);
+  // 긴 수식 보기가 칸과 화면 밖으로 나가지 않고, 설명 입력란에 이름이 있다
+  await page.goto(BASE + '#/l/u4-l4');
+  await page.waitForSelector('[data-check="u4-l4-c2"] .opt');
+  const optFit = await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth
+    && [...document.querySelectorAll('#view .opt')].every((o) => [...o.querySelectorAll('.katex')].every((k) => k.getBoundingClientRect().right <= o.getBoundingClientRect().right + 1)));
+  const noteName = await page.evaluate(() => { const t = document.querySelector('textarea[data-note]'); const id = t && t.getAttribute('aria-labelledby'); return !!(id && document.getElementById(id) && document.getElementById(id).textContent.trim()); });
+  ok(optFit && noteName, `[${tag}] 긴 수식 보기가 칸 안에 들어오고, "직접 설명해 보기" 입력란에 이름이 있다`);
   await page.goto(BASE + '#/l/u2-l1');
   await page.waitForSelector('[data-note]');
   ok((await page.inputValue('[data-note]')) === '실수부분과 허수부분을 각각 비교한다', `[${tag}] 직접 쓴 설명이 저장되어 다시 보인다`);

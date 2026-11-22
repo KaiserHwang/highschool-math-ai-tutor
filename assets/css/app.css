@@ -506,7 +506,7 @@ img, svg { display: block; }
 .prow-k { font-size: 12px; color: var(--pencil); }
 .st { font: 700 16px var(--sans); text-align: center; }
 .st-clean, .st-solved, .st-wrong { color: var(--red-pen); }
-.st-new { color: var(--rule); }
+.st-new { color: var(--pencil); } /* 아직 시작하지 않음: 옅은 선 색(--rule)은 글자 대비가 1.2:1이라 쓰지 않는다 */
 
 /* ── 진단 ─────────────────────────────── */
 .diag-head { margin-bottom: 16px; }
@@ -1330,3 +1330,16 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
   .mst .meter { background: #fff !important; border: 1px solid #6b7280; }
   .side-block > .h3, .mst-h { break-after: avoid-page; page-break-after: avoid; }
 }
+/* ── 전체 점검 반영: 객관식 보기 수식 넘침, 작은 터치 영역 ── */
+/* 보기 칸이 화면 폭 안에서 줄어들고, 긴 수식은 연산 기호에서 줄을 바꾼다(이전에는 줄바꿈 금지로 칸 밖으로 나갔다) */
+.options { grid-template-columns: minmax(0, 1fr); }
+.opt, .opt-t { min-width: 0; }
+.opt .katex { white-space: normal; }
+.opt-t { overflow-wrap: anywhere; }
+@media (max-width: 480px) { .options-mid { grid-template-columns: minmax(0, 1fr) !important; } }
+/* 위치 링크와 펼치기 버튼은 24px 이상 */
+.crumbs a { display: inline-flex; align-items: center; min-height: 24px; }
+#view summary { min-height: 24px; }/* 개념 지도의 단원 제목 링크: 글자보다 넓은 투명 눌림 영역(24px) */
+.mmap .mh-hit { fill: transparent; }
+.mmap .mh-a:focus-visible .mh-hit { stroke: var(--brand); stroke-width: 2; rx: 6; }
+.mmap .mh-a:hover .mh-t { text-decoration: underline; }

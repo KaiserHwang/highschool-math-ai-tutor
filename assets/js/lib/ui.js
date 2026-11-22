@@ -140,5 +140,6 @@ export function statusGlyph(status) {
 const optLen = (s) => String(s).replace(/\\(cap|cup|le|ge|ne)/g, 'xx').replace(/\\[a-z]+/g, 'x').replace(/[${}\\^_ ]/g, '').length;
 export function optionsClass(options) {
   const n = Math.max(...options.map(optLen));
-  return n <= 6 ? ' options-row' : n <= 16 ? ' options-mid' : '';
+  // 한 줄 5칸(options-row)은 아주 짧은 보기만. 좌표 (3, -1)처럼 6자 보기는 390px에서 칸(약 57px)을 넘었다
+  return n <= 5 ? ' options-row' : n <= 16 ? ' options-mid' : '';
 }
