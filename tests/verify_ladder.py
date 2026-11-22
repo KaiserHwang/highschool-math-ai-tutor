@@ -30,6 +30,11 @@ def expected_ladder(P):
     E['u2-31'] = sum(1 for n in range(-100, 101) if 3 * n - 1 > 5 and n + 4 <= 10)
     E['u2-32'] = sum(1 for n in range(-100, 101) if abs(n + 1) < 4)
     E['u2-33'] = sum(1 for n in range(-100, 101) if n * n - 2 * n - 8 < 0)
+    # 연립이차부등식(#66): 정수를 직접 대입해 두 부등식을 모두 만족하는 것만 센다
+    E['u2-34'] = sum(1 for n in range(-100, 101) if n + 1 > 0 and n * n - 3 * n - 10 <= 0)
+    E['u2-35'] = sum(1 for n in range(-100, 101) if n * n - n - 12 <= 0 and n * n - 3 * n > 0)
+    one_sol = lambda av: sum(1 for n in range(-100, 101) if n * n - 3 * n - 4 <= 0 and n * n - (av + 2) * n + 2 * av < 0) == 1
+    E['u2-36'] = sum(av for av in range(-50, 51) if one_sol(av))
 
     E['u3-21'] = len(list(itertools.combinations(range(7), 3)))
     E['u3-22'] = sum(1 for c in itertools.combinations(range(1, 10), 2) if any(v % 2 == 0 for v in c))

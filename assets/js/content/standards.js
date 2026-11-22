@@ -134,9 +134,7 @@ export const LESSON_STANDARDS = {
 };
 
 /** 일부만 다루는 성취기준과 빠진 내용(범위 표의 비고). 콘텐츠를 채우면 지운다 */
-export const PARTIAL = {
-  '10공수1-02-11': '연립이차부등식은 아직 다루지 않음(#66)',
-};
+export const PARTIAL = {};
 
 /** 성취기준 하나를 다루는 소단원 id들 */
 export const lessonsOfStandard = (code) => Object.keys(LESSON_STANDARDS).filter((id) => LESSON_STANDARDS[id].includes(code));

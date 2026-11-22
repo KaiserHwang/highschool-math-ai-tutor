@@ -536,7 +536,7 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   ok(normalizeCourses(null).join() === 'common1,common2' && normalizeCourses([]).join() === 'common1,common2' && normalizeCourses(['zzz']).join() === 'common1,common2'
     && normalizeCourses(['common2', 'zzz', 'common2']).join() === 'common2' && normalizeCourses(['common2', 'common1']).join() === 'common1,common2' && normalizeCourses('common1').join() === 'common1,common2',
     '공부하는 과목이 없거나 비었거나 모르는 과목뿐이면 기본 과목으로 보고, 아는 과목만 과목 순서로 남긴다');
-  ok(ids(model.activeUnits()) === 'u1,u2,u3,u4,u5,u6,u7,u8' && ids(model.activeRegularUnits()) === 'u1,u2,u3,u4,u5,u6,u7' && model.activeLessons().length === 44 && model.totals().total === 185,
+  ok(ids(model.activeUnits()) === 'u1,u2,u3,u4,u5,u6,u7,u8' && ids(model.activeRegularUnits()) === 'u1,u2,u3,u4,u5,u6,u7' && model.activeLessons().length === 44 && model.totals().total === 188,
     '과목을 고른 적이 없으면 지금까지와 같이 전 단원이 범위다');
   // 두 과목에 기록을 만든다: 공통수학1(u2)과 공통수학2(u5)에 재확인·간격 복습·오답, 융합(u8)에 오답
   const day = store.today();

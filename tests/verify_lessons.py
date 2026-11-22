@@ -185,6 +185,7 @@ def u2():
         rr = real_roots(x ** 2 - (kk + 1) * x + kk - 3)
         return len(rr) == 2 and min(rr) < 2 < max(rr)
     r['u2-l11-c2'] = min(kk for kk in range(-20, 21) if straddle(kk))
+    r['u2-l11-c3'] = count_int(-50, 50, lambda n: n * n - 2 * n - 8 <= 0 and n * n - n - 2 > 0)
     return r
 
 
