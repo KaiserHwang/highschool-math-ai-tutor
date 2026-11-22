@@ -144,6 +144,8 @@ for (const L of LESSONS) {
   L.checks.forEach((c, i) => {
     const cw = `${w}.checks[${i}]`;
     if (c.id !== `${w}-c${i + 1}`) fail(`${cw}: id는 ${w}-c${i + 1} 이어야 함`);
+    // 나중에 추가한 확인 문제(#66): added는 날짜, 원래 문제 뒤에만 둔다(앞 문제의 id 순서를 바꾸지 않게)
+    if (c.added !== undefined && (!/^\d{4}-\d\d-\d\d$/.test(c.added) || L.checks.slice(i + 1).some((x) => !x.added))) fail(`${cw}: added는 YYYY-MM-DD이고, 원래 확인 문제 뒤에 있어야 함`);
     if (checkIds.has(c.id)) fail(`${cw}: id 중복`);
     checkIds.add(c.id);
     check(`${cw}.q`, c.q);

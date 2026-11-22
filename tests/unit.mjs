@@ -833,6 +833,45 @@ for (const tz of ['Asia/Seoul', 'UTC', 'America/Los_Angeles', 'Pacific/Kiritimat
   ok(g1.units.u5 === r1.pct, '저장되는 단원 준비도와 화면의 준비도가 같은 기준이다');
 }
 
+// ── #66 나중에 추가한 확인 문제가 이미 얻은 완료와 복습 예정일을 지우지 않는다 ──
+{
+  installStorage();
+  const store = await import('../assets/js/store.js');
+  const model = await import('../assets/js/model.js');
+  const { LESSON_BY_ID } = await import('../assets/js/content/lessons/index.js');
+  const L = LESSON_BY_ID['u2-l11'];
+  const late = L.checks.find((c) => c.added);
+  const ckRec = (solvedAt) => ({ tries: 1, solved: true, firstCorrect: true, sawSolution: false, lastAt: '2026-11-20T01:00:00.000Z', ...(solvedAt ? { solvedAt } : {}) });
+  // 예전 기록: 원래 확인 문제 두 개를 처음에 맞혔고 solvedAt이 없다
+  store.resetAll();
+  store.update((s) => { s.lessons['u2-l11'] = { ...model.blankLessonRec(), checks: { 'u2-l11-c1': ckRec(), 'u2-l11-c2': ckRec() } }; });
+  const oldRec = store.getState().lessons['u2-l11'];
+  const oldOk = model.extraChecks(L, oldRec).map((c) => c.id).join() === late.id && model.lessonProgress(L).total === 2 && model.lessonProgress(L).independent === 2
+    && model.learnedOn(L, oldRec) === '2026-11-20' && !!model.spacedOf(L, oldRec);
+  // 예전 기록을 나중에 다시 풀어도(lastAt만 바뀜) 그대로
+  store.update((s) => { s.lessons['u2-l11'].checks['u2-l11-c1'].lastAt = '2026-12-05T01:00:00.000Z'; });
+  const retryOk = model.extraChecks(L, store.getState().lessons['u2-l11']).length === 1;
+  // 백업 왕복에서 solvedAt이 보존된다
+  store.update((s) => { s.lessons['u2-l11'].checks['u2-l11-c2'].solvedAt = '2026-11-25T01:00:00.000Z'; });
+  const back = JSON.parse(store.exportData());
+  store.resetAll();
+  store.importData(JSON.stringify(back));
+  const kept = store.getState().lessons['u2-l11'].checks['u2-l11-c2'].solvedAt === '2026-11-25T01:00:00.000Z';
+  // 추가일 뒤에 원래 문제를 맞힌 학생(새로 배우는 학생)은 새 문제까지 풀어야 한다
+  const newRec = store.getState().lessons['u2-l11'];
+  const newOk = model.extraChecks(L, newRec).length === 0 && model.lessonProgress(L).total === 3 && model.learnedOn(L, newRec) === null;
+  // 새로 맞히면 solvedAt이 남고, 다시 맞혀도 바뀌지 않는다
+  store.resetAll();
+  store.update((s) => { model.recordCheck(s, 'u2-l11', 'u2-l11-c1', true); });
+  const first = store.getState().lessons['u2-l11'].checks['u2-l11-c1'].solvedAt;
+  store.update((s) => { model.recordCheck(s, 'u2-l11', 'u2-l11-c1', true); });
+  const stamp = !!first && store.getState().lessons['u2-l11'].checks['u2-l11-c1'].solvedAt === first;
+  store.resetAll();
+  if (!(oldOk && retryOk && kept && newOk && stamp)) console.log('  #66 세부', { oldOk, retryOk, kept, newOk, stamp });
+  ok(late && late.id === 'u2-l11-c3' && oldOk && retryOk && kept && newOk && stamp,
+    '나중에 추가한 확인 문제는 그 전에 원래 문제를 다 맞힌 기록의 완료·배운 날을 바꾸지 않고(다시 풀어도), 새로 배우는 학생에게는 판정에 들어간다');
+}
+
 // ── #11·#10 간격 복습, 현재 숙련도 ─────────────────
 {
   const r = spawnSync(process.execPath, [HERE, '--review-child'], { env: { ...process.env, TZ: 'Asia/Seoul' }, encoding: 'utf8' });

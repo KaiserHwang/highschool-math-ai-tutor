@@ -211,7 +211,10 @@ export function checkState(raw, { strict }) {
     if (isBool(c)) return { tries: 1, solved: c, firstCorrect: c ? null : false, sawSolution: false, lastAt: null }; // 예전 형식: 첫 시도 여부는 알 수 없음
     if (!isObj(c) || !isInt(c.tries, 0, 100000) || !isBool(c.solved) || !(c.firstCorrect === null || isBool(c.firstCorrect))
       || !isBool(c.sawSolution) || !(c.lastAt === null || c.lastAt === undefined || isIso(c.lastAt))) return null;
-    return { tries: c.tries, solved: c.solved, firstCorrect: c.firstCorrect, sawSolution: c.sawSolution, lastAt: c.lastAt ?? null };
+    const out = { tries: c.tries, solved: c.solved, firstCorrect: c.firstCorrect, sawSolution: c.sawSolution, lastAt: c.lastAt ?? null };
+    // 처음 맞힌 시각(#66). 예전 기록에는 없고, 없으면 남기지 않는다(없음 = 이 필드를 남기기 전에 맞힌 기록)
+    if (c.solvedAt !== undefined && c.solvedAt !== null) { if (!isIso(c.solvedAt)) return null; out.solvedAt = c.solvedAt; }
+    return out;
   };
   // 개념 간격 복습 기록
   const okSpaced = (sp) => isObj(sp) && isInt(sp.stage, 0, 3) && isDay(sp.due) && (sp.keptAt === null || sp.keptAt === undefined || isDay(sp.keptAt))

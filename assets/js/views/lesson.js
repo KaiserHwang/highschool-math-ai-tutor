@@ -5,7 +5,7 @@ import { LESSONS, LESSON_BY_ID, lessonsOfUnit, allChecks } from '../content/less
 import { UNIT_BY_ID, LEVELS, unitLabel } from '../content/units.js';
 import { PROBLEM_BY_ID } from '../content/problems.js';
 import { getState, update, today, logActivity } from '../store.js';
-import { isCorrect, normalizeAnswer, answerTex, statusOf, lessonProgress, blankLessonRec, recordCheck, markCheckSolution, LESSON_STATE, lessonCQs, lessonCQAnswer, lastCQ, lessonActivity, lessonSteps, posStep, recordPredict, recordGoal, recordDerive, recordKeys } from '../model.js';
+import { isCorrect, normalizeAnswer, answerTex, statusOf, lessonProgress, blankLessonRec, recordCheck, markCheckSolution, LESSON_STATE, lessonCQs, lessonCQAnswer, lastCQ, lessonActivity, lessonSteps, posStep, recordPredict, recordGoal, recordDerive, recordKeys, extraChecks } from '../model.js';
 import { cqHTML, cqClick, newCQSeed, seedOf } from './cq.js';
 import { tex, esc, CIRCLED, gradeMark, statusGlyph, optionsClass, toast, fmtDate, fieldError } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
@@ -192,6 +192,12 @@ export function renderLesson(view, { args: [lessonId], params }) {
       ${next ? `<a class="btn btn-quiet" href="#/l/${next.id}">다음: ${esc(next.title)}</a>` : `<a class="btn btn-quiet" href="#/u/${unit.id}">단원으로</a>`}
     </nav>
   </section>`;
+
+  // 이미 혼자 확인한 뒤에 추가된 확인 문제는 판정에 넣지 않으므로 그렇다고 알려 준다(#66)
+  for (const c of extraChecks(L, getState().lessons[L.id])) {
+    const row = view.querySelector(`.ck[data-check="${c.id}"] .q-row`);
+    if (row) row.insertAdjacentHTML('afterend', '<p class="hint-text ck-new">새로 추가된 문제예요. 이 개념은 추가 전에 확인을 마쳐서, 이 문제는 완료 판정에 넣지 않아요.</p>');
+  }
 
   const $ = (s) => view.querySelector(s);
   const selected = {};
