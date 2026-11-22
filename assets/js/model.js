@@ -579,17 +579,36 @@ export function lessonActivity(lesson, rec = getState().lessons[lesson.id]) {
 /** 하루 학습량(#22): 개념 문항(확인 문제·개념 질문) 풀이 수 + 문제 해결 수(문제 은행, 숫자를 바꾼 연습, 오답 복습, 혼합 평가에서 맞힌 것). 오늘 목표, 주간 막대, 4주 달력이 이 값을 쓴다. */
 export const studyCount = (a) => (a ? (a.solved || 0) + (a.checks || 0) : 0);
 
+/**
+ * 판정(혼자 확인, 배운 날)에 쓰는 확인 문제(#66). 나중에 추가한 확인 문제(added: 'YYYY-MM-DD')는,
+ * 그 날짜 전에 원래 확인 문제를 모두 맞힌 기록이면 판정에서 뺀다. 이미 얻은 완료 표시와 복습 예정일을 지키기 위해서다.
+ * 뺀 문제는 extraChecks로 따로 보인다. 그 전에 다 맞히지 않았다면(새로 배우는 학생 포함) 새 문제도 판정에 넣는다.
+ */
+export function requiredChecks(lesson, rec) {
+  const late = lesson.checks.filter((c) => c.added);
+  if (!late.length || !rec) return lesson.checks;
+  const base = lesson.checks.filter((c) => !c.added).map((c) => rec.checks[c.id]);
+  if (!base.length || !base.every((r) => r && r.solved)) return lesson.checks;
+  // 처음 맞힌 날(solvedAt). 이 값이 없으면 solvedAt을 남기기 전, 즉 새 문제를 추가하기 전에 맞힌 기록이다.
+  // lastAt은 나중에 다시 풀면 바뀌므로 쓰지 않는다(다시 풀었다고 얻은 완료가 풀리면 안 된다).
+  const before = (c) => base.every((r) => !r.solvedAt || localDay(r.solvedAt) < c.added);
+  return lesson.checks.filter((c) => !c.added || !before(c));
+}
+/** 판정에서 뺀, 나중에 추가한 확인 문제 */
+export const extraChecks = (lesson, rec = getState().lessons[lesson.id]) => { const req = requiredChecks(lesson, rec); return lesson.checks.filter((c) => !req.includes(c)); };
+
 export function lessonProgress(lesson) {
   const rec = getState().lessons[lesson.id] || blankLessonRec();
   let independent = 0, helped = 0, missed = 0;
-  for (const c of lesson.checks) {
+  const req = requiredChecks(lesson, rec);
+  for (const c of req) {
     const r = rec.checks[c.id];
     if (!r || !r.tries) continue;
     if (r.solved && r.firstCorrect === true && !r.sawSolution) independent++;
     else if (r.solved) helped++;
     if (r.firstCorrect === false || r.sawSolution) missed++;
   }
-  const total = lesson.checks.length;
+  const total = req.length;
   const right = independent + helped;
   // 심화 확인 문제는 따로 센다(혼자 확인 판정에는 넣지 않는다)
   const dcs = (lesson.deep && lesson.deep.checks) || [];
@@ -652,6 +671,7 @@ export function recordCheck(st, lessonId, checkId, ok, { deep = false } = {}) {
   if (cr.tries === 0) cr.firstCorrect = ok;
   cr.tries += 1;
   cr.lastAt = new Date().toISOString();
+  if (ok && !cr.solved) cr.solvedAt = cr.lastAt; // 처음 맞힌 시각(나중에 추가한 확인 문제의 판정에 쓴다, #66)
   if (ok) cr.solved = true;
   if (!ok && !deep) scheduleRecheck(st, lessonId); // 심화 문제를 틀린 것은 기본 개념의 재확인 사유가 아니다
   return cr;
@@ -750,7 +770,7 @@ export const posStep = (v) => (v && typeof v === 'object' ? v.s : v) || null;
 export function learnedOn(lesson, rec) {
   if (!rec) return null;
   if (rec.done) return rec.done;
-  const base = lesson.checks.map((c) => rec.checks[c.id]);
+  const base = requiredChecks(lesson, rec).map((c) => rec.checks[c.id]);
   if (!base.length || base.some((r) => !r || !r.solved)) return null;
   const days = base.map((r) => (r.lastAt ? localDay(r.lastAt) : null)).filter(Boolean).sort();
   return days.length ? days[days.length - 1] : today();

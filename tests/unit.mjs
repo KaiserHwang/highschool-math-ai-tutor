@@ -536,7 +536,7 @@ const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!
   ok(normalizeCourses(null).join() === 'common1,common2' && normalizeCourses([]).join() === 'common1,common2' && normalizeCourses(['zzz']).join() === 'common1,common2'
     && normalizeCourses(['common2', 'zzz', 'common2']).join() === 'common2' && normalizeCourses(['common2', 'common1']).join() === 'common1,common2' && normalizeCourses('common1').join() === 'common1,common2',
     '공부하는 과목이 없거나 비었거나 모르는 과목뿐이면 기본 과목으로 보고, 아는 과목만 과목 순서로 남긴다');
-  ok(ids(model.activeUnits()) === 'u1,u2,u3,u4,u5,u6,u7,u8' && ids(model.activeRegularUnits()) === 'u1,u2,u3,u4,u5,u6,u7' && model.activeLessons().length === 44 && model.totals().total === 185,
+  ok(ids(model.activeUnits()) === 'u1,u2,u3,u4,u5,u6,u7,u8' && ids(model.activeRegularUnits()) === 'u1,u2,u3,u4,u5,u6,u7' && model.activeLessons().length === 44 && model.totals().total === 188,
     '과목을 고른 적이 없으면 지금까지와 같이 전 단원이 범위다');
   // 두 과목에 기록을 만든다: 공통수학1(u2)과 공통수학2(u5)에 재확인·간격 복습·오답, 융합(u8)에 오답
   const day = store.today();
@@ -831,6 +831,45 @@ for (const tz of ['Asia/Seoul', 'UTC', 'America/Los_Angeles', 'Pacific/Kiritimat
   const one = model.diagUnitReadiness({ items: [{ id: 'd07', correct: false, credit: 0 }] }).u5;
   ok(one.pct > 0 && !one.enough, `예전 진단처럼 한 문항뿐이면 '자료 부족'으로 표시하고 0으로 단정하지 않는다 (${one.pct})`);
   ok(g1.units.u5 === r1.pct, '저장되는 단원 준비도와 화면의 준비도가 같은 기준이다');
+}
+
+// ── #66 나중에 추가한 확인 문제가 이미 얻은 완료와 복습 예정일을 지우지 않는다 ──
+{
+  installStorage();
+  const store = await import('../assets/js/store.js');
+  const model = await import('../assets/js/model.js');
+  const { LESSON_BY_ID } = await import('../assets/js/content/lessons/index.js');
+  const L = LESSON_BY_ID['u2-l11'];
+  const late = L.checks.find((c) => c.added);
+  const ckRec = (solvedAt) => ({ tries: 1, solved: true, firstCorrect: true, sawSolution: false, lastAt: '2026-11-20T01:00:00.000Z', ...(solvedAt ? { solvedAt } : {}) });
+  // 예전 기록: 원래 확인 문제 두 개를 처음에 맞혔고 solvedAt이 없다
+  store.resetAll();
+  store.update((s) => { s.lessons['u2-l11'] = { ...model.blankLessonRec(), checks: { 'u2-l11-c1': ckRec(), 'u2-l11-c2': ckRec() } }; });
+  const oldRec = store.getState().lessons['u2-l11'];
+  const oldOk = model.extraChecks(L, oldRec).map((c) => c.id).join() === late.id && model.lessonProgress(L).total === 2 && model.lessonProgress(L).independent === 2
+    && model.learnedOn(L, oldRec) === '2026-11-20' && !!model.spacedOf(L, oldRec);
+  // 예전 기록을 나중에 다시 풀어도(lastAt만 바뀜) 그대로
+  store.update((s) => { s.lessons['u2-l11'].checks['u2-l11-c1'].lastAt = '2026-12-05T01:00:00.000Z'; });
+  const retryOk = model.extraChecks(L, store.getState().lessons['u2-l11']).length === 1;
+  // 백업 왕복에서 solvedAt이 보존된다
+  store.update((s) => { s.lessons['u2-l11'].checks['u2-l11-c2'].solvedAt = '2026-11-25T01:00:00.000Z'; });
+  const back = JSON.parse(store.exportData());
+  store.resetAll();
+  store.importData(JSON.stringify(back));
+  const kept = store.getState().lessons['u2-l11'].checks['u2-l11-c2'].solvedAt === '2026-11-25T01:00:00.000Z';
+  // 추가일 뒤에 원래 문제를 맞힌 학생(새로 배우는 학생)은 새 문제까지 풀어야 한다
+  const newRec = store.getState().lessons['u2-l11'];
+  const newOk = model.extraChecks(L, newRec).length === 0 && model.lessonProgress(L).total === 3 && model.learnedOn(L, newRec) === null;
+  // 새로 맞히면 solvedAt이 남고, 다시 맞혀도 바뀌지 않는다
+  store.resetAll();
+  store.update((s) => { model.recordCheck(s, 'u2-l11', 'u2-l11-c1', true); });
+  const first = store.getState().lessons['u2-l11'].checks['u2-l11-c1'].solvedAt;
+  store.update((s) => { model.recordCheck(s, 'u2-l11', 'u2-l11-c1', true); });
+  const stamp = !!first && store.getState().lessons['u2-l11'].checks['u2-l11-c1'].solvedAt === first;
+  store.resetAll();
+  if (!(oldOk && retryOk && kept && newOk && stamp)) console.log('  #66 세부', { oldOk, retryOk, kept, newOk, stamp });
+  ok(late && late.id === 'u2-l11-c3' && oldOk && retryOk && kept && newOk && stamp,
+    '나중에 추가한 확인 문제는 그 전에 원래 문제를 다 맞힌 기록의 완료·배운 날을 바꾸지 않고(다시 풀어도), 새로 배우는 학생에게는 판정에 들어간다');
 }
 
 // ── #11·#10 간격 복습, 현재 숙련도 ─────────────────
