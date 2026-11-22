@@ -53,7 +53,7 @@ export function renderHome(view) {
   const mem = conceptMemory();
   const roots = rootWeaknesses(3);
   const upNext = conceptQueue()[0];
-  const tiles = []; // 오늘 할 복습 타일(#48 3단계): 개념 확인과 틀린 문제 복습을 나란히
+  const tiles = []; // 오늘 할 복습 타일(#48 3단계): 오늘의 개념 확인과 오답 복습을 나란히(복습 화면과 같은 이름)
   if (cDue.length) {
     const n = Math.min(cDue.length, CONCEPT_SET);
     tiles.push(`<article class="paper tile concept-today" aria-labelledby="ct-h">
@@ -84,7 +84,7 @@ export function renderHome(view) {
     steps.push(`<li class="plan-step"><div class="plan-body"><h2 class="h3">다시 확인할 개념 ${rechecksDue.length}개</h2><p class="hint-text">${rechecksDue.slice(0, 3).map((x) => esc(x.l.title)).join(', ')}${rechecksDue.length > 3 ? ' 등' : ''} · 아직 보지 않은 개념 질문으로 확인합니다.</p></div><a class="btn" href="#/review">확인하기</a></li>`);
   }
   if (due.length) {
-    tiles.push(`<article class="paper tile review-today" aria-labelledby="rv-h"><header class="paper-head"><h2 id="rv-h" class="paper-title">틀린 문제 복습</h2><span class="meta">오늘</span></header><p class="tile-n">${due.length}<small>문제</small></p><p class="row"><a class="btn btn-primary" href="#/review">복습하기</a></p></article>`);
+    tiles.push(`<article class="paper tile review-today" aria-labelledby="rv-h"><header class="paper-head"><h2 id="rv-h" class="paper-title">오답 복습</h2><span class="meta">오늘</span></header><p class="tile-n">${due.length}<small>문제</small></p><p class="row"><a class="btn btn-primary" href="#/review">복습하기</a></p></article>`);
   }
   steps.push(next
     ? `<li class="plan-step plan-main plan-sub">
@@ -113,12 +113,14 @@ export function renderHome(view) {
     const isCont = learnNext === inProgress; // 시작한 소단원이면 제목·버튼·이동 위치를 모두 이어서 하기 기준으로
     const LABEL = { warm: '생각', core: '정리', why: '왜', ex: '예제', ck: '확인', cq: '이유', deep: '심화', say: '설명' };
     const left = stp.ck ? stp.ck.total - stp.ck.done : 0;
-    const sub = [pos && LABEL[pos] && pos !== 'warm' ? `'${LABEL[pos]}'까지 봤어요` : '', pct ? (left ? `확인 문제 ${left}개 남음` : '확인 문제를 모두 맞혔어요') : ''].filter(Boolean).join(' · ') || '아직 시작하지 않은 개념이에요';
+    const sub = [pos && LABEL[pos] && pos !== 'warm' ? `'${LABEL[pos]}'까지 봤어요` : '', pct ? (left ? `확인 문제 ${left}개 남음` : '확인 문제를 모두 맞혔어요') : ''].filter(Boolean).join(' · ');
+    // 시작 전에는 0% 막대 대신 이 개념이 무엇인지 한 줄로(전체 점검 8)
+    const started = isCont || pct > 0;
     hero = `<section class="hero" aria-labelledby="hero-h">
       <p class="hero-k">${isCont ? '이어서 하기' : '다음에 배울 개념'} · ${esc(unitLabel(UNIT_BY_ID[learnNext.unit]))}</p>
       <h2 id="hero-h" class="hero-t">${esc(learnNext.title)}</h2>
-      <p class="hero-s">${sub}</p>
-      <div class="hero-bar" role="img" aria-label="활동 진행 ${pct}%"><span style="--v:${pct}%"></span></div><p class="hero-pct">활동 진행 ${pct}%</p>
+      <p class="hero-s">${started ? sub || '방금 시작한 개념이에요' : tex(learnNext.summary)}</p>
+      ${started ? `<div class="hero-bar" role="img" aria-label="활동 진행 ${pct}%"><span style="--v:${pct}%"></span></div><p class="hero-pct">활동 진행 ${pct}%</p>` : ''}
       <a class="btn hero-btn" href="#/l/${learnNext.id}${isCont && pos && pos !== 'warm' ? `?go=${pos}` : ''}">${isCont ? '이어서 공부하기' : '개념 배우기'}</a>
     </section>`;
   }

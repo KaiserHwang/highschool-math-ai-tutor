@@ -52,15 +52,15 @@ function draw(view) {
     return `<li class="rc-row"><div><a class="rc-t" href="#/l/${l.id}">${esc(unitLabel(UNIT_BY_ID[l.unit]))} · ${esc(l.title)}</a><span class="hint-text">${pr.recheckDue ? '오늘 다시 확인' : `${fmtDate(pr.recheck.due)} 다시 확인`} · ${why}</span></div>
       <span class="row"><a class="btn btn-quiet" href="#/l/${l.id}">개념 다시 보기</a><a class="btn ${pr.recheckDue ? 'btn-primary' : 'btn-quiet'}" href="#/rc/${l.id}">${pr.recheckDue ? '개념 질문으로 확인' : '미리 연습'}</a></span></li>`;
   };
-  const recheckSec = rechecks.length ? `<section class="wn-sec"><h2 class="h3">다시 확인할 개념 ${rechecks.length}</h2><p class="hint-text">확인 문제나 개념 질문을 틀렸거나 풀이를 본 소단원입니다. 다음 날 아직 보지 않은 개념 질문에서 답과 이유를 모두 맞히면 목록에서 빠집니다.</p><ul class="rc-list">${rechecks.map(recheckCard).join('')}</ul></section>` : '';
+  const recheckSec = rechecks.length ? `<section class="wn-sec"><h2 class="h3">개념 다시 확인 ${rechecks.length}</h2><p class="hint-text">확인 문제나 개념 질문을 틀렸거나 풀이를 본 소단원입니다. 다음 날 아직 보지 않은 개념 질문에서 답과 이유를 모두 맞히면 목록에서 빠집니다.</p><ul class="rc-list">${rechecks.map(recheckCard).join('')}</ul></section>` : '';
 
-  // 오늘 할 복습과 다음 예정을 한곳에(#48 1-C): 오답 다시 풀기 · 개념 다시 확인 · 기억 확인. 메뉴 배지도 같은 집계(reviewToday)를 쓴다.
+  // 오늘 할 복습과 다음 예정을 한곳에(#48 1-C): 오답 복습 · 개념 다시 확인 · 오늘의 개념 확인(화면마다 같은 이름을 쓴다). 메뉴 배지도 같은 집계(reviewToday)를 쓴다.
   const rt = reviewToday();
   const rcFirst = rechecks.find((x) => x.pr.recheckDue);
   const nextOf = { wrong: later[0]?.due, recheck: rechecks.find((x) => !x.pr.recheckDue)?.pr.recheck.due, memory: conceptQueue().find((x) => x.sp.due > today())?.sp.due };
   const sumRow = (label, n, href, note, next) => `<li class="rs-i${n ? ' on' : ''}"><span class="rs-t">${label}</span><b class="rs-n">${n}</b><span class="hint-text">${note}${!n && next ? ` · 다음 ${fmtDate(next)}` : ''}</span>${n && href ? `<a class="btn btn-quiet" href="${href}">시작</a>` : ''}</li>`;
   const summary = `<section class="review-sum" aria-labelledby="rs-h"><h2 id="rs-h" class="h3">오늘 할 복습 ${rt.total}</h2>
-    <ul class="rs-list">${sumRow('오답 다시 풀기', rt.wrong, due[0] ? `#/p/${due[0].pid}?review=1` : '', '틀린 문제를 1·3·7·14일 간격으로', nextOf.wrong)}${sumRow('개념 다시 확인', rt.recheck, rcFirst ? `#/rc/${rcFirst.l.id}` : '', '틀린 개념을 다음 날 다른 질문으로', nextOf.recheck)}${sumRow('기억 확인', rt.memory, '#/cr', '배운 개념을 1주·3주·2개월 뒤에, 그 뒤 6개월마다', nextOf.memory)}</ul>
+    <ul class="rs-list">${sumRow('오답 복습', rt.wrong, due[0] ? `#/p/${due[0].pid}?review=1` : '', '틀린 문제를 1·3·7·14일 간격으로', nextOf.wrong)}${sumRow('개념 다시 확인', rt.recheck, rcFirst ? `#/rc/${rcFirst.l.id}` : '', '틀린 개념을 다음 날 다른 질문으로', nextOf.recheck)}${sumRow('오늘의 개념 확인', rt.memory, '#/cr', '배운 개념을 1주·3주·2개월 뒤에, 그 뒤 6개월마다', nextOf.memory)}</ul>
     ${rt.total ? '' : '<p class="hint-text">오늘 할 복습은 없어요.</p>'}</section>`;  const filtered = filter.reason !== 'all' || filter.unit !== 'all';
   const listOf = (arr, isDue) => arr.filter(pass).map((w) => card(w, isDue)).join('') || `<li class="empty">${filtered ? '고른 조건에 맞는 문제가 없습니다.' : isDue ? '오늘 복습할 문제가 없습니다. 예정된 복습일에 다시 오세요.' : '없습니다.'}</li>`;
 
@@ -68,11 +68,10 @@ function draw(view) {
   <section class="page">
     <header class="page-head">
       <h1 class="page-title">복습</h1>
-      <p class="lead">틀렸거나 풀이를 보고 푼 문제가 모입니다. 힌트 없이 맞힐 때마다 복습 간격이 ${REVIEW_GAPS.join('일, ')}일로 늘어나고, 네 번 통과하면 졸업합니다.</p>
-      ${hidden.total ? `<p class="hint-text" data-hidden-reviews>공부하지 않는 과목에 남은 복습 ${hidden.total}개(오답 ${hidden.wrong}, 재확인할 개념 ${hidden.rechecks}, 기억 관리 중인 개념 ${hidden.concepts})는 숨겨 두었어요. 예정일은 그대로이고, <a href="#/settings">설정</a>에서 과목을 켜면 다시 나옵니다.</p>` : ''}
+      <p class="lead">오늘 할 복습을 한곳에 모았어요. <b>오답 복습</b>은 틀렸거나 풀이를 보고 푼 문제를 ${REVIEW_GAPS.join('·')}일 간격으로 다시 풀고, 힌트 없이 네 번 맞히면 졸업합니다.</p>
+      ${hidden.total ? `<p class="hint-text" data-hidden-reviews>공부하지 않는 과목에 남은 복습 ${hidden.total}개(오답 복습 ${hidden.wrong}, 개념 다시 확인 ${hidden.rechecks}, 개념 확인 예정 ${hidden.concepts})는 숨겨 두었어요. 예정일은 그대로이고, <a href="#/settings">설정</a>에서 과목을 켜면 다시 나옵니다.</p>` : ''}
     </header>
     ${summary}
-    ${conceptsDue().length ? `<section class="wn-sec"><h2 class="h3">오늘의 개념 확인 ${conceptsDue().length}</h2><p class="hint-text">배운 지 1주·3주·2개월이 된 개념을 두 문항씩 다시 확인합니다.</p><p class="row"><a class="btn btn-primary" href="#/cr">개념 확인 시작</a></p></section>` : ''}
     ${recheckSec}
     ${active.length || done.length ? `
     <div class="reason-bar" role="group" aria-label="원인별 보기">
@@ -83,8 +82,8 @@ function draw(view) {
       <button type="button" class="chip" data-f="unit" data-v="all" aria-pressed="${filter.unit === 'all'}">모든 단원</button>
       ${UNITS.filter((u) => all.some((w) => w.p.unit === u.id)).map((u) => `<button type="button" class="chip" data-f="unit" data-v="${u.id}" aria-pressed="${filter.unit === u.id}">${esc(unitLabel(u))}</button>`).join('')}
     </div>
-    <section class="wn-sec"><h2 class="h3">오늘 복습 ${due.filter(pass).length}</h2><ol class="wn-list">${listOf(due, true)}</ol></section>
-    ${later.length ? `<section class="wn-sec"><h2 class="h3">예정된 복습 ${later.filter(pass).length}</h2><ol class="wn-list">${listOf(later, false)}</ol></section>` : ''}
+    <section class="wn-sec"><h2 class="h3">오늘 할 오답 복습 ${due.filter(pass).length}</h2><ol class="wn-list">${listOf(due, true)}</ol></section>
+    ${later.length ? `<section class="wn-sec"><h2 class="h3">예정된 오답 복습 ${later.filter(pass).length}</h2><ol class="wn-list">${listOf(later, false)}</ol></section>` : ''}
     ${done.length ? `<details class="wn-sec"><summary class="h3">졸업한 문제 ${done.length}</summary><ol class="wn-list">${listOf(done, false)}</ol></details>` : ''}
     ` : rechecks.length ? '' : `<section class="paper empty-state"><h2 class="paper-title">오답노트가 비어 있어요</h2><p>문제를 틀리거나 풀이를 보고 풀면 여기에 모입니다.</p><p><a class="btn btn-primary" href="#/">문제 풀러 가기</a></p></section>`}
   </section>`;

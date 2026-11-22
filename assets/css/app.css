@@ -1342,3 +1342,15 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .mmap .mh-hit { fill: transparent; }
 .mmap .mh-a:focus-visible .mh-hit { stroke: var(--brand); stroke-width: 2; rx: 6; }
 .mmap .mh-a:hover .mh-t { text-decoration: underline; }
+
+/* ── 전체 점검 7: 소단원 머리 영역 줄이기. 지도·거꾸로 확인·진행 상황은 작은 글자 링크 한 줄 ── */
+.lesson-head .page-title { margin-top: 2px; }
+.lesson-head .lead { margin-bottom: 0; }
+.l-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; margin: 8px 0 0; font-size: 13px; }
+.l-tools > a { display: inline-flex; align-items: center; min-height: 24px; color: var(--blue-pen); font-weight: 600; }
+.l-tools .l-stats { margin: 0; }
+.l-tools .l-stats[open] { flex-basis: 100%; }
+.lesson-page .lstrip { margin-bottom: 8px; }/* 전체 점검 9: 개념 지도 소개는 한 줄, 읽는 법은 펼쳐 보기 */
+.mp-howto { margin: 6px 0 0; font-size: 13px; }
+.mp-howto > summary { cursor: pointer; color: var(--pencil); font-weight: 600; }
+.mp-howto[open] > summary { margin-bottom: 6px; }
