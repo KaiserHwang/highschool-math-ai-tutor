@@ -350,8 +350,10 @@ async function run(viewport, tag) {
   await page.waitForSelector('[data-check="u4-l4-c2"] .opt');
   const optFit = await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth
     && [...document.querySelectorAll('#view .opt')].every((o) => [...o.querySelectorAll('.katex')].every((k) => k.getBoundingClientRect().right <= o.getBoundingClientRect().right + 1)));
-  const noteName = await page.evaluate(() => { const t = document.querySelector('textarea[data-note]'); const id = t && t.getAttribute('aria-labelledby'); return !!(id && document.getElementById(id) && document.getElementById(id).textContent.trim()); });
-  ok(optFit && noteName, `[${tag}] 긴 수식 보기가 칸 안에 들어오고, "직접 설명해 보기" 입력란에 이름이 있다`);
+  // 입력란의 실제 접근성 이름에 질문의 수식(AB=O)까지 들어 있어야 한다(KaTeX 화면 글자는 낭독기에서 숨겨짐)
+  const noteName = /AB=O/.test(await page.locator('textarea[data-note]').evaluate((t) => t.getAttribute('aria-label') || '')) && /AB=O/.test(await page.locator('textarea[data-note]').ariaSnapshot());
+  const shortOneLine = await page.evaluate(() => [...document.querySelectorAll('[data-check="u4-l4-c2"] .opt .katex')].every((k) => new Set([...k.getClientRects()].map((x) => Math.round(x.top))).size === 1));
+  ok(optFit && noteName && shortOneLine, `[${tag}] 긴 수식 보기가 칸 안에 들어오고, "직접 설명해 보기" 입력란에 이름이 있다`);
   await page.goto(BASE + '#/l/u2-l1');
   await page.waitForSelector('[data-note]');
   ok((await page.inputValue('[data-note]')) === '실수부분과 허수부분을 각각 비교한다', `[${tag}] 직접 쓴 설명이 저장되어 다시 보인다`);

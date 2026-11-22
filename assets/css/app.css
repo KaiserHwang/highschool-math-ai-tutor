@@ -1278,8 +1278,7 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 /* 긴 이유 보기 수식이 좁은 화면 밖으로 나가지 않게: 칸이 줄어들고 수식은 줄을 바꿀 수 있게(기존 동작 보완) */
 .cq-reasons { grid-template-columns: minmax(0, 1fr); }
 .cq-reasons .opt, .cq-reasons .opt-t { min-width: 0; }
-.cq-reasons .opt .katex { white-space: normal; }
-.cq-reasons .opt-t { overflow-wrap: anywhere; }
+/* 이유 보기의 수식 줄바꿈은 수식이 칸보다 넓을 때만(opts-break, fitReasons) */
 /* 섹션 끝의 "다음 단계"(키보드 순서용). 모바일의 떠 있는 버튼은 같은 동작을 시각적으로만 보인다 */
 .sec-next { margin: 18px 0 0; display: flex; justify-content: flex-end; }
 @media print { .sec-next, .lnext { display: none !important; } }
@@ -1331,12 +1330,12 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
   .side-block > .h3, .mst-h { break-after: avoid-page; page-break-after: avoid; }
 }
 /* ── 전체 점검 반영: 객관식 보기 수식 넘침, 작은 터치 영역 ── */
-/* 보기 칸이 화면 폭 안에서 줄어들고, 긴 수식은 연산 기호에서 줄을 바꾼다(이전에는 줄바꿈 금지로 칸 밖으로 나갔다) */
+/* 보기 칸은 화면 폭 안에서 줄어든다. 열 수는 fitOptions(ui.js)가 수식을 한 줄로 잰 폭으로 정하고,
+   한 열로도 들어가지 않으면 수식 사이 글자에서 줄을 바꾸고(opts-wrap), 수식 하나가 칸보다 넓을 때만 수식 안 줄바꿈을 허용한다(opts-break). 짧은 식 B=O나 괄호가 끊기지 않게 */
 .options { grid-template-columns: minmax(0, 1fr); }
 .opt, .opt-t { min-width: 0; }
-.opt .katex { white-space: normal; }
-.opt-t { overflow-wrap: anywhere; }
-@media (max-width: 480px) { .options-mid { grid-template-columns: minmax(0, 1fr) !important; } }
+.opts-break .opt .katex { white-space: normal; }
+.opts-break .opt-t { overflow-wrap: anywhere; }
 /* 위치 링크와 펼치기 버튼은 24px 이상 */
 .crumbs a { display: inline-flex; align-items: center; min-height: 24px; }
 #view summary { min-height: 24px; }/* 개념 지도의 단원 제목 링크: 글자보다 넓은 투명 눌림 영역(24px) */

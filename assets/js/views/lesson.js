@@ -7,7 +7,7 @@ import { PROBLEM_BY_ID } from '../content/problems.js';
 import { getState, update, today, logActivity } from '../store.js';
 import { isCorrect, normalizeAnswer, answerTex, statusOf, lessonProgress, blankLessonRec, recordCheck, markCheckSolution, LESSON_STATE, lessonCQs, lessonCQAnswer, lastCQ, lessonActivity, lessonSteps, posStep, recordPredict, recordGoal, recordDerive, recordKeys, extraChecks } from '../model.js';
 import { cqHTML, cqClick, newCQSeed, seedOf } from './cq.js';
-import { tex, esc, CIRCLED, gradeMark, statusGlyph, optionsClass, toast, fmtDate, fieldError } from '../lib/ui.js';
+import { tex, esc, CIRCLED, gradeMark, statusGlyph, optionsClass, speakText, toast, fmtDate, fieldError } from '../lib/ui.js';
 import { figure } from '../lib/plot.js';
 import { AI_SERVICES, lessonPrompt, explainPrompt, sendToAI } from '../lib/ai.js';
 
@@ -168,8 +168,8 @@ export function renderLesson(view, { args: [lessonId], params }) {
         ${deep.ideas.map((idea, i) => `<div class="idea"><h3 class="idea-t"><span class="idea-n">${i + 1}</span>${tex(idea.title)}</h3><div class="c-body">${tex(idea.body)}</div>${idea.example ? `<ol class="ex-list">${exampleHTML(idea.example, i, '심화 예제', `d${i}`)}</ol>` : ''}</div>`).join('')}
         ${deep.checks.length ? `<h3 class="idea-t deep-ck-h">심화 확인 문제</h3><p class="hint-text">"혼자 확인" 판정에는 들어가지 않습니다. 틀려도 재확인 목록에 올라가지 않으니 도전해 보세요.</p><ol class="ck-list">${deep.checks.map((c, i) => checkHTML(c, i, rec, '심화 ')).join('')}</ol>` : ''}`, 'l-deep') : ''}
       ${L.explain ? sec('say', '직접 설명해 보기', `<div class="say">
-        <p class="say-q" id="say-q">${tex(L.explain.prompt)}</p>
-        <textarea data-note rows="4" aria-labelledby="say-q" placeholder="내 말로 두세 문장. 수식은 $...$ 없이 그냥 써도 됩니다.">${esc(rec.note || '')}</textarea>
+        <p class="say-q" id="say-q-${esc(L.id)}">${tex(L.explain.prompt)}</p>
+        <textarea data-note rows="4" aria-label="${esc(speakText(L.explain.prompt))}" placeholder="내 말로 두세 문장. 수식은 $...$ 없이 그냥 써도 됩니다.">${esc(rec.note || '')}</textarea>
         <p class="row"><button type="button" class="btn btn-quiet" data-act="say-model">모범 설명과 비교</button>${Object.entries(AI_SERVICES).map(([k, s]) => `<button type="button" class="btn btn-ai ai-${k}" data-say-ai="${k}">${s.name}에게 점검받기</button>`).join('')}</p>
         <div class="say-model" hidden><p class="say-mh">모범 설명</p><div class="c-body">${tex(L.explain.model)}</div><p class="say-mh">내 설명에 들어 있나요?</p><ul class="say-keys">${L.explain.keys.map((k, i) => `<li><label><input type="checkbox" data-key="${i}"> ${tex(k)}</label></li>`).join('')}</ul></div>
         <p class="hint-text">남에게 설명할 수 있어야 정말 아는 것입니다. 쓴 내용은 이 기기에 저장됩니다.</p>
