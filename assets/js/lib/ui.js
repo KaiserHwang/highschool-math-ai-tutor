@@ -10,6 +10,77 @@ export function tex(html) {
   );
 }
 
+/** 낭독기용 이름(aria-label)에 넣을 평문: 태그를 지우고 수식은 기호만 남긴다(KaTeX 화면 글자는 낭독기에서 숨겨진다) */
+export function speakText(html) {
+  return String(html).replace(/<[^>]+>/g, ' ')
+    .replace(/\$([^$]+)\$/g, (_, s) => s.replace(/\\(?:d?frac)\{([^}]*)\}\{([^}]*)\}/g, '$1/$2').replace(/\\(le|leq)\b/g, '≤').replace(/\\(ge|geq)\b/g, '≥').replace(/\\ne\b/g, '≠')
+      .replace(/\\[a-zA-Z]+/g, ' ').replace(/[{}]/g, '').replace(/\s+/g, ' ').trim())
+    .replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * 객관식 보기의 열 수를 실제 폭으로 정한다(전체 점검 #68).
+ * 수식은 줄을 바꾸지 않은 채로 재서, 모든 보기가 한 줄에 들어가는 가장 많은 열을 고른다(보기 종류별 최대 열 수 안에서).
+ * 한 열로도 들어가지 않는 보기 묶음만 수식 줄바꿈을 허용한다(opts-wrap). 그래서 B=O 같은 짧은 식은 끊기지 않는다.
+ */
+export function fitOptions(root = document) {
+  for (const box of root.querySelectorAll('.options')) {
+    const opts = [...box.children].filter((o) => o.classList.contains('opt'));
+    if (!opts.length || !box.clientWidth) continue;
+    box.classList.remove('opts-wrap', 'opts-break');
+    box.style.removeProperty('grid-template-columns');
+    const W = box.clientWidth;
+    const gap = parseFloat(getComputedStyle(box).columnGap) || 8;
+    const maxCols = Math.min(opts.length, box.classList.contains('options-row') ? 5 : box.classList.contains('options-mid') ? 3 : 1);
+    // 지금 열 수에서의 실제 배치(좁은 칸에서는 번호를 위에 두는 세로 배치)로, 보기 하나를 한 줄로 쓸 때 필요한 폭
+    const need = () => Math.max(...opts.map((o) => {
+      const cs = getComputedStyle(o);
+      const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+      const n = o.querySelector('.opt-n'), t = o.querySelector('.opt-t');
+      let tw = 0;
+      if (t) { const ws = t.style.whiteSpace; t.style.whiteSpace = 'nowrap'; tw = t.getBoundingClientRect().width; t.style.whiteSpace = ws; }
+      const nw = n ? n.getBoundingClientRect().width : 0;
+      return pad + (cs.flexDirection === 'column' ? Math.max(nw, tw) : nw + (parseFloat(cs.columnGap) || 0) + tw) + 2;
+    }));
+    let chosen = 1;
+    for (let k = maxCols; k >= 1; k--) {
+      box.style.setProperty('grid-template-columns', `repeat(${k}, minmax(0, 1fr))`, 'important');
+      const cell = (W - gap * (k - 1)) / k;
+      if (need() <= cell) { chosen = k; break; }
+      if (k === 1) chosen = 0;
+    }
+    if (chosen === 0) {
+      // 한 열로도 한 줄에 안 들어가면: 수식은 통째로 두고 수식 사이 글자에서 줄을 바꾼다(opts-wrap).
+      // 수식 하나가 칸보다 넓을 때만 수식 안에서 줄을 바꾼다(opts-break)
+      box.style.setProperty('grid-template-columns', 'minmax(0, 1fr)', 'important');
+      box.classList.add('opts-wrap');
+      box.classList.toggle('opts-break', opts.some((o) => { const r = o.getBoundingClientRect(); return [...o.querySelectorAll('.katex')].some((k) => k.getBoundingClientRect().right > r.right - 4); }));
+    }
+    else box.style.setProperty('grid-template-columns', `repeat(${chosen}, minmax(0, 1fr))`, 'important');
+  }
+}
+
+/** 문장으로 된 이유 보기(.cq-reasons): 열은 하나. 수식은 통째로 두고, 수식 하나가 칸보다 넓을 때만 수식 안 줄바꿈을 허용한다 */
+export function fitReasons(root = document) {
+  for (const box of root.querySelectorAll('.cq-reasons')) {
+    box.classList.remove('opts-break');
+    const over = [...box.querySelectorAll('.opt')].some((o) => { const r = o.getBoundingClientRect(); return r.width > 0 && [...o.querySelectorAll('.katex')].some((k) => k.getBoundingClientRect().right > r.right - 4); });
+    box.classList.toggle('opts-break', over);
+  }
+}
+
+/** 화면이 바뀌거나 폭·글꼴이 바뀌면 보기 열 수를 다시 맞춘다 */
+export function installFitOptions(view) {
+  let raf = 0;
+  const run = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { fitOptions(view); fitReasons(view); }); };
+  new MutationObserver((ms) => { if (ms.some((m) => [...m.addedNodes].some((n) => n.nodeType === 1 && (n.matches?.('.options, .cq-reasons, .opt') || n.querySelector?.('.options, .cq-reasons'))))) run(); })
+    .observe(view, { childList: true, subtree: true });
+  let lastW = innerWidth;
+  addEventListener('resize', () => { if (innerWidth !== lastW) { lastW = innerWidth; run(); } });
+  if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', run);
+  run();
+}
+
 /** 학생이 입력한 텍스트(신뢰할 수 없음)는 이스케이프한 뒤 수식만 렌더링 */
 export const texUser = (s) => tex(esc(s));
 
@@ -140,5 +211,6 @@ export function statusGlyph(status) {
 const optLen = (s) => String(s).replace(/\\(cap|cup|le|ge|ne)/g, 'xx').replace(/\\[a-z]+/g, 'x').replace(/[${}\\^_ ]/g, '').length;
 export function optionsClass(options) {
   const n = Math.max(...options.map(optLen));
+  // 열 수는 fitOptions가 실제 폭으로 정한다. 여기서는 보기 종류(아주 짧음/중간/긺)만 나눈다
   return n <= 6 ? ' options-row' : n <= 16 ? ' options-mid' : '';
 }

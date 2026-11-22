@@ -73,7 +73,7 @@ function mapSVG(cols) {
   for (const L of LESSONS) for (const p of L.pre || []) edges.push(`<path class="me" data-from="${p}" data-to="${L.id}" d="${edgePath(pos[p], pos[L.id])}" marker-end="url(#mk)"/>`);
   return `<svg class="mmap" viewBox="0 0 ${w} ${h}" width="${w}" style="max-width:100%;height:auto" role="group" aria-label="개념 지도: 소단원 ${LESSONS.length}개와 선수 관계 ${edges.length}개">
     <defs>${['mk', 'mk-anc', 'mk-dep'].map((m) => `<marker id="${m}" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="${m}" d="M0,0 L8,4 L0,8 z"/></marker>`).join('')}</defs>
-    ${heads.map(({ u, x, y }) => `<g class="mh"><text x="${x}" y="${y + 15}" class="mh-c">${esc(courseTitle(u))}</text><text x="${x}" y="${y + 33}" class="mh-t"><a href="#/u/${u.id}">${esc(u.no)} ${esc(u.title)}</a></text></g>`).join('')}
+    ${heads.map(({ u, x, y }) => `<g class="mh"><text x="${x}" y="${y + 15}" class="mh-c">${esc(courseTitle(u))}</text><a href="#/u/${u.id}" class="mh-a"><rect class="mh-hit" data-cy="${y + 29}" x="${x - 4}" y="${y + 17}" width="${G.colW + 8}" height="24"/><text x="${x}" y="${y + 33}" class="mh-t">${esc(u.no)} ${esc(u.title)}</text></a></g>`).join('')}
     <g class="me-all">${edges.join('')}</g>
     ${LESSONS.map((L) => nodeSVG(L, pos[L.id])).join('')}
   </svg>`;
@@ -165,14 +165,23 @@ export function renderMap(view, { args: [selArg] }) {
     if (sel) panel.removeAttribute('data-empty'); else panel.setAttribute('data-empty', '');
   };
 
+  // 지도가 화면보다 넓어 줄어들면 단원 제목의 눌림 영역도 같이 줄어든다. 줄어든 뒤에도 24px이 되도록 높이를 키운다
+  const fitHits = () => {
+    const svg = wrap.querySelector('.mmap');
+    if (!svg) return;
+    const s = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+    const h = Math.max(24, 24 / (s || 1));
+    svg.querySelectorAll('.mh-hit').forEach((r) => { r.setAttribute('height', h.toFixed(1)); r.setAttribute('y', (Number(r.dataset.cy) - h / 2).toFixed(1)); });
+  };
   const drawMap = () => {
     const cs = getComputedStyle(wrap);
     const avail = wrap.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
     const want = avail >= mapLayout(4).w ? 4 : 2;
-    if (want === cols) return;
+    if (want === cols) return fitHits();
     cols = want;
     wrap.innerHTML = mapSVG(cols);
     highlight();
+    fitHits();
   };
 
   // 고른 개념이 보이게: 아래 카드가 떠 있으면 화면 위쪽에, 아니면 가운데에
