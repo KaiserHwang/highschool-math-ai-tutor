@@ -3,10 +3,13 @@ import katex from '../../vendor/katex/katex.mjs';
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ESC[c]);
 
-/** 콘텐츠 문자열 속 $...$ 수식을 KaTeX로 렌더링한다. 콘텐츠는 앱이 직접 작성한 신뢰할 수 있는 HTML이다. */
+/**
+ * 콘텐츠 문자열 속 $...$ 수식을 KaTeX로 렌더링한다. 콘텐츠는 앱이 직접 작성한 신뢰할 수 있는 HTML이다.
+ * 화면 글자(katex-html)는 낭독기에서 숨겨지므로, 낭독기가 읽을 MathML을 함께 만든다(#69).
+ */
 export function tex(html) {
   return String(html).replace(/\$([^$]+)\$/g, (_, src) =>
-    katex.renderToString(src, { throwOnError: false, strict: 'ignore', output: 'html' }),
+    katex.renderToString(src, { throwOnError: false, strict: 'ignore', output: 'htmlAndMathml' }),
   );
 }
 
