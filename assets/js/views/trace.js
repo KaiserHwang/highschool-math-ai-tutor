@@ -38,7 +38,7 @@ function summaryHTML(root, s) {
       <a class="tr-t" href="#/l/${L.id}">${esc(L.title)}</a>
       <span class="tr-sub">${esc(unitLabel(UNIT_BY_ID[L.unit]))}${rootIds.has(a.lid) ? ' · <strong>여기부터</strong>' : ''}</span>
       ${m ? `<span class="tr-mis">고른 이유: ${esc(m.name)}</span>` : ''}
-      <span class="tr-next">${learned ? (rc ? '다시 확인할 개념에 넣었어요(오늘 화면과 복습에 나와요).' : '배운 개념이에요. 핵심 정리를 다시 보세요.') : '아직 배우지 않은 개념이에요. 이 소단원부터 공부하세요.'}</span>
+      <span class="tr-next">${learned ? (rc ? '"개념 다시 확인"에 넣었어요(오늘 화면과 복습에 나와요).' : '배운 개념이에요. 핵심 정리를 다시 보세요.') : '아직 배우지 않은 개념이에요. 이 소단원부터 공부하세요.'}</span>
     </li>`;
   };
   return `<section class="paper tr-sum miss">

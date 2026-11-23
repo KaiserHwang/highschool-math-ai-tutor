@@ -143,18 +143,17 @@ export function renderLesson(view, { args: [lessonId], params }) {
 
   view.innerHTML = `
   <section class="page lesson-page">
-    <nav class="crumbs" aria-label="위치"><a href="#/units">개념 학습</a><span aria-hidden="true">/</span><a href="#/u/${unit.id}">${esc(unitLabel(unit))}</a><span aria-hidden="true">/</span><span>개념 ${no}</span></nav>
+    <nav class="crumbs" aria-label="위치"><a href="#/units">개념 학습</a><span aria-hidden="true">/</span><a href="#/u/${unit.id}">${esc(unitLabel(unit))}</a><span aria-hidden="true">/</span><span>개념 ${no} / ${siblings.length}</span></nav>
     <nav class="lstrip" aria-label="${esc(unit.title)} 개념 목록">${siblings.map((l, i) => {
       const pr = lessonProgress(l);
       return `<a href="#/l/${l.id}" class="lstrip-i${l === L ? ' is-cur' : ''} st-${pr.state}" ${l === L ? 'aria-current="page"' : ''} title="${esc(l.title)}${LESSON_STATE[pr.state] ? ' · ' + LESSON_STATE[pr.state] : ''}">${i + 1}</a>`;
     }).join('')}</nav>
     <header class="page-head lesson-head">
-      <p class="kicker">개념 ${no} / ${siblings.length}</p>
       <h1 class="page-title">${esc(L.title)}</h1>
       <p class="lead">${tex(L.summary)}</p>
-      <p class="pre-row">${pre.length ? `<span class="pre-l">먼저 알아야 할 것</span>${pre.map((l) => `<a class="chip" href="#/l/${l.id}">${esc(l.title)}${lessonProgress(l).verified ? ' ✓' : ''}</a>`).join('')}` : ''}<a class="chip chip-trace" href="#/map/${L.id}">개념 지도</a>${pre.length ? `<a class="chip chip-trace" href="#/t/${L.id}">막히면 앞 개념 거꾸로 확인</a>` : ''}</p>
+      ${pre.length ? `<p class="pre-row"><span class="pre-l">먼저 알아야 할 것</span>${pre.map((l) => `<a class="chip" href="#/l/${l.id}">${esc(l.title)}${lessonProgress(l).verified ? ' ✓' : ''}</a>`).join('')}</p>` : ''}
       ${resumeAt ? `<p class="resume-row"><button type="button" class="btn btn-quiet" data-step="${resumeAt}">지난번에 '${STEP_LABEL[resumeAt]}'까지 봤어요 · 이어서 보기</button></p>` : ''}
-      <details class="l-stats"><summary>자세한 진행 상황</summary><p class="meta" data-progress></p></details>
+      <div class="l-tools"><a href="#/map/${L.id}">개념 지도</a>${pre.length ? `<a href="#/t/${L.id}">막히면 앞 개념 거꾸로 확인</a>` : ''}<details class="l-stats"><summary>진행 상황</summary><p class="meta" data-progress></p></details></div>
     </header>
     <nav class="lsteps" aria-label="이 개념의 학습 단계"><ol>${stepIds.map((id) => `<li><button type="button" class="ls-i" data-step="${id}"><span class="ls-mark" aria-hidden="true"></span><span class="ls-t">${STEP_LABEL[id]}</span><span class="ls-n"></span></button></li>`).join('')}</ol></nav>
     <article class="paper lesson">
@@ -163,10 +162,10 @@ export function renderLesson(view, { args: [lessonId], params }) {
       ${sec('why', '왜 그럴까', `<div class="c-body">${tex(L.why)}</div>${L.derive ? deriveHTML(L.derive) : ''}`)}
       ${sec('ex', '예제로 익히기', `<p class="hint-text">먼저 스스로 풀어 본 뒤, 풀이를 한 단계씩 열어 비교하세요.</p><ol class="ex-list">${L.examples.map((e, i) => exampleHTML(e, i)).join('')}</ol>`)}
       ${sec('ck', '확인 문제', `<p class="hint-text">바로 채점됩니다. 틀리면 그 답이 어떤 생각에서 나왔는지 짚어 줍니다. 숙련도에는 반영되지 않으니 편하게 풀어 보세요.</p><ol class="ck-list">${L.checks.map((c, i) => checkHTML(c, i, rec)).join('')}</ol>`)}
-      ${L.cq && L.cq.length ? sec('cq', '이유까지 답하기', `<p class="hint-text">답만 맞히는 것으로는 부족해요. 답과 함께 <strong>그렇게 고른 이유</strong>를 고르세요. 이유가 틀리면 어떤 오해인지 알려 줍니다. 확인 문제와 이 질문들을 모두 처음에 혼자 맞히면 "혼자 확인"이 되고, 틀리면 내일 다른 개념 질문으로 다시 확인합니다. 나머지 개념 질문은 재확인과 "오늘의 개념 확인"에 나옵니다.</p><ol class="ck-list">${lessonCQs(L).map((q, i) => { const d = lastCQ(L.id, q.id); return cqHTML(q, { num: i + 1, done: d, retry: !!d, missAfter: traceLink, seed: newCQSeed() }); }).join('')}</ol>`) : ''}
+      ${L.cq && L.cq.length ? sec('cq', '이유까지 답하기', `<p class="hint-text">답만 맞히는 것으로는 부족해요. 답과 함께 <strong>그렇게 고른 이유</strong>를 고르세요. 이유가 틀리면 어떤 오해인지 알려 줍니다. 확인 문제와 이 질문들을 모두 처음에 혼자 맞히면 "혼자 확인"이 되고, 틀리면 내일 다른 개념 질문으로 다시 확인합니다. 나머지 개념 질문은 "개념 다시 확인"과 "오늘의 개념 확인"에 나옵니다.</p><ol class="ck-list">${lessonCQs(L).map((q, i) => { const d = lastCQ(L.id, q.id); return cqHTML(q, { num: i + 1, done: d, retry: !!d, missAfter: traceLink, seed: newCQSeed() }); }).join('')}</ol>`) : ''}
       ${deep ? sec('deep', '한 걸음 더 <span class="deep-tag">심화</span>', `${deep.intro ? `<div class="c-body deep-intro">${tex(deep.intro)}</div>` : ''}
         ${deep.ideas.map((idea, i) => `<div class="idea"><h3 class="idea-t"><span class="idea-n">${i + 1}</span>${tex(idea.title)}</h3><div class="c-body">${tex(idea.body)}</div>${idea.example ? `<ol class="ex-list">${exampleHTML(idea.example, i, '심화 예제', `d${i}`)}</ol>` : ''}</div>`).join('')}
-        ${deep.checks.length ? `<h3 class="idea-t deep-ck-h">심화 확인 문제</h3><p class="hint-text">"혼자 확인" 판정에는 들어가지 않습니다. 틀려도 재확인 목록에 올라가지 않으니 도전해 보세요.</p><ol class="ck-list">${deep.checks.map((c, i) => checkHTML(c, i, rec, '심화 ')).join('')}</ol>` : ''}`, 'l-deep') : ''}
+        ${deep.checks.length ? `<h3 class="idea-t deep-ck-h">심화 확인 문제</h3><p class="hint-text">"혼자 확인" 판정에는 들어가지 않습니다. 틀려도 "개념 다시 확인"에 올라가지 않으니 도전해 보세요.</p><ol class="ck-list">${deep.checks.map((c, i) => checkHTML(c, i, rec, '심화 ')).join('')}</ol>` : ''}`, 'l-deep') : ''}
       ${L.explain ? sec('say', '직접 설명해 보기', `<div class="say">
         <p class="say-q" id="say-q-${esc(L.id)}">${tex(L.explain.prompt)}</p>
         <textarea data-note rows="4" aria-label="${esc(speakText(L.explain.prompt))}" placeholder="내 말로 두세 문장. 수식은 $...$ 없이 그냥 써도 됩니다.">${esc(rec.note || '')}</textarea>
@@ -260,7 +259,7 @@ export function renderLesson(view, { args: [lessonId], params }) {
 
   function recheckHTML(pr) {
     if (!pr.recheck) return '';
-    return `<div class="recheck-box"><p><strong>다시 확인할 개념</strong> 확인 문제나 개념 질문을 틀렸거나 풀이를 본 기록이 있어요. ${pr.recheckDue ? '오늘' : fmtDate(pr.recheck.due) + '에'} 아직 보지 않은 개념 질문으로 다시 확인해 보세요. 답과 이유를 모두 맞히면 이 표시가 사라집니다.</p>
+    return `<div class="recheck-box"><p><strong>개념 다시 확인 예정</strong> 확인 문제나 개념 질문을 틀렸거나 풀이를 본 기록이 있어요. ${pr.recheckDue ? '오늘' : fmtDate(pr.recheck.due) + '에'} 아직 보지 않은 개념 질문으로 다시 확인해 보세요. 답과 이유를 모두 맞히면 이 표시가 사라집니다.</p>
       <p class="row"><a class="btn${pr.recheckDue ? ' btn-primary' : ' btn-quiet'}" href="#/rc/${L.id}">${pr.recheckDue ? '지금 다시 확인하기' : '미리 풀어 보기(연습)'}</a></p></div>`;
   }
 

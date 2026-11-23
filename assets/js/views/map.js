@@ -116,15 +116,15 @@ export function renderMap(view, { args: [selArg] }) {
     <nav class="crumbs" aria-label="위치"><a href="#/units">개념 학습</a><span aria-hidden="true">/</span><span>개념 지도</span></nav>
     <header class="page-head">
       <h1 class="page-title">개념 지도</h1>
-      <p class="lead">${LESSONS.length}개 소단원이 서로 어떻게 기대는지 보여 줍니다. 공부하지 않는 과목의 개념도 함께 보입니다(뒤 과목의 개념이 앞 과목에 기대기 때문입니다). 화살표는 "앞 개념 → 그 개념을 쓰는 뒤 개념"입니다. 뒤 개념이 막히면 대개 앞 개념 어딘가가 흔들린 것이니, 개념을 눌러 앞 개념을 따라가 보세요.</p>
+      <p class="lead">막히는 개념을 누르면 기대고 있는 앞 개념을 따라갈 수 있어요.</p>
+      <details class="mp-howto"><summary>지도 읽는 법</summary><p class="hint-text">${LESSONS.length}개 소단원이 서로 어떻게 기대는지 보여 줍니다. 화살표는 "앞 개념 → 그 개념을 쓰는 뒤 개념"입니다. 뒤 개념이 막히면 대개 앞 개념 어딘가가 흔들린 것입니다. 공부하지 않는 과목의 개념도 함께 보입니다(뒤 과목의 개념이 앞 과목에 기대기 때문입니다).</p></details>
       <p class="mem-row"><span><b>${mem.learned}</b> 배운 개념</span><span><b>${mem.kept}</b> 오래 기억함</span><span><b>${weakAll}</b> 다시 볼 개념</span></p>
     </header>
     ${roots.length ? `<section class="paper mp-roots"><h2 class="h3">먼저 다지면 좋은 개념</h2><p class="hint-text">다시 볼 개념 중 그 위에 쌓이는 개념이 많은 순서예요. 여기가 흔들리면 뒤 개념이 함께 막힙니다.</p>
       <ol class="mp-root-list">${roots.map(({ l, sig, above }) => `<li><button type="button" class="link-btn" data-sel="${l.id}">${esc(l.title)}</button><span class="hint-text">${esc(weakText(sig))} · 위에 쌓인 개념 ${above}개</span></li>`).join('')}</ol></section>` : ''}
     <p class="mp-legend" aria-label="범례"><span class="lg st-new">아직</span><span class="lg st-partial">확인 중</span><span class="lg st-self">이해 표시</span><span class="lg st-verified">혼자 확인 ✓</span><span class="lg st-kept">오래 기억함 ★</span><span class="lg st-recheck">다시 확인 ↻</span><span class="lg lg-weak">다시 볼 것 있음</span></p>
     <section class="mp-find" aria-labelledby="mp-find-h"><h2 id="mp-find-h" class="sr">개념 찾기</h2>
-      <label class="field"><span class="field-l">개념 찾기</span><input type="search" data-find placeholder="예: 인수분해, 미분계수" autocomplete="off" aria-describedby="mp-find-hint"></label>
-      <p class="hint-text" id="mp-find-hint">이름을 입력하면 아래에 개념이 나와요. 지도를 순서대로 지나지 않아도 바로 열 수 있어요.</p>
+      <label class="field"><span class="field-l">개념 찾기</span><input type="search" data-find placeholder="예: 인수분해, 미분계수" autocomplete="off"></label>
       <ul class="mp-results" data-results aria-live="polite"></ul>
       <details class="mp-all"><summary>과목별 목록으로 보기</summary>${UNITS.map((u) => {
         const ls = lessonsOfUnit(u.id);
