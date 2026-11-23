@@ -28,7 +28,8 @@ export default {
       },
       read: ({ m, n }) => {
         const P = [(4 * m - 2 * n) / (m + n), (4 * m + n) / (m + n)];
-        return [[t`$P$`, `$\\left(\\dfrac{${m}\\cdot4+${n}\\cdot(-2)}{${m + n}},\\ \\dfrac{${m}\\cdot4+${n}\\cdot1}{${m + n}}\\right)=${pt(P)}$`], [t`$\overline{AP}:\overline{PB}$`, `$${m}:${n}$`]];
+        // x, y 좌표를 따로 적어 좁은 화면에서 식 사이에서 줄을 바꿀 수 있게(한 괄호로 묶으면 320px에서 칸을 넘었다)
+        return [[t`$P$`, `$x=\\dfrac{${m}\\cdot4+${n}\\cdot(-2)}{${m + n}}$, $y=\\dfrac{${m}\\cdot4+${n}\\cdot1}{${m + n}}$, $P${pt(P)}$`], [t`$\overline{AP}:\overline{PB}$`, `$${m}:${n}$`]];
       },
       goals: [
         { text: t`$P$가 $\overline{AB}$의 중점이 되게 해 보세요.`, test: ({ m, n }) => m === n },
