@@ -1354,3 +1354,12 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .mp-howto { margin: 6px 0 0; font-size: 13px; }
 .mp-howto > summary { cursor: pointer; color: var(--pencil); font-weight: 600; }
 .mp-howto[open] > summary { margin-bottom: 6px; }
+
+/* 320px 넘침(전체 점검): 탐구 그래프 칸이 내용보다 작아질 수 있게, 그림은 칸 폭에 맞추고, 긴 식은 칸 안에서 가로로 밀어 보기 */
+.xp-body { grid-template-columns: minmax(0, 1fr); }
+.xp-fig, .xp-side { min-width: 0; }
+.xp-fig svg { max-width: 100%; height: auto; }
+.xp-read div { flex-wrap: wrap; min-width: 0; }
+.xp-read dd { min-width: 0; max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+/* 작은 표는 좁은 화면에서 칸 여백을 줄인다 */
+@media (max-width: 360px) { table.mini th, table.mini td { padding: 6px 5px; } table.mini { font-size: 14px; } }
