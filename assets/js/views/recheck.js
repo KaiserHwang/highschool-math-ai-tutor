@@ -11,12 +11,12 @@ function outcomeHTML(L, out) {
   const links = `<a class="btn btn-quiet" href="#/l/${L.id}">개념 다시 보기</a>`;
   if (out.g.ok && out.res.counted) {
     return `<section class="paper tr-sum ok"><h2 class="paper-title">개념 다시 확인 통과</h2>
-      <p>답과 이유를 모두 맞혔어요. <strong>${esc(L.title)}</strong>의 "다시 확인할 개념" 표시를 지웠습니다.</p>
+      <p>답과 이유를 모두 맞혔어요. <strong>${esc(L.title)}</strong>은 "개념 다시 확인" 목록에서 빠졌어요.</p>
       <p class="row"><a class="btn btn-primary" href="#/review">복습 목록으로</a>${links}</p></section>`;
   }
   if (out.g.ok) {
     return `<section class="paper tr-sum ok"><h2 class="paper-title">연습으로 기록했어요</h2>
-      <p>예정일 전이라 "다시 확인할 개념" 표시는 그대로입니다. ${fmtDate(out.due)}에 다른 문항으로 한 번 더 확인해요.</p>
+      <p>예정일 전이라 "개념 다시 확인" 목록에 그대로 남아요. ${fmtDate(out.due)}에 다른 문항으로 한 번 더 확인해요.</p>
       <p class="row"><a class="btn btn-primary" href="#/review">복습 목록으로</a>${links}</p></section>`;
   }
   return `<section class="paper tr-sum miss"><h2 class="paper-title">내일 다시 확인해요</h2>
@@ -42,7 +42,7 @@ export function renderRecheck(view, { args: [id] }) {
         ${!done && early ? `<p class="banner">예정일(${fmtDate(pr.recheck.due)}) 전이라 맞혀도 연습으로만 기록됩니다.</p>` : ''}
       </header>
       ${q ? `<ol class="ck-list tr-list">${cqHTML(q, { num: 1, done, seed })}</ol>${out ? outcomeHTML(L, out) : ''}`
-      : `<section class="paper tr-sum ok"><h2 class="paper-title">다시 확인할 것이 없어요</h2><p>이 개념은 다시 확인할 목록에 없습니다.</p><p class="row"><a class="btn btn-primary" href="#/l/${L.id}">${esc(L.title)} 보기</a><a class="btn btn-quiet" href="#/review">복습 목록으로</a></p></section>`}
+      : `<section class="paper tr-sum ok"><h2 class="paper-title">다시 확인할 것이 없어요</h2><p>이 개념은 "개념 다시 확인" 목록에 없어요.</p><p class="row"><a class="btn btn-primary" href="#/l/${L.id}">${esc(L.title)} 보기</a><a class="btn btn-quiet" href="#/review">복습 목록으로</a></p></section>`}
     </section>`;
   };
 

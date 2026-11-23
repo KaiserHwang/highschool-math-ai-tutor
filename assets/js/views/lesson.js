@@ -259,7 +259,7 @@ export function renderLesson(view, { args: [lessonId], params }) {
 
   function recheckHTML(pr) {
     if (!pr.recheck) return '';
-    return `<div class="recheck-box"><p><strong>다시 확인할 개념</strong> 확인 문제나 개념 질문을 틀렸거나 풀이를 본 기록이 있어요. ${pr.recheckDue ? '오늘' : fmtDate(pr.recheck.due) + '에'} 아직 보지 않은 개념 질문으로 다시 확인해 보세요. 답과 이유를 모두 맞히면 이 표시가 사라집니다.</p>
+    return `<div class="recheck-box"><p><strong>개념 다시 확인 예정</strong> 확인 문제나 개념 질문을 틀렸거나 풀이를 본 기록이 있어요. ${pr.recheckDue ? '오늘' : fmtDate(pr.recheck.due) + '에'} 아직 보지 않은 개념 질문으로 다시 확인해 보세요. 답과 이유를 모두 맞히면 이 표시가 사라집니다.</p>
       <p class="row"><a class="btn${pr.recheckDue ? ' btn-primary' : ' btn-quiet'}" href="#/rc/${L.id}">${pr.recheckDue ? '지금 다시 확인하기' : '미리 풀어 보기(연습)'}</a></p></div>`;
   }
 

@@ -81,7 +81,7 @@ export function renderHome(view) {
     || lessonsOfUnit(weak.id).find(unlearned) || activeLessons().find(unlearned) || null; // 공부하는 과목 안에서 고른다
   const rechecksDue = lessonRechecks().filter((x) => x.pr.recheckDue);
   if (rechecksDue.length) {
-    steps.push(`<li class="plan-step"><div class="plan-body"><h2 class="h3">다시 확인할 개념 ${rechecksDue.length}개</h2><p class="hint-text">${rechecksDue.slice(0, 3).map((x) => esc(x.l.title)).join(', ')}${rechecksDue.length > 3 ? ' 등' : ''} · 아직 보지 않은 개념 질문으로 확인합니다.</p></div><a class="btn" href="#/review">확인하기</a></li>`);
+    steps.push(`<li class="plan-step"><div class="plan-body"><h2 class="h3">개념 다시 확인 ${rechecksDue.length}개</h2><p class="hint-text">${rechecksDue.slice(0, 3).map((x) => esc(x.l.title)).join(', ')}${rechecksDue.length > 3 ? ' 등' : ''} · 아직 보지 않은 개념 질문으로 확인합니다.</p></div><a class="btn" href="#/review">확인하기</a></li>`);
   }
   if (due.length) {
     tiles.push(`<article class="paper tile review-today" aria-labelledby="rv-h"><header class="paper-head"><h2 id="rv-h" class="paper-title">오답 복습</h2><span class="meta">오늘</span></header><p class="tile-n">${due.length}<small>문제</small></p><p class="row"><a class="btn btn-primary" href="#/review">복습하기</a></p></article>`);

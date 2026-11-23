@@ -82,7 +82,7 @@ export function renderReport(view) {
       <summary>학습 지표 자세히 보기</summary>
       <p class="hint-text">오래 기억한 개념은 지금까지의 기록, 나머지는 최근 7일 기록입니다.</p>
       <dl class="stats">
-        <div><dt>오래 기억한 개념</dt><dd>${conceptMemory().learned ? `${conceptMemory().kept}<small>/${conceptMemory().learned}</small>` : '<small class="dd-note">첫 기억 확인을 기다려요</small>'}</dd></div>
+        <div><dt>오래 기억한 개념</dt><dd>${conceptMemory().learned ? `${conceptMemory().kept}<small>/${conceptMemory().learned}</small>` : '<small class="dd-note">첫 개념 확인을 기다려요</small>'}</dd></div>
         <div><dt>개념 확인 문제</dt><dd>${w7.checks}<small>번 풀이</small></dd></div>
         <div><dt>공부한 날</dt><dd>${w7.activeDays}<small>/7일</small></dd></div>
         <div><dt>첫 시도 정답률</dt><dd>${w7.problems ? Math.round(w7.firstRight * 100) : '–'}<small>%</small></dd></div>

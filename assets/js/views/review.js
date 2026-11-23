@@ -58,7 +58,7 @@ function draw(view) {
   const rt = reviewToday();
   const rcFirst = rechecks.find((x) => x.pr.recheckDue);
   const nextOf = { wrong: later[0]?.due, recheck: rechecks.find((x) => !x.pr.recheckDue)?.pr.recheck.due, memory: conceptQueue().find((x) => x.sp.due > today())?.sp.due };
-  const sumRow = (label, n, href, note, next) => `<li class="rs-i${n ? ' on' : ''}"><span class="rs-t">${label}</span><b class="rs-n">${n}</b><span class="hint-text">${note}${!n && next ? ` · 다음 ${fmtDate(next)}` : ''}</span>${n && href ? `<a class="btn btn-quiet" href="${href}">시작</a>` : ''}</li>`;
+  const sumRow = (label, n, href, note, next) => `<li class="rs-i${n ? ' on' : ''}"><span class="rs-t">${label}</span><b class="rs-n">${n}</b><span class="hint-text">${note}${!n && next ? ` · 다음 ${fmtDate(next)}` : ''}</span>${n && href ? `<a class="btn btn-quiet" href="${href}" aria-label="${label} 시작">시작</a>` : ''}</li>`; // 링크 목록에서도 무엇을 시작하는지 구분되게
   const summary = `<section class="review-sum" aria-labelledby="rs-h"><h2 id="rs-h" class="h3">오늘 할 복습 ${rt.total}</h2>
     <ul class="rs-list">${sumRow('오답 복습', rt.wrong, due[0] ? `#/p/${due[0].pid}?review=1` : '', '틀린 문제를 1·3·7·14일 간격으로', nextOf.wrong)}${sumRow('개념 다시 확인', rt.recheck, rcFirst ? `#/rc/${rcFirst.l.id}` : '', '틀린 개념을 다음 날 다른 질문으로', nextOf.recheck)}${sumRow('오늘의 개념 확인', rt.memory, '#/cr', '배운 개념을 1주·3주·2개월 뒤에, 그 뒤 6개월마다', nextOf.memory)}</ul>
     ${rt.total ? '' : '<p class="hint-text">오늘 할 복습은 없어요.</p>'}</section>`;  const filtered = filter.reason !== 'all' || filter.unit !== 'all';
