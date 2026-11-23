@@ -1,4 +1,6 @@
-import katex from '../../vendor/katex/katex.mjs';
+// KaTeX 0.16.47 축소본(첫 로딩 용량, 전체 점검 10). 다시 만들 때: npm의 katex@0.16.47 dist/katex.mjs를 받아
+// esbuild katex.mjs --minify --format=esm --legal-comments=inline --outfile=assets/vendor/katex/katex.min.mjs (앞에 버전·라이선스 배너)
+import katex from '../../vendor/katex/katex.min.mjs';
 
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ESC[c]);
