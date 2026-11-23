@@ -969,7 +969,7 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .xp + .xp { margin-top: 14px; }
 .xp-t { font: 700 16px var(--sans); margin: 0 0 4px; }
 .xp-intro { margin: 0 0 10px; line-height: 1.8; }
-.xp-body { display: grid; gap: 14px; align-items: start; }
+.xp-body { display: grid; gap: 14px; align-items: start; grid-template-columns: minmax(0, 1fr); } /* 좁은 화면: 칸이 내용보다 작아질 수 있게(320px 넘침) */
 @media (min-width: 760px) { .xp-body { grid-template-columns: minmax(0, 1.25fr) minmax(220px, 1fr); } }
 .xp-fig { background: var(--paper); border: 1px solid var(--grid); border-radius: var(--r-sm); display: grid; place-items: center; padding: 6px; min-height: 160px; }
 .xp-fig .fig { margin: 0; }
@@ -1355,11 +1355,10 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .mp-howto > summary { cursor: pointer; color: var(--pencil); font-weight: 600; }
 .mp-howto[open] > summary { margin-bottom: 6px; }
 
-/* 320px 넘침(전체 점검): 탐구 그래프 칸이 내용보다 작아질 수 있게, 그림은 칸 폭에 맞추고, 긴 식은 칸 안에서 가로로 밀어 보기 */
-.xp-body { grid-template-columns: minmax(0, 1fr); }
+/* 320px 넘침(전체 점검): 그림은 칸 폭에 맞추고, 읽은 값의 긴 식은 등호·연산 기호 뒤에서 줄을 바꾼다(가로 스크롤은 WebKit에서 키보드로 볼 수 없다) */
 .xp-fig, .xp-side { min-width: 0; }
 .xp-fig svg { max-width: 100%; height: auto; }
 .xp-read div { flex-wrap: wrap; min-width: 0; }
-.xp-read dd { min-width: 0; max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+.xp-read dd { min-width: 0; max-width: 100%; }
 /* 작은 표는 좁은 화면에서 칸 여백을 줄인다 */
 @media (max-width: 360px) { table.mini th, table.mini td { padding: 6px 5px; } table.mini { font-size: 14px; } }
