@@ -353,7 +353,17 @@ async function run(viewport, tag) {
   // 입력란의 실제 접근성 이름에 질문의 수식(AB=O)까지 들어 있어야 한다(KaTeX 화면 글자는 낭독기에서 숨겨짐)
   const noteName = /AB=O/.test(await page.locator('textarea[data-note]').evaluate((t) => t.getAttribute('aria-label') || '')) && /AB=O/.test(await page.locator('textarea[data-note]').ariaSnapshot());
   const shortOneLine = await page.evaluate(() => [...document.querySelectorAll('[data-check="u4-l4-c2"] .opt .katex')].every((k) => new Set([...k.getClientRects()].map((x) => Math.round(x.top))).size === 1));
-  ok(optFit && noteName && shortOneLine, `[${tag}] 긴 수식 보기가 칸 안에 들어오고, "직접 설명해 보기" 입력란에 이름이 있다`);
+  // 수식이 낭독기에서 읽힌다(#69): 접근성 트리에 수식(math)이 내용과 함께 들어 있어야 한다
+  const coreSnap = await page.locator('.lesson .l-core').first().ariaSnapshot();
+  ok(/math: .*A B ≠ B A/.test(coreSnap), `[${tag}] 개념 정리의 수식이 낭독기용 수식(MathML)으로 함께 나온다`);
+  // 수식 보기에 포커스하면 번호와 수식(행렬은 행·칸까지)이 함께 읽히고, 숨긴 MathML은 복사에 섞이지 않는다(#69)
+  await page.goto(BASE + '#/p/u4-03');
+  await page.waitForSelector('.opt[role="radio"]');
+  await page.waitForFunction(() => !!document.querySelector('.opt[role="radio"]').getAttribute('aria-label'));
+  const optName = await page.evaluate(() => document.querySelector('.opt[role="radio"]').getAttribute('aria-label'));
+  const noCopy = await page.evaluate(() => getComputedStyle(document.querySelector('.katex-mathml')).userSelect === 'none');
+  ok(/① 행렬 \(-1, 0; 3, 4\)/.test(optName) && noCopy, `[${tag}] 수식 보기의 이름에 번호와 수식이 함께 들어가고(${optName}), 숨긴 MathML은 복사되지 않는다`);
+  ok(optFit && noteName && shortOneLine,`[${tag}] 긴 수식 보기가 칸 안에 들어오고, "직접 설명해 보기" 입력란에 이름이 있다`);
   await page.goto(BASE + '#/l/u2-l1');
   await page.waitForSelector('[data-note]');
   ok((await page.inputValue('[data-note]')) === '실수부분과 허수부분을 각각 비교한다', `[${tag}] 직접 쓴 설명이 저장되어 다시 보인다`);
