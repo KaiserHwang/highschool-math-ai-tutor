@@ -15,14 +15,42 @@ export function tex(html) {
   );
 }
 
-/** 낭독기용 이름(aria-label)에 넣을 평문: 태그를 지우고 수식은 기호만 남긴다(KaTeX 화면 글자는 낭독기에서 숨겨진다) */
-export function speakText(html) {
-  return String(html).replace(/<[^>]+>/g, ' ')
-    .replace(/\$([^$]+)\$/g, (_, s) => s.replace(/\\(?:d?frac)\{([^}]*)\}\{([^}]*)\}/g, '$1/$2').replace(/\\(le|leq)\b/g, '≤').replace(/\\(ge|geq)\b/g, '≥').replace(/\\ne\b/g, '≠')
-      .replace(/\\[a-zA-Z]+/g, ' ').replace(/[{}]/g, '').replace(/\s+/g, ' ').trim())
+/** LaTeX 한 덩어리를 낭독기용 평문으로: 분수·근호·부등호·지수·행렬(행은 ;, 칸은 ,)을 기호로 바꾸고 나머지 명령은 지운다 */
+export function speakTex(s) {
+  return String(s)
+    .replace(/\\begin\{[pbv]?matrix\}([\s\S]*?)\\end\{[pbv]?matrix\}/g, (_, m) => ` 행렬 (${m.split('\\\\').map((r) => r.split('&').map((x) => x.trim()).join(', ')).join('; ')}) `)
+    .replace(/\\(?:d|t)?frac\{([^{}]*)\}\{([^{}]*)\}/g, '($1)/($2)').replace(/\\(?:d|t)?frac(\d)(\d)/g, '$1/$2')
+    .replace(/\\sqrt\{([^{}]*)\}/g, '√($1)')
+    .replace(/\\(le|leq)\b/g, '≤').replace(/\\(ge|geq)\b/g, '≥').replace(/\\ne\b/g, '≠').replace(/\\(cdot|times)\b/g, '×').replace(/\\pi\b/g, 'π')
+    .replace(/\^\{?2\}?/g, '²').replace(/\^\{?3\}?/g, '³').replace(/\^\{([^{}]*)\}/g, '^($1)')
+    .replace(/\\(left|right|,|;|!|quad)/g, ' ').replace(/\\ /g, ' ').replace(/\\[a-zA-Z]+/g, ' ').replace(/[{}]/g, '')
     .replace(/\s+/g, ' ').trim();
 }
 
+/** 낭독기용 이름(aria-label)에 넣을 평문: 태그를 지우고 수식은 speakTex로(KaTeX 화면 글자는 낭독기에서 숨겨진다) */
+export function speakText(html) {
+  return String(html).replace(/<[^>]+>/g, ' ').replace(/\$([^$]+)\$/g, (_, s) => speakTex(s)).replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * 렌더링된 요소의 낭독기용 평문: KaTeX 수식은 MathML 안의 원래 LaTeX(annotation)를 speakTex로 바꿔 넣는다.
+ * 라디오 보기처럼 포커스 이름이 하위 MathML을 빼는 컨트롤의 aria-label에 쓴다(#69).
+ */
+export function speakNode(el) {
+  const c = el.cloneNode(true);
+  c.querySelectorAll('.katex').forEach((k) => { const a = k.querySelector('annotation'); k.replaceWith(document.createTextNode(` ${a ? speakTex(a.textContent) : ''} `)); });
+  c.querySelectorAll('[aria-hidden="true"]').forEach((x) => x.remove());
+  return c.textContent.replace(/\s+/g, ' ').trim();
+}
+
+/** 수식이 든 라디오 보기에 "① 행렬 (-1, 0; 3, 4)" 같은 접근성 이름을 붙인다 */
+export function labelOptions(root = document) {
+  for (const o of root.querySelectorAll('[role="radio"]')) {
+    if (!o.querySelector('.katex')) { if (o.dataset.spoke) { o.removeAttribute('aria-label'); delete o.dataset.spoke; } continue; }
+    const name = speakNode(o);
+    if (name && o.getAttribute('aria-label') !== name) { o.setAttribute('aria-label', name); o.dataset.spoke = '1'; }
+  }
+}
 /**
  * 객관식 보기의 열 수를 실제 폭으로 정한다(전체 점검 #68).
  * 수식은 줄을 바꾸지 않은 채로 재서, 모든 보기가 한 줄에 들어가는 가장 많은 열을 고른다(보기 종류별 최대 열 수 안에서).
@@ -77,7 +105,7 @@ export function fitReasons(root = document) {
 /** 화면이 바뀌거나 폭·글꼴이 바뀌면 보기 열 수를 다시 맞춘다 */
 export function installFitOptions(view) {
   let raf = 0;
-  const run = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { fitOptions(view); fitReasons(view); }); };
+  const run = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { fitOptions(view); fitReasons(view); labelOptions(view); }); };
   new MutationObserver((ms) => { if (ms.some((m) => [...m.addedNodes].some((n) => n.nodeType === 1 && (n.matches?.('.options, .cq-reasons, .opt') || n.querySelector?.('.options, .cq-reasons'))))) run(); })
     .observe(view, { childList: true, subtree: true });
   let lastW = innerWidth;

@@ -6,7 +6,7 @@ export default {
     {
       id: 'u5-l1-q1', q: t`두 점 $A(1,\ 1),\ B(7,\ 4)$에 대하여 $\overline{AB}$를 $2:1$로 내분하는 점은?`,
       options: [t`$(5,\ 3)$`, t`$(3,\ 2)$`, t`$(4,\ 2.5)$`], answer: 0,
-      reasons: [t`$2:1$이면 $B$에 가까우므로 $\left(\dfrac{2\cdot7+1\cdot1}3,\ \dfrac{2\cdot4+1\cdot1}3\right)$`, t`비의 앞 수 $2$를 $A$의 좌표에 곱한다`, '내분점은 항상 두 점의 중점이다', '비의 합으로 나누지 않아도 된다'],
+      reasons: [t`$2:1$이면 $B$에 가까우므로 $x=\dfrac{2\cdot7+1\cdot1}3$, $y=\dfrac{2\cdot4+1\cdot1}3$`, t`비의 앞 수 $2$를 $A$의 좌표에 곱한다`, '내분점은 항상 두 점의 중점이다', '비의 합으로 나누지 않아도 된다'],
       reason: 0, mis: [null, 'formula', 'overgen', 'formula'],
       note: t`$m:n$으로 내분하는 점은 $\dfrac{mx_2+nx_1}{m+n}$으로, 비의 앞 수 $m$이 $B$에 붙습니다(엇갈려 곱하기). $A$에서 $\overline{AB}$의 $\dfrac23$만큼 간 점이라고 생각해도 됩니다.`,
     },
