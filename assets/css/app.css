@@ -1362,3 +1362,5 @@ table.mini th { font: 600 13px var(--sans); color: var(--pencil); }
 .xp-read dd { min-width: 0; max-width: 100%; }
 /* 작은 표는 좁은 화면에서 칸 여백을 줄인다 */
 @media (max-width: 360px) { table.mini th, table.mini td { padding: 6px 5px; } table.mini { font-size: 14px; } }
+/* 낭독기용으로 숨긴 MathML은 복사에 섞이지 않게(#69) */
+.katex .katex-mathml { user-select: none; -webkit-user-select: none; }
