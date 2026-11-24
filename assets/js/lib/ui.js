@@ -1,6 +1,8 @@
-// KaTeX 0.16.47 축소본(첫 로딩 용량, 전체 점검 10). 다시 만들 때: npm의 katex@0.16.47 dist/katex.mjs를 받아
-// esbuild katex.mjs --minify --format=esm --legal-comments=inline --outfile=assets/vendor/katex/katex.min.mjs (앞에 버전·라이선스 배너)
-import katex from '../../vendor/katex/katex.min.mjs';
+// KaTeX 0.16.47 축소본(첫 로딩 용량, 전체 점검 10). 파일 경로는 예전 그대로 katex.mjs로 둔다:
+// 업데이트 도중 연결이 끊겨도 서비스 워커의 이전 캐시(같은 경로)로 열리게 하기 위해서다(#73 검토).
+// 다시 만들 때: npm의 katex@0.16.47 dist/katex.mjs를 받아
+// esbuild katex.mjs --minify --format=esm --legal-comments=inline --outfile=assets/vendor/katex/katex.mjs (앞에 버전·라이선스 배너)
+import katex from '../../vendor/katex/katex.mjs';
 
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ESC[c]);

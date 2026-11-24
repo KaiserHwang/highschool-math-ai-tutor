@@ -2,7 +2,7 @@
 // (1) 정답을 생성기와 다른 방법(전수 조사, 수치 계산)으로 다시 구해 대조하고
 // (2) 수식이 KaTeX로 렌더링되는지, 표기가 어색하지 않은지(+-, +0 등), 보기가 올바른지 확인한다.
 // 실행: node tests/gen-check.mjs
-import katex from '../assets/vendor/katex/katex.min.mjs';
+import katex from '../assets/vendor/katex/katex.mjs';
 import { GENERATORS, makeVariant } from '../assets/js/content/generators.js';
 import { PROBLEM_BY_ID } from '../assets/js/content/problems.js';
 import { normalizeAnswer } from '../assets/js/model.js';

@@ -1,7 +1,7 @@
 // 콘텐츠 정적 검사: 모든 수식이 KaTeX로 오류 없이 렌더링되는지, 수식 밖에 깨진 HTML이 없는지,
 // 그림 설명이 있는지, 서비스 워커가 최신인지 확인한다.  실행: node tests/content-check.mjs
 import { readFileSync } from 'fs';
-import katex from '../assets/vendor/katex/katex.min.mjs';
+import katex from '../assets/vendor/katex/katex.mjs';
 import { PROBLEMS } from '../assets/js/content/problems.js';
 import { DIAGNOSIS } from '../assets/js/content/diagnosis.js';
 import { UNITS, REGULAR_UNITS, isFusionUnit } from '../assets/js/content/units.js';

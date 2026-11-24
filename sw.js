@@ -1,6 +1,6 @@
 // 자동 생성 파일입니다. 직접 고치지 말고 node tools/gen-sw.mjs 를 실행하세요.
 // 오프라인에서도 열리도록 앱 파일을 미리 받아 두고, 온라인일 때는 항상 서버의 최신 파일을 먼저 씁니다.
-const VERSION = 'mathpulse-9a7b05229303';
+const VERSION = 'mathpulse-b6aaab038482';
 const ASSETS = [
   './',
   'assets/css/app.css',
@@ -132,7 +132,7 @@ const ASSETS = [
   'assets/vendor/katex/fonts/KaTeX_Size4-Regular.woff2',
   'assets/vendor/katex/fonts/KaTeX_Typewriter-Regular.woff2',
   'assets/vendor/katex/katex.min.css',
-  'assets/vendor/katex/katex.min.mjs',
+  'assets/vendor/katex/katex.mjs',
   'index.html',
   'manifest.webmanifest',
 ];
