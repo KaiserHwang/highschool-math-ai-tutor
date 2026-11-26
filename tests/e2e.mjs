@@ -23,7 +23,8 @@ const { LESSONS, lessonsOfUnit, LESSON_BY_ID } = await import('../assets/js/cont
 let failures = 0;
 const ok = (cond, msg) => { console.log(`${cond ? '✓' : '✗'} ${msg}`); if (!cond) failures++; };
 
-const browser = await chromium.launch();
+// E2E_CHANNEL=msedge 처럼 설치된 브라우저를 쓸 수 있다(Playwright 브라우저를 따로 받지 않은 PC에서 로컬 실행)
+const browser = await chromium.launch(process.env.E2E_CHANNEL ? { channel: process.env.E2E_CHANNEL } : {});
 
 async function run(viewport, tag) {
   const ctx = await browser.newContext({ viewport, permissions: ['clipboard-read', 'clipboard-write'] });
