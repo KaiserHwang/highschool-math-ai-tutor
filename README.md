@@ -120,11 +120,12 @@ node tests/content-check.mjs       # 수식·HTML·그림 설명·서비스 워�
 node tests/unit.mjs                # 회귀 검사(백업, 캐시 정리, 시간대별 통계, 간격 복습, 숙련도, 진단 준비도, 개념 재확인, 심화 기록, 개념 간격 복습, 개념 질문 채점·기록·오개념 통계, 선수 관계·역추적·약한 개념)
 node tools/gen-sw.mjs              # 파일을 고친 뒤 서비스 워커 갱신
 npm i --no-save playwright && npx playwright install chromium
-node tests/e2e.mjs                 # 브라우저 종단 테스트(서버 실행 중일 때)
+node tests/e2e.mjs                 # 브라우저 종단 테스트(서버 실행 중일 때). 설치된 Edge로: E2E_CHANNEL=msedge
+bash tools/review/request-review.sh <PR 번호>   # Codex·agy에게 PR 검토 요청(AGENTS.md "PR 검토와 로컬 확인")
 ```
 
 파일을 고치면 `npm run gen`(`node tools/ids.mjs`, `node tools/coverage.mjs`, `node tools/gen-sw.mjs`)을 실행하세요. `tests/ids.json`은 한 번 내보낸 문항·소단원 id의 장부로, 학습 기록의 키인 id가 실수로 바뀌거나 사라지는 것을 콘텐츠 검사가 잡아냅니다. 버전이 파일 내용의 해시로 정해지므로, 배포하면 사용자의 오프라인 캐시도 자동으로 새 버전으로 바뀝니다. `content-check.mjs`가 최신인지 검사합니다. 그림을 고칠 때는 `tests/gallery.html`에서 모든 그림을 한눈에 볼 수 있습니다. GitHub Actions(`.github/workflows/check.yml`)가 푸시할 때마다 여섯 가지 검사를 실행합니다.
 
 ## 라이선스
 
-MIT. KaTeX는 MIT 라이선스(`assets/vendor/katex/LICENSE`)를 따릅니다.
+MIT. KaTeX는 MIT 라이선스(`assets/vendor/katex/LICENSE`)를 따릅니다. `assets/vendor/katex/katex.mjs`는 KaTeX 0.16.47을 esbuild로 축소한 것입니다(다시 만드는 방법은 `assets/js/lib/ui.js`의 주석).
